@@ -117,26 +117,10 @@ export const Transmissions: React.FC<transmissionsProps> = ({
     <div className="relative w-full border-t border-t-white/10 bg-[#030308]/60 p-6 md:p-12 pb-8 flex flex-col gap-6 select-none">
       <div className="relative z-10 flex items-center justify-between select-none">
         <div className="flex items-center gap-3">
-          <div className="font-bebas text-2xl font-bold tracking-[0.14em] text-paper">transmissions</div>
           <div className="font-mono text-[10px] text-white/20">// EPISODES</div>
-          <div className="font-mono text-[9px] tracking-widest py-0.5 px-2 bg-white/5 border border-white/15 text-white/50">
-            {activeCount > 0 ? (
-              <>
-                <span className="inline-block w-1.5 h-1.5 rounded-full bg-crt animate-pulse mr-1"></span>ACTIVE NOW
-              </>
-            ) : (
-              `${transmissions.length} AVAILABLE`
-            )}
-          </div>
-        </div>
-        <div
-          className="font-mono text-[10px] tracking-wider text-white/40 hover:text-paper cursor-pointer transition-colors duration-150"
-          onClick={onBrowseAll}
-        >
-          ALL EPISODES →
-        </div>
+        </div>  
       </div>
-      <div className="h-[1px] bg-white/10 w-full relative z-10"></div>
+     
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 w-full relative z-10">
         {transmissions.map((tx, idx) => {
@@ -155,25 +139,15 @@ export const Transmissions: React.FC<transmissionsProps> = ({
               <div>
                 {/* Image header wrapper */}
                 <div className="relative aspect-[16/10] overflow-hidden bg-black/40">
-                  <img
-                    src={img}
-                    alt={tx.title}
-                    className="w-full h-full object-cover saturate-[0.7] brightness-[0.85] transition-all duration-300 group-hover:scale-105 group-hover:saturate-[1] group-hover:brightness-100"
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
-                  />
+                 
                   <div
                     className="absolute inset-0 z-2 pointer-events-none"
-                    style={{ background: `linear-gradient(0deg, ${tx.arc?.bgColor || '#06060e'}ee 0%, rgba(6,6,14,.1) 100%)` }}
+                    style={{ background: `linear-gradient(0deg, ${tx.arc?.bgColor || '#3e3ea8'}ee 0%, rgba(173, 173, 212, 0.66) 100%)` }}
                   ></div>
                   <div className="absolute inset-0 z-3 pointer-events-none bg-scanlines bg-[length:100%_4px,6px_100%] opacity-5"></div>
                   <div className="absolute top-3 left-3 z-10 font-bebas text-xl text-white/40 tracking-wider select-none">{String(idx + 1).padStart(2, '0')}</div>
-                  <div
-                    className="absolute bottom-3 left-3 z-10 font-mono text-[9px] tracking-widest px-2 py-0.5 font-bold uppercase select-none"
-                    style={{ background: tm.bg, color: tm.color }}
-                  >
-                    {tm.label}{tx.active && <>&nbsp;<span className="animate-pulse">◉</span></>}
-                  </div>
-                  <div className="absolute top-3 right-3 z-10 font-mono text-[9px] tracking-wider bg-black/60 border border-white/10 px-2 py-0.5 text-paper flex items-center gap-1">⚡ {tx.xp} XP</div>
+                  
+                 
                 </div>
 
                 {/* Card body details */}
@@ -184,12 +158,7 @@ export const Transmissions: React.FC<transmissionsProps> = ({
                 </div>
               </div>
 
-              <div className="p-5 pt-0">
-                <div className="flex items-center justify-between text-[9px] font-mono text-white/40 border-t border-white/5 pt-3">
-                  <span className="truncate max-w-[70%] tracking-wider" style={{ color: `${acc}99` }}>{tx.arc?.arcName || ''}</span>
-                  <span className="font-bold tracking-widest text-white/60">EP {tx.n}</span>
-                </div>
-              </div>
+            
 
               {/* Corner indicators inside relative card */}
               <div className="absolute w-[9px] h-[9px] border-t-[1.5px] border-l-[1.5px] border-solid top-[4px] left-[4px] pointer-events-none z-1" style={{ borderColor: acc }}></div>

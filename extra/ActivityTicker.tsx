@@ -1,5 +1,5 @@
 import React from 'react';
-import { synthSound } from '../utils/audio';
+import { synthSound } from '../src/utils/audio';
 
 const VERBS = ['captured', 'pwned', 'exfiltrated', 'cracked', 'breached'];
 

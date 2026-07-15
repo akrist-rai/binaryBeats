@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
-import { synthSound } from '../utils/audio';
-import { SpeedLines } from './Effects/SpeedLines';
-import type { Arc, Episode } from '../data/content';
+import { synthSound } from '../src/utils/audio';
+import { SpeedLines } from '../src/components/Effects/SpeedLines';
+import type { Arc, Episode } from '../src/data/content';
 
 interface ManifestProps {
   ARCS: Arc[];

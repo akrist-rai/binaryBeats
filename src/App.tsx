@@ -1,9 +1,9 @@
 import { useState, useEffect, useMemo } from "react";
 import { Navbar } from "./components/Navbar";
 import { Hero } from "./components/Hero";
-import { ActivityTicker } from "./components/ActivityTicker";
+import { ActivityTicker } from "../extra/ActivityTicker";
 import { Transmissions } from "./components/Transmissions";
-import { Manifest } from "./components/Manifest";
+import { Manifest } from "../extra/Manifest";
 import { ARCS, EPISODES } from "./data/content";
 
 export default function App() {
@@ -97,7 +97,7 @@ export default function App() {
           {/* Hero panel layout component */}
 
           {/* Activity Ticker */}
-          <ActivityTicker />
+      
 
           {/* transmissions grid */}
           <Transmissions

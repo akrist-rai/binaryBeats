@@ -19,11 +19,8 @@ export default function App() {
   });
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string; lang: string } | null>(null);
 
-  // Set accent color
   useEffect(() => {
-    if (typeof document !== "undefined") {
-      document.documentElement.style.setProperty("--mg-acc", "#7c5cfc");
-    }
+    document.documentElement.style.setProperty("--mg-acc", "#6d5cff");
   }, []);
 
   const handleAddXp = (amount: number) => {
@@ -48,11 +45,6 @@ export default function App() {
     });
   };
 
-  const handleLogout = () => {
-    playSound("click");
-    alert("Logging out...");
-  };
-
   const handleTabChange = (tab: string) => {
     playSound("click");
     setActiveTab(tab);
@@ -64,46 +56,39 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#0c0c10] text-zinc-100 flex flex-col font-sans">
+    <div className="w-full min-h-screen bg-[#08080c] text-zinc-100 flex flex-col font-sans noise-bg">
       <Navbar
         activeTab={activeTab}
         xp={xp}
         username={username}
         onNavigate={handleTabChange}
-        onLogout={handleLogout}
+        onLogout={() => { playSound("click"); alert("Logging out..."); }}
         onHoverSound={() => playSound("hover")}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />
 
-      <main className="w-full flex-1 flex flex-col">
-        {activeTab === "home" && (
-          <LeetCodeDashboard 
-            onAddXp={handleAddXp} 
-            playSound={playSound}
-            onShareSolution={handleShareSolution}
-          />
-        )}
-        {activeTab === "blitz" && (
-          <ContestView 
-            playSound={playSound} 
-            onAddXp={handleAddXp}
-          />
-        )}
-        {activeTab === "leaderboard" && (
-          <LeaderboardView 
-            playSound={playSound} 
-            currentUser={username}
-          />
-        )}
-        {activeTab === "community" && (
-          <CommunityView
-            playSound={playSound}
-            onAddXp={handleAddXp}
-            sharedCode={sharedCode}
-            onClearSharedCode={() => setSharedCode(null)}
-          />
-        )}
+      <main className="w-full flex-1 flex flex-col relative">
+        {/* Global ambient orbs */}
+        <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
+          <div className="absolute top-[-10%] right-[10%] w-[600px] h-[600px] rounded-full bg-indigo-600/[0.04] blur-[200px]" />
+          <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet-600/[0.03] blur-[180px]" />
+        </div>
+        
+        <div className="relative z-10 flex-1 flex flex-col">
+          {activeTab === "home" && (
+            <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />
+          )}
+          {activeTab === "blitz" && (
+            <ContestView playSound={playSound} onAddXp={handleAddXp} />
+          )}
+          {activeTab === "leaderboard" && (
+            <LeaderboardView playSound={playSound} currentUser={username} />
+          )}
+          {activeTab === "community" && (
+            <CommunityView playSound={playSound} onAddXp={handleAddXp} sharedCode={sharedCode} onClearSharedCode={() => setSharedCode(null)} />
+          )}
+        </div>
       </main>
     </div>
   );

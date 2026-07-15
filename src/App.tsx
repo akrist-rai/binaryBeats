@@ -1,83 +1,26 @@
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
-import { Hero } from "./components/Hero";
-import { ActivityTicker } from "../extra/ActivityTicker";
-import { Transmissions } from "./components/Transmissions";
-import { Manifest } from "../extra/Manifest";
-import { ARCS, EPISODES } from "./data/content";
+import { LeetCodeDashboard } from "./components/LeetCodeDashboard";
 
 export default function App() {
-  // Global State variables
-  const [activeArcId, setActiveArcId] = useState(3);
-  const [activeEpId, setActiveEpId] = useState("S1E3_A1");
-  const [currentMode, setCurrentMode] = useState<"SOLO" | "NETWORK">("SOLO");
   const [activeTab, setActiveTab] = useState("home");
-  const [xp] = useState(360);
+  const [xp] = useState(230); // Matches dashboard stats
   const [username] = useState("akrist");
 
-  // Load local storage states on mount
+  // Set the default theme accent color (purple) on mount
   useEffect(() => {
-    const savedMode = localStorage.getItem("Binary Beats_mode");
-    if (savedMode === "SOLO" || savedMode === "NETWORK") {
-      setCurrentMode(savedMode);
-    }
-
-    const savedArcId = localStorage.getItem("Binary Beats_arc_id");
-    if (savedArcId) {
-      setActiveArcId(parseInt(savedArcId, 10));
-    }
-
-    const savedEpId = localStorage.getItem("Binary Beats_ep_id");
-    if (savedEpId) {
-      setActiveEpId(savedEpId);
+    if (typeof document !== "undefined") {
+      document.documentElement.style.setProperty("--mg-acc", "#8b5cf6");
     }
   }, []);
 
-  // Reactively track and update theme colors
-  const activeArc = useMemo(() => {
-    return ARCS.find((a) => a.id === activeArcId) || ARCS[0];
-  }, [activeArcId]);
-
-  useEffect(() => {
-    if (typeof document !== "undefined" && activeArc) {
-      document.documentElement.style.setProperty("--mg-acc", activeArc.accColor);
-    }
-  }, [activeArc]);
-
-  const handleSelectArc = (id: number) => {
-    setActiveArcId(id);
-    localStorage.setItem("Binary Beats_arc_id", String(id));
-
-    // Auto-select first episode of new Arc
-    const arcEpisodes = EPISODES.filter((ep) => ep.arcId === id);
-    if (arcEpisodes.length > 0) {
-      setActiveEpId(arcEpisodes[0].id);
-      localStorage.setItem("Binary Beats_ep_id", arcEpisodes[0].id);
-    }
-  };
-
-  const handleSelectEpisode = (id: string) => {
-    setActiveEpId(id);
-    localStorage.setItem("Binary Beats_ep_id", id);
-  };
-
-  const handleToggleMode = (mode: "SOLO" | "NETWORK") => {
-    setCurrentMode(mode);
-    localStorage.setItem("Binary Beats_mode", mode);
-  };
-
   const handlePlayEpisode = (id: string) => {
     console.log(`Navigating to play episode: ${id}`);
-    alert(`Play Episode Triggered: Starting session for challenge ${id}`);
+    alert(`Play Challenge Triggered: Starting compile environment for ${id}`);
   };
 
   const handleLogout = () => {
     alert("Logout initiated. Returning to control shell...");
-  };
-
-  const handleTransmissionPlay = (arcId: number, episodeId: string) => {
-    handleSelectArc(arcId);
-    handleSelectEpisode(episodeId);
   };
 
   return (
@@ -94,21 +37,7 @@ export default function App() {
       {activeTab === "home" ? (
         /* Home Dashboard Section wrapper */
         <main className="w-full pb-12">
-          {/* Hero panel layout component */}
-
-          {/* Activity Ticker */}
-      
-
-          {/* transmissions grid */}
-          <Transmissions
-            ARCS={ARCS}
-            EPISODES={EPISODES}
-            onPlay={handleTransmissionPlay}
-            onBrowseAll={() => setActiveTab("blitz")}
-          />
-
-          {/* blitz Manifest grid */}
-
+          <LeetCodeDashboard onPlayEpisode={handlePlayEpisode} />
         </main>
       ) : (
         /* Stub panels for other tabs */

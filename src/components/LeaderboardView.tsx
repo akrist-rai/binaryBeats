@@ -36,27 +36,25 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
   }, [search]);
 
   return (
-    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 bg-[#0c0c10] relative pb-12">
-      <div className="absolute top-[30%] left-[30%] w-[400px] h-[250px] rounded-full bg-mg-acc/[0.03] blur-[120px] pointer-events-none" />
-
+    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 bg-[#0a0a0f] relative pb-12">
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
         
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl font-semibold text-white mb-1">Leaderboard</h2>
-            <p className="text-sm text-zinc-500">Global developer rankings</p>
+            <h2 className="text-2xl md:text-3xl font-bold font-heading text-white mb-2 tracking-tight">Leaderboard</h2>
+            <p className="text-xs font-mono text-zinc-500">Global developer rankings</p>
           </div>
 
           <div className="relative w-full md:w-72">
-            <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+            <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
             <input 
               value={search} 
               onChange={e => setSearch(e.target.value)}
               placeholder="Search users..."
-              className="w-full h-10 pl-10 pr-4 rounded-lg text-sm text-white bg-white/[0.04] placeholder-zinc-600 focus:outline-none border border-white/[0.06] focus:border-white/[0.12] transition-colors"
+              className="w-full h-10 pl-10 pr-4 rounded-lg text-xs font-mono text-white bg-[#111116] placeholder-zinc-600 focus:outline-none border border-white/[0.08] focus:border-[#c3f73a]/30 transition-colors"
             />
           </div>
         </div>
@@ -64,8 +62,8 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
         {/* Main layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Table */}
-          <div className="lg:col-span-2 rounded-xl overflow-hidden border border-white/[0.06] bg-white/[0.02] flex flex-col">
-            <div className="grid grid-cols-[60px_1fr_90px_80px_70px] items-center h-11 px-6 text-xs font-medium text-zinc-500 border-b border-white/[0.06] select-none">
+          <div className="lg:col-span-2 rounded-xl overflow-hidden border border-white/[0.08] bg-[#111116] flex flex-col">
+            <div className="grid grid-cols-[60px_1fr_90px_80px_70px] items-center h-10 px-6 text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 border-b border-white/[0.08] select-none">
               <span>Rank</span>
               <span>Developer</span>
               <span className="text-right">Rating</span>
@@ -77,7 +75,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
               <AnimatePresence mode="popLayout">
                 {visibleUsers.length === 0 ? (
                   <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                    className="py-16 text-center text-sm text-zinc-500">
+                    className="py-16 text-center text-xs font-mono text-zinc-500">
                     No developers found
                   </motion.div>
                 ) : (
@@ -87,12 +85,12 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                       <motion.div 
                         key={u.username} layout
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
-                        className={`grid grid-cols-[60px_1fr_90px_80px_70px] items-center px-6 py-4 transition-colors ${
-                          isMe ? 'bg-mg-acc/5 hover:bg-mg-acc/8' : 'hover:bg-white/[0.02]'
+                        className={`grid grid-cols-[60px_1fr_90px_80px_70px] items-center px-6 py-4 transition-colors border-l-2 ${
+                          isMe ? 'bg-white/[0.03] border-l-[#c3f73a]' : 'border-l-transparent hover:bg-white/[0.01] hover:border-l-[#c3f73a]/50'
                         }`}
                       >
                         <div className="flex items-center">
-                          <span className={`text-sm font-semibold ${
+                          <span className={`text-xs font-mono font-bold ${
                             u.rank === 1 ? 'text-amber-400' : 
                             u.rank === 2 ? 'text-zinc-300' : 
                             u.rank === 3 ? 'text-amber-600' : 'text-zinc-500'
@@ -103,22 +101,22 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
 
                         <div className="flex items-center gap-3">
                           <div 
-                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white"
+                            className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white font-mono"
                             style={{ backgroundColor: u.accent }}
                           >
                             {u.avatar}
                           </div>
                           <div className="flex flex-col">
-                            <span className={`text-sm font-medium ${isMe ? 'text-white' : 'text-zinc-300'}`}>
-                              {u.username} {isMe && <span className="text-xs text-mg-acc ml-1">(you)</span>}
+                            <span className={`text-sm font-semibold font-sans ${isMe ? 'text-white' : 'text-zinc-300'}`}>
+                              {u.username} {isMe && <span className="text-[10px] font-mono tracking-wider uppercase text-[#c3f73a] ml-2 font-bold">(you)</span>}
                             </span>
-                            <span className="text-xs text-zinc-500">{u.tier}</span>
+                            <span className="text-[10px] font-mono text-zinc-500">{u.tier}</span>
                           </div>
                         </div>
 
-                        <div className="text-right text-sm font-medium text-zinc-200">{u.rating}</div>
-                        <div className="text-right text-sm text-zinc-400">{u.solved}</div>
-                        <div className="text-right text-sm text-zinc-400">🔥{u.streak}d</div>
+                        <div className="text-right text-sm font-mono font-bold text-white">{u.rating}</div>
+                        <div className="text-right text-xs font-mono text-zinc-400">{u.solved}</div>
+                        <div className="text-right text-xs font-mono text-zinc-400">🔥{u.streak}d</div>
                       </motion.div>
                     );
                   })
@@ -130,22 +128,22 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
           {/* Sidebar */}
           <div className="flex flex-col gap-6">
             <motion.div initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }}
-              className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-5">
-              <h4 className="text-xs font-medium text-zinc-500 mb-4 border-b border-white/[0.06] pb-2">
+              className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+              <h4 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
                 Your Status
               </h4>
               <div className="flex flex-col gap-4">
                 <div>
-                  <span className="text-xs text-zinc-500 block mb-1">Global Standing</span>
+                  <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-1">Global Standing</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-semibold text-white">#142</span>
-                    <span className="text-xs text-zinc-500">Top 12.4%</span>
+                    <span className="text-2xl font-mono font-bold text-[#c3f73a]">#142</span>
+                    <span className="text-[10px] font-mono text-zinc-500">Top 12.4%</span>
                   </div>
                 </div>
                 <div>
-                  <span className="text-xs text-zinc-500 block mb-1">Rating Trend</span>
+                  <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-1">Rating Trend</span>
                   <div className="h-10 mt-1 relative flex items-end">
-                    <svg className="w-full h-full text-mg-acc" viewBox="0 0 100 30" fill="none">
+                    <svg className="w-full h-full text-[#c3f73a]" viewBox="0 0 100 30" fill="none">
                       <path d="M0,25 Q15,22 30,23 T60,12 T90,8" stroke="currentColor" strokeWidth="2" fill="none" />
                       <circle cx="90" cy="8" r="2.5" fill="white" className="animate-pulse" />
                     </svg>
@@ -155,11 +153,11 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
             </motion.div>
 
             <motion.div initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
-              className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-5">
-              <h4 className="text-xs font-medium text-zinc-500 mb-3 border-b border-white/[0.06] pb-2">
+              className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+              <h4 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-3 border-b border-white/[0.08] pb-2">
                 Tier Guide
               </h4>
-              <div className="flex flex-col gap-2.5 text-xs">
+              <div className="flex flex-col gap-3 text-xs font-mono">
                 {[
                   { tier: 'Luminary', rating: '3000+', color: '#f43f5e' },
                   { tier: 'Sentinel', rating: '2800–3000', color: '#06b6d4' },
@@ -168,10 +166,10 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                 ].map(t => (
                   <div key={t.tier} className="flex justify-between items-center">
                     <div className="flex items-center gap-2">
-                      <span className="w-2 h-2 rounded-full" style={{ backgroundColor: t.color }} />
-                      <span className="text-zinc-300 font-medium">{t.tier}</span>
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
+                      <span className="text-zinc-300 font-bold">{t.tier}</span>
                     </div>
-                    <span className="text-zinc-500">{t.rating}</span>
+                    <span className="text-zinc-500 text-[10px]">{t.rating}</span>
                   </div>
                 ))}
               </div>

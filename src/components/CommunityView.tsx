@@ -323,25 +323,22 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   }, [threads, selectedTag, searchQuery]);
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] text-white bg-black relative pb-12">
-      {/* Decorative ambient neon background glow */}
-      <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[550px] h-[300px] rounded-full bg-mg-acc/5 blur-[130px] pointer-events-none" />
-
-      <div className="w-full px-12 py-8 relative z-10">
+    <div className="w-full min-h-[calc(100vh-64px)] text-white bg-[#0a0a0f] relative pb-12">
+      <div className="w-full px-12 py-8 relative z-10 max-w-7xl mx-auto">
         
         {/* Hub Header & Navigation sub-tabs */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-zinc-900 pb-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.08] pb-6 mb-6">
           <div>
-            <h2 className="text-xl font-bold font-mono tracking-widest uppercase mb-1">
+            <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-white mb-2">
               Community Hub
             </h2>
-            <p className="text-[10px] text-zinc-500 font-mono uppercase tracking-wider">
+            <p className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase">
               Sync templates, review solutions, and coordinate within engineering guilds
             </p>
           </div>
 
           {/* Sub tabs */}
-          <div className="flex rounded overflow-hidden border border-zinc-900 bg-zinc-950/80 p-0.5 shadow-inner font-mono text-[11px]">
+          <div className="flex rounded-lg overflow-hidden border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-[10px]">
             {[
               { id: 'forum', label: 'Discussions' },
               { id: 'feed', label: 'Live Activities' },
@@ -354,13 +351,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   setActiveSubTab(tab.id as any);
                   setSelectedThread(null);
                 }}
-                className={`px-4 h-8 rounded font-semibold tracking-wider cursor-pointer uppercase transition-colors relative`}
-                style={{ color: activeSubTab === tab.id ? '#ffffff' : '#71717a' }}
+                className={`px-4 h-8 rounded-md font-bold tracking-wider cursor-pointer uppercase transition-colors relative`}
+                style={{ color: activeSubTab === tab.id ? '#000000' : '#71717a' }}
               >
                 {activeSubTab === tab.id && (
                   <motion.span
                     layoutId="activeSubTabBg"
-                    className="absolute inset-0 bg-zinc-900 border border-zinc-800 rounded shadow-md"
+                    className="absolute inset-0 bg-[#c3f73a] rounded-md shadow-sm"
                     transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                   />
                 )}
@@ -381,7 +378,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 <motion.div 
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded glass-panel p-6 border border-zinc-900"
+                  className="rounded-xl p-6 border border-white/[0.08] bg-[#111116]"
                 >
                   {/* Thread Header */}
                   <div className="flex items-center justify-between mb-4">
@@ -390,19 +387,19 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         playSound('click');
                         setSelectedThread(null);
                       }}
-                      className="px-3 py-1.5 rounded border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white cursor-pointer font-mono text-[10px] uppercase tracking-wider bg-zinc-950/40"
+                      className="px-3 py-1.5 rounded-md border border-white/[0.08] hover:border-white/[0.16] text-zinc-400 hover:text-white cursor-pointer font-mono text-[10px] uppercase tracking-wider bg-white/[0.02]"
                     >
                       ← Back to Feed
                     </button>
                     
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-zinc-800 bg-zinc-900 text-zinc-400">
+                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[#c3f73a]">
                       {selectedThread.tag}
                     </span>
                   </div>
 
                   {/* Title & Author Info */}
                   <div className="flex gap-4 items-start mb-6">
-                    <div className="w-10 h-10 rounded-full bg-mg-acc/10 border border-mg-acc/30 flex items-center justify-center text-xs font-bold text-white shadow-sm font-mono">
+                    <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white shadow-sm font-mono">
                       {selectedThread.avatar}
                     </div>
                     <div className="flex-1 min-w-0">
@@ -417,15 +414,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   </div>
 
                   {/* Body Content */}
-                  <div className="bg-zinc-950/50 border border-zinc-900 p-5 rounded text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
+                  <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-lg text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
                     {selectedThread.content}
                   </div>
 
                   {/* Upvote Bar */}
-                  <div className="flex items-center gap-4 border-b border-zinc-900 pb-5 mb-5">
+                  <div className="flex items-center gap-4 border-b border-white/[0.08] pb-5 mb-5">
                     <button
                       onClick={(e) => handleUpvote(selectedThread.id, e)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded border border-zinc-900 bg-zinc-950/80 hover:border-zinc-700 text-zinc-400 hover:text-white cursor-pointer text-xs font-mono transition-colors"
+                      className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#c3f73a]/20 bg-[#c3f73a]/5 hover:border-[#c3f73a]/40 text-[#c3f73a] cursor-pointer text-xs font-mono font-bold uppercase tracking-wider transition-colors"
                     >
                       <span>👍 Upvote</span>
                       <span className="font-bold text-white">{selectedThread.upvotes}</span>
@@ -442,13 +439,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     </h4>
 
                     {selectedThread.comments.length === 0 ? (
-                      <div className="py-4 text-center text-xs text-zinc-500 font-mono bg-zinc-950/20 rounded border border-dashed border-zinc-900">
+                      <div className="py-4 text-center text-xs text-zinc-500 font-mono bg-white/[0.02] rounded-lg border border-dashed border-white/[0.08]">
                         No responses yet. Start the review thread!
                       </div>
                     ) : (
                       selectedThread.comments.map(c => (
-                        <div key={c.id} className="flex gap-3 items-start p-4 rounded border border-zinc-900 bg-zinc-950/30">
-                          <div className="w-8 h-8 rounded-full bg-zinc-800 flex items-center justify-center text-[10px] font-bold text-zinc-300 font-mono">
+                        <div key={c.id} className="flex gap-3 items-start p-4 rounded-lg border border-white/[0.08] bg-white/[0.01]">
+                          <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center text-[10px] font-bold text-zinc-300 font-mono">
                             {c.avatar}
                           </div>
                           <div className="flex-1">
@@ -471,12 +468,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={commentInput}
                       onChange={e => setCommentInput(e.target.value)}
                       placeholder="Compile response or review comments..."
-                      className="w-full h-20 p-3 bg-zinc-950 border border-zinc-900 rounded text-xs text-zinc-200 placeholder-zinc-700 focus:outline-none focus:border-zinc-700 resize-none"
+                      className="w-full h-20 p-3 bg-[#111116] border border-white/[0.08] rounded-lg text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30 resize-none font-mono"
                     />
                     <div className="flex justify-end">
                       <button
                         onClick={handleAddComment}
-                        className="px-5 h-8 rounded bg-zinc-100 hover:bg-white text-black font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                        className="px-5 h-8 rounded-md bg-white hover:bg-zinc-100 text-black font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
                       >
                         Post Response
                       </button>
@@ -497,7 +494,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         value={searchQuery} 
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search posts or code..."
-                        className="w-full h-9 pl-9 pr-3 rounded text-xs text-white bg-zinc-950/80 placeholder-zinc-700 focus:outline-none transition-colors border border-zinc-900 focus:border-zinc-700 shadow-inner"
+                        className="w-full h-9 pl-9 pr-3 rounded text-xs text-white bg-[#111116] placeholder-zinc-700 focus:outline-none transition-colors border border-white/[0.08] focus:border-[#c3f73a]/30 shadow-inner"
                       />
                     </div>
 
@@ -507,7 +504,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         playSound('click');
                         setIsCreatorOpen(true);
                       }}
-                      className="px-4 h-9 rounded bg-mg-acc text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_var(--mg-acc)] hover:brightness-110 cursor-pointer flex items-center justify-center gap-1.5"
+                      className="px-4 h-9 rounded bg-[#c3f73a] text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_#c3f73a] hover:brightness-110 cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <span>+ Create Post</span>
                     </button>
@@ -516,7 +513,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   {/* Thread Cards list */}
                   <div className="flex flex-col gap-3">
                     {filteredThreads.length === 0 ? (
-                      <div className="py-16 text-center text-xs text-zinc-500 font-mono rounded border border-dashed border-zinc-900 bg-zinc-950/10">
+                      <div className="py-16 text-center text-xs text-zinc-500 font-mono rounded border border-dashed border-white/[0.08] bg-[#111116]/10">
                         No discussion threads match this criteria
                       </div>
                     ) : (
@@ -528,17 +525,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             playSound('click');
                             setSelectedThread(t);
                           }}
-                          className="rounded p-5 border border-zinc-900 bg-zinc-950/30 hover:bg-zinc-950/60 transition-colors cursor-pointer flex gap-4 items-start group"
+                          className="rounded p-5 border border-white/[0.08] bg-[#111116]/30 hover:bg-[#111116]/60 transition-colors cursor-pointer flex gap-4 items-start group"
                         >
                           {/* Left avatar column */}
-                          <div className="w-8 h-8 rounded-full bg-zinc-900 flex items-center justify-center text-[10px] font-bold text-zinc-400 border border-zinc-800 font-mono shadow-sm group-hover:border-zinc-700 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-[10px] font-bold text-zinc-400 border border-white/[0.08] font-mono shadow-sm group-hover:border-[#c3f73a]/30 transition-colors">
                             {t.avatar}
                           </div>
 
                           {/* Right main column */}
                           <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-zinc-900 bg-black text-zinc-500">
+                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/[0.08] bg-[#0a0a0f] text-zinc-500">
                                 {t.tag}
                               </span>
                               <span className="text-[9.5px] text-zinc-600">
@@ -578,9 +575,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             </div>
 
             {/* Right side: Categories filtering panel */}
+            {/* Right side: Categories filtering panel */}
             <div className="flex flex-col gap-6 font-mono">
-              <div className="rounded p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl">
-                <h4 className="text-[10px] font-bold text-zinc-400 mb-3.5 uppercase tracking-wider border-b border-zinc-900 pb-2">
+              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116]">
+                <h4 className="text-[10px] font-bold text-zinc-500 mb-3.5 uppercase tracking-wider border-b border-white/[0.08] pb-2">
                   Topic Filter
                 </h4>
                 <div className="flex flex-col gap-2">
@@ -594,15 +592,19 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           setSelectedTag(tag);
                           setSelectedThread(null);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded border text-left text-xs transition-colors cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-left text-xs transition-colors cursor-pointer ${
                           isSelected 
-                            ? 'bg-mg-acc/10 text-white border-mg-acc/30 font-bold text-glow' 
-                            : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-zinc-900/30'
+                            ? 'bg-white/[0.03] text-[#c3f73a] border-[#c3f73a]/30 font-bold' 
+                            : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]'
                         }`}
                       >
                         <span>{tag === 'All' ? 'All Channels' : `# ${tag}`}</span>
                         {tag !== 'All' && (
-                          <span className="text-[9px] text-zinc-600 bg-zinc-950 border border-zinc-900 px-1.5 py-0.5 rounded">
+                          <span className={`text-[9px] border px-1.5 py-0.5 rounded ${
+                            isSelected 
+                              ? 'text-[#c3f73a] bg-[#c3f73a]/5 border-[#c3f73a]/20'
+                              : 'text-zinc-600 bg-[#111116] border-white/[0.08]'
+                          }`}>
                             {threads.filter(t => t.tag === tag).length}
                           </span>
                         )}
@@ -613,21 +615,21 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               </div>
 
               {/* Guidelines panel */}
-              <div className="rounded p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl text-[10px] text-zinc-500">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 border-b border-zinc-900 pb-2">
+              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116] text-[10px] text-zinc-500">
+                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 border-b border-white/[0.08] pb-2">
                   Code Sharing Protocol
                 </h4>
                 <ul className="flex flex-col gap-2.5 list-none pl-0 leading-relaxed">
                   <li className="flex gap-2">
-                    <span className="text-mg-acc">◼</span>
+                    <span className="text-[#c3f73a]">◼</span>
                     <span>Sanitize secrets, keys, and tokens prior to uploading scripts.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-mg-acc">◼</span>
+                    <span className="text-[#c3f73a]">◼</span>
                     <span>Explain O(N) constraints to simplify complexity reviews.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-mg-acc">◼</span>
+                    <span className="text-[#c3f73a]">◼</span>
                     <span>Upvote optimized compilers to encourage clean architecture.</span>
                   </li>
                 </ul>
@@ -640,13 +642,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ TAB CONTENT: LIVE ACTIVITIES ═══ */}
         {activeSubTab === 'feed' && (
           <div className="w-full font-mono">
-            <div className="rounded border border-zinc-900 bg-zinc-950/80 shadow-2xl p-6">
-              <div className="flex items-center justify-between border-b border-zinc-900 pb-4 mb-6 select-none">
+            <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-6">
+              <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6 select-none">
                 <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
                   Live Activity Signal Feed
                 </span>
-                <span className="flex items-center gap-1.5 text-[9px] text-mg-acc uppercase tracking-widest font-black animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-mg-acc" />
+                <span className="flex items-center gap-1.5 text-[9px] text-[#c3f73a] uppercase tracking-widest font-black animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a]" />
                   Live Syncing
                 </span>
               </div>
@@ -660,9 +662,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, height: 0, overflow: 'hidden', margin: 0, padding: 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="flex items-start gap-4 p-4 rounded border border-zinc-900 bg-zinc-950/30 hover:border-zinc-800 transition-colors"
+                      className="flex items-start gap-4 p-4 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.16] transition-colors"
                     >
-                      <div className="w-8 h-8 rounded bg-zinc-900 border border-zinc-800 flex items-center justify-center text-xs shadow-inner">
+                      <div className="w-8 h-8 rounded bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-xs shadow-inner">
                         {a.icon}
                       </div>
                       <div className="flex-1 min-w-0">
@@ -686,7 +688,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             {/* Clans list */}
             <div className="flex flex-col gap-4 font-mono">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1 border-b border-zinc-900 pb-2">
+              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1 border-b border-white/[0.08] pb-2">
                 Clans Standing Leaderboard
               </h3>
 
@@ -696,17 +698,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   return (
                     <div 
                       key={clan.id}
-                      className={`rounded p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
+                      className={`rounded-lg p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
                         isMember 
-                          ? 'border-mg-acc bg-mg-acc/5 shadow-[0_0_15px_rgba(255,42,56,0.04)]' 
-                          : 'border-zinc-900 bg-zinc-950/40 hover:bg-zinc-950/80'
+                          ? 'border-[#c3f73a] bg-[#c3f73a]/5 shadow-[0_0_15px_rgba(195,247,58,0.04)]' 
+                          : 'border-white/[0.08] bg-[#111116] hover:bg-white/[0.02]'
                       }`}
                     >
                       <div className="flex gap-4 items-start">
                         <div className={`w-10 h-10 rounded flex items-center justify-center font-bold text-xs border ${
                           isMember 
-                            ? 'bg-mg-acc text-black border-mg-acc' 
-                            : 'bg-zinc-900 text-zinc-400 border-zinc-800'
+                            ? 'bg-[#c3f73a] text-black border-[#c3f73a]' 
+                            : 'bg-white/[0.02] text-zinc-400 border-white/[0.08]'
                         }`}>
                           {clan.tag}
                         </div>
@@ -733,10 +735,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                         <button
                           onClick={() => handleJoinClan(clan.id)}
-                          className={`px-4 py-1.5 rounded text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-all ${
+                          className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-all ${
                             isMember 
-                              ? 'bg-zinc-800 hover:bg-red-800 text-white hover:text-red-200 border border-zinc-700' 
-                              : 'bg-zinc-100 hover:bg-white text-black hover:scale-103'
+                              ? 'bg-white/[0.05] hover:bg-red-500/20 text-white hover:text-red-400 border border-white/[0.08] hover:border-red-500/30' 
+                              : 'bg-white hover:bg-zinc-100 text-black hover:scale-103'
                           }`}
                         >
                           {isMember ? 'Leave' : 'Join'}
@@ -750,8 +752,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             {/* User Guild Profile status */}
             <div className="flex flex-col gap-6 font-mono">
-              <div className="rounded p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl relative">
-                <h4 className="text-[10px] font-bold text-zinc-400 mb-3.5 uppercase tracking-wider border-b border-zinc-900 pb-2">
+              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116] relative">
+                <h4 className="text-[10px] font-bold text-zinc-400 mb-3.5 uppercase tracking-wider border-b border-white/[0.08] pb-2">
                   Your Guild Affiliation
                 </h4>
 
@@ -760,15 +762,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     <div>
                       <span className="text-[9px] text-zinc-500 uppercase block mb-1">Active Clan</span>
                       <div className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <span className="w-2 h-2 rounded bg-mg-acc" />
+                        <span className="w-2 h-2 rounded-full bg-[#c3f73a]" />
                         {userClan}
                       </div>
                     </div>
                     <div>
                       <span className="text-[9px] text-zinc-500 uppercase block mb-1">Weekly contribution</span>
-                      <span className="text-xs font-bold text-zinc-300">+230 XP contributed</span>
+                      <span className="text-xs font-bold text-[#c3f73a]">+230 XP contributed</span>
                     </div>
-                    <div className="p-3 bg-zinc-950 border border-zinc-900 rounded text-[9px] text-zinc-500 leading-relaxed font-sans font-light">
+                    <div className="p-3 bg-white/[0.02] border border-white/[0.08] rounded text-[9px] text-zinc-500 leading-relaxed font-sans font-light">
                       Your scores add to the clan leaderboard weekly. Secure double-XP matches to rank up your guild!
                     </div>
                   </div>
@@ -789,14 +791,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ CREATE THREAD DIALOG MODAL ═══ */}
         <AnimatePresence>
           {isCreatorOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-black/85 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#0a0a0f]/85 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-[600px] border border-zinc-900 bg-zinc-950 p-6 rounded shadow-2xl font-mono"
+                className="w-full max-w-[600px] border border-white/[0.08] bg-[#111116] p-6 rounded shadow-2xl font-mono"
               >
-                <div className="flex items-center justify-between border-b border-zinc-900 pb-3.5 mb-5">
+                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5 mb-5">
                   <h3 className="text-sm font-bold text-white uppercase tracking-wider">
                     Compile New Forum Thread
                   </h3>
@@ -820,7 +822,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={newTitle}
                       onChange={e => setNewTitle(e.target.value)}
                       placeholder="E.g., JS runtime recursive stack optimization"
-                      className="h-10 px-3.5 bg-zinc-900 border border-zinc-800 rounded text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-700"
+                      className="h-10 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30"
                     />
                   </div>
 
@@ -830,7 +832,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     <select
                       value={newTag}
                       onChange={e => setNewTag(e.target.value as any)}
-                      className="h-10 px-3 bg-zinc-900 border border-zinc-800 rounded text-white focus:outline-none focus:border-zinc-700"
+                      className="h-10 px-3 bg-white/[0.04] border border-white/[0.08] rounded text-white focus:outline-none focus:border-[#c3f73a]/30"
                     >
                       <option value="Solutions"># Solutions</option>
                       <option value="Contest"># Contest</option>
@@ -846,24 +848,24 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={newContent}
                       onChange={e => setNewContent(e.target.value)}
                       placeholder="Write your explanation or paste your codebase snippets..."
-                      className="h-44 p-4 bg-zinc-900 border border-zinc-800 rounded text-white placeholder-zinc-700 focus:outline-none focus:border-zinc-700 resize-none font-mono text-[11px] leading-relaxed"
+                      className="h-44 p-4 bg-white/[0.04] border border-white/[0.08] rounded text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30 resize-none font-mono text-[11px] leading-relaxed"
                     />
                   </div>
 
                   {/* Save/Cancel */}
-                  <div className="flex justify-end gap-3 pt-3 border-t border-zinc-900 mt-2">
+                  <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.08] mt-2">
                     <button
                       onClick={() => {
                         playSound('click');
                         setIsCreatorOpen(false);
                       }}
-                      className="px-4 h-9 rounded border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white cursor-pointer uppercase text-xs"
+                      className="px-4 h-9 rounded-md border border-white/[0.08] hover:border-white/[0.16] text-zinc-400 hover:text-white cursor-pointer uppercase text-xs transition-colors"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleCreateThread}
-                      className="px-5 h-9 rounded bg-mg-acc text-black font-bold uppercase tracking-wider shadow-[0_0_12px_var(--mg-acc)] hover:brightness-110 cursor-pointer text-xs"
+                      className="px-5 h-9 rounded-md bg-[#c3f73a] text-black font-bold uppercase tracking-wider hover:brightness-110 cursor-pointer text-xs transition-colors"
                     >
                       Deploy Thread (+15 XP)
                     </button>

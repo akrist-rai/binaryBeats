@@ -20,7 +20,9 @@ export default function App() {
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string; lang: string } | null>(null);
 
   useEffect(() => {
-    document.documentElement.style.setProperty("--mg-acc", "#6d5cff");
+    document.documentElement.style.setProperty("--mg-acc", "#c3f73a");
+    document.documentElement.style.setProperty("--mg-bg", "#0a0a0f");
+    document.documentElement.style.setProperty("--mg-surface", "#111116");
   }, []);
 
   const handleAddXp = (amount: number) => {
@@ -56,7 +58,7 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#08080c] text-zinc-100 flex flex-col font-sans noise-bg">
+    <div className="w-full min-h-screen bg-[#0a0a0f] text-zinc-200 flex flex-col font-sans noise-bg">
       <Navbar
         activeTab={activeTab}
         xp={xp}
@@ -69,12 +71,6 @@ export default function App() {
       />
 
       <main className="w-full flex-1 flex flex-col relative">
-        {/* Global ambient orbs */}
-        <div className="fixed top-0 left-0 w-full h-full pointer-events-none z-0 overflow-hidden">
-          <div className="absolute top-[-10%] right-[10%] w-[600px] h-[600px] rounded-full bg-indigo-600/[0.04] blur-[200px]" />
-          <div className="absolute bottom-[-20%] left-[-10%] w-[500px] h-[500px] rounded-full bg-violet-600/[0.03] blur-[180px]" />
-        </div>
-        
         <div className="relative z-10 flex-1 flex flex-col">
           {activeTab === "home" && (
             <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />

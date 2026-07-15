@@ -1,0 +1,247 @@
+import React, { useMemo, useState } from "react";
+import { motion, AnimatePresence } from "motion/react";
+import { buildDuelTargets, buildSoloTargets } from "../../lib/blitzAlgorithm";
+import { CfApiError, fetchUserInfo, isValidHandleFormat, type CfUser } from "../../lib/codeforces";
+import type { BlitzMode } from "../../lib/blitzSession";
+import { RatingBadge } from "./RatingBadge";
+
+export interface RivalInfo {
+  handle: string;
+  rating: number | null;
+}
+
+interface SessionSetupProps {
+  meHandle: string;
+  meRating: number | null;
+  starting: boolean;
+  startError: string | null;
+  playSound: (type: "click" | "hover") => void;
+  onStart: (mode: BlitzMode, rival: RivalInfo | null) => void;
+}
+
+export const SessionSetup: React.FC<SessionSetupProps> = ({
+  meHandle,
+  meRating,
+  starting,
+  startError,
+  playSound,
+  onStart,
+}) => {
+  const [mode, setMode] = useState<BlitzMode>("blitz");
+  const [rivalInput, setRivalInput] = useState("");
+  const [rival, setRival] = useState<CfUser | null>(null);
+  const [rivalStatus, setRivalStatus] = useState<"idle" | "validating" | "error">("idle");
+  const [rivalError, setRivalError] = useState<string | null>(null);
+
+  const fetchRival = async () => {
+    const trimmed = rivalInput.trim();
+    if (!isValidHandleFormat(trimmed)) {
+      setRivalStatus("error");
+      setRivalError("Enter a valid Codeforces handle.");
+      return;
+    }
+    if (trimmed.toLowerCase() === meHandle.toLowerCase()) {
+      setRivalStatus("error");
+      setRivalError("Pick someone other than yourself to duel.");
+      return;
+    }
+
+    setRivalStatus("validating");
+    setRivalError(null);
+    playSound("click");
+
+    try {
+      const [fetched] = await fetchUserInfo([trimmed]);
+      if (!fetched) {
+        setRivalStatus("error");
+        setRivalError(`No Codeforces user "${trimmed}" found.`);
+        return;
+      }
+      setRival(fetched);
+      setRivalStatus("idle");
+    } catch (e) {
+      setRivalStatus("error");
+      setRivalError(
+        e instanceof CfApiError && e.kind === "NOT_FOUND"
+          ? `No Codeforces user "${trimmed}" found.`
+          : "Could not reach Codeforces. Retry in a moment."
+      );
+    }
+  };
+
+  const targets = useMemo(() => {
+    if (mode === "blitz") return buildSoloTargets(meRating ?? 800);
+    if (rival) return buildDuelTargets(meRating ?? 800, rival.rating ?? 800);
+    return null;
+  }, [mode, meRating, rival]);
+
+  const canStart = mode === "blitz" || (mode === "duel" && rival !== null);
+
+  const handleStart = () => {
+    if (!canStart || starting) return;
+    playSound("click");
+    onStart(mode, mode === "duel" && rival ? { handle: rival.handle, rating: rival.rating ?? null } : null);
+  };
+
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="lg:col-span-2 flex flex-col gap-6">
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
+        >
+          <h3 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
+            Choose a mode
+          </h3>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            {(["blitz", "duel"] as BlitzMode[]).map((m) => {
+              const selected = mode === m;
+              return (
+                <button
+                  key={m}
+                  onClick={() => {
+                    playSound("click");
+                    setMode(m);
+                  }}
+                  onMouseEnter={() => playSound("hover")}
+                  className={`relative text-left rounded-lg border p-4 transition-colors cursor-pointer ${
+                    selected ? "border-white/40 bg-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.16]"
+                  }`}
+                >
+                  {selected && (
+                    <motion.div
+                      layoutId="modeIndicator"
+                      className="absolute inset-0 rounded-lg border border-white/40 pointer-events-none"
+                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                    />
+                  )}
+                  <span className="text-sm font-bold font-heading text-white block mb-1">
+                    {m === "blitz" ? "Solo Blitz" : "Duel"}
+                  </span>
+                  <span className="text-xs font-mono text-zinc-500 leading-relaxed block">
+                    {m === "blitz"
+                      ? "4 problems · ladder around your rating"
+                      : "5 problems · first AC claims each"}
+                  </span>
+                </button>
+              );
+            })}
+          </div>
+
+          <AnimatePresence>
+            {mode === "duel" && (
+              <motion.div
+                initial={{ opacity: 0, height: 0 }}
+                animate={{ opacity: 1, height: "auto" }}
+                exit={{ opacity: 0, height: 0 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-5 pt-5 border-t border-white/[0.08]">
+                  <p className="text-xs font-mono text-zinc-500 mb-3">
+                    Your rival doesn't need an account here — any public Codeforces handle works.
+                  </p>
+                  {rival ? (
+                    <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5">
+                      <span className="text-xs font-mono text-zinc-300">{rival.handle}</span>
+                      <div className="flex items-center gap-2">
+                        <RatingBadge rating={rival.rating ?? null} />
+                        <button
+                          onClick={() => {
+                            setRival(null);
+                            setRivalInput("");
+                          }}
+                          className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                        >
+                          change
+                        </button>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="flex items-center gap-2">
+                      <input
+                        value={rivalInput}
+                        onChange={(e) => setRivalInput(e.target.value)}
+                        onKeyDown={(e) => {
+                          if (e.key === "Enter") fetchRival();
+                        }}
+                        placeholder="rival's codeforces handle"
+                        disabled={rivalStatus === "validating"}
+                        className="flex-1 h-9 px-3 rounded-lg text-xs font-mono text-white bg-[#0a0a0f] placeholder-zinc-700 focus:outline-none border border-white/[0.08] focus:border-white/[0.2] transition-colors disabled:opacity-50"
+                      />
+                      <button
+                        onClick={fetchRival}
+                        disabled={rivalStatus === "validating"}
+                        className="shrink-0 h-9 px-4 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                      >
+                        {rivalStatus === "validating" ? "Checking…" : "Fetch"}
+                      </button>
+                    </div>
+                  )}
+                  {rivalError && <p className="text-xs font-mono text-rose-400 mt-2">{rivalError}</p>}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+
+          {targets && (
+            <div className="mt-5 pt-5 border-t border-white/[0.08]">
+              <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-2.5">
+                Target draw
+              </span>
+              <div className="flex flex-wrap gap-2 mb-2.5">
+                {targets.map((t, i) => (
+                  <RatingBadge key={i} rating={t} />
+                ))}
+              </div>
+              <p className="text-[11px] font-mono text-zinc-600 leading-relaxed">
+                {mode === "blitz"
+                  ? "Staircase from just-below your rating up to a stretch problem."
+                  : "Anchored 60/40 toward the lower rating, capped so the gap never dominates."}
+              </p>
+            </div>
+          )}
+
+          <motion.button
+            whileHover={{ scale: canStart ? 1.02 : 1 }}
+            whileTap={{ scale: canStart ? 0.98 : 1 }}
+            onClick={handleStart}
+            onMouseEnter={() => canStart && playSound("hover")}
+            disabled={!canStart || starting}
+            className="w-full mt-6 h-11 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+          >
+            {starting ? "Drawing problems…" : "Start Session"}
+          </motion.button>
+          {startError && <p className="text-xs font-mono text-rose-400 mt-3 text-center">{startError}</p>}
+        </motion.div>
+      </div>
+
+      <div className="flex flex-col gap-6">
+        <motion.div
+          initial={{ opacity: 0, x: 15 }}
+          animate={{ opacity: 1, x: 0 }}
+          transition={{ delay: 0.1 }}
+          className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
+        >
+          <h4 className="text-[10px] font-mono uppercase tracking-wider font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
+            How it works
+          </h4>
+          <ul className="flex flex-col gap-3 text-sm text-zinc-400 font-sans leading-relaxed list-none pl-0">
+            {[
+              "Solve on codeforces.com using your linked handle.",
+              "Accepted verdicts are detected automatically within ~15s.",
+              "Only submissions made after the draw count.",
+              "Problems either of you already solved are excluded.",
+            ].map((rule, i) => (
+              <li key={i} className="flex gap-2.5 items-start">
+                <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a] mt-2 shrink-0" />
+                <span>{rule}</span>
+              </li>
+            ))}
+          </ul>
+        </motion.div>
+      </div>
+    </div>
+  );
+};

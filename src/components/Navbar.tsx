@@ -17,7 +17,7 @@ export const Navbar: React.FC<NavbarProps> = ({
 }) => {
   const tabs = [
     { id: 'home', label: 'Problems' },
-    { id: 'blitz', label: 'Contest' },
+    { id: 'blitz', label: 'Blitz & Duel' },
     { id: 'leaderboard', label: 'Ranking' },
     { id: 'community', label: 'Community' },
   ];

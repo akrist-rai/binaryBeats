@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { Navbar } from "./components/Navbar";
 import { LeetCodeDashboard } from "./components/LeetCodeDashboard";
-import { ContestView } from "./components/ContestView";
+import { BlitzDuelView } from "./components/blitz/BlitzDuelView";
 import { LeaderboardView } from "./components/LeaderboardView";
 import { CommunityView } from "./components/CommunityView";
 import { synthSound } from "./utils/audio";
@@ -76,7 +76,7 @@ export default function App() {
             <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />
           )}
           {activeTab === "blitz" && (
-            <ContestView playSound={playSound} onAddXp={handleAddXp} />
+            <BlitzDuelView playSound={playSound} onAddXp={handleAddXp} />
           )}
           {activeTab === "leaderboard" && (
             <LeaderboardView playSound={playSound} currentUser={username} />

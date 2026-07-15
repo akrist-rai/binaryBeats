@@ -1,503 +1,303 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { synthSound } from '../utils/audio';
+import { useState, useEffect, useMemo } from 'react';
+import { motion, AnimatePresence } from 'motion/react';
 
-interface Challenge {
-  id: string;
-  n: number;
-  title: string;
-  description: string;
-  category: string;
-  difficulty: 'Easy' | 'Medium' | 'Hard';
-  xp: number;
-  min: number;
-  done: boolean;
-  active?: boolean;
-  acceptance: string;
-}
+interface Props { onPlayEpisode: (id: string) => void; }
 
-interface LeetCodeDashboardProps {
-  onPlayEpisode: (id: string) => void;
-}
-
-const DUMMY_CHALLENGES: Challenge[] = [
-  {
-    id: "S1E1_A9",
-    n: 1,
-    title: "Two Sum",
-    description: "Given an array of integers `nums` and an integer `target`, return indices of the two numbers such that they add up to `target`.",
-    category: "ALGORITHMS",
-    difficulty: "Easy",
-    xp: 80,
-    min: 15,
-    done: true,
-    acceptance: "48.2%"
-  },
-  {
-    id: "S1E3_A9",
-    n: 2,
-    title: "Valid Parentheses",
-    description: "Given a string containing just the characters '(', ')', '{', '}', '[' and ']', determine if the input string is valid.",
-    category: "DATA STRUCTURES",
-    difficulty: "Medium",
-    xp: 150,
-    min: 25,
-    done: false,
-    acceptance: "41.5%"
-  },
-  {
-    id: "S1E3_A1",
-    n: 3,
-    title: "Optimal Sacrifice (3-SAT)",
-    description: "Formulate a reduction proof showing Griffith's apostle sacrifice decision matches the NP-Complete 3-satisfiability problem bounds.",
-    category: "COMP. PROG",
-    difficulty: "Hard",
-    xp: 300,
-    min: 50,
-    done: false,
-    active: true,
-    acceptance: "18.9%"
-  }
+const PROBLEMS = [
+  { id: 'p1', num: 1, title: 'Two Sum', tags: ['Array','Hash Table'], diff: 'Easy' as const, rate: '52.4%', xp: 80, solved: true },
+  { id: 'p2', num: 15, title: 'Valid Parentheses', tags: ['Stack','String'], diff: 'Medium' as const, rate: '43.1%', xp: 150, solved: false },
+  { id: 'p3', num: 23, title: 'Merge K Sorted Lists', tags: ['Heap','Linked List'], diff: 'Hard' as const, rate: '19.7%', xp: 300, solved: false },
 ];
 
-const DIFFICULTY_THEMES = {
-  Easy: {
-    color: 'text-emerald-400',
-    border: 'border-emerald-500/30',
-    bg: 'bg-emerald-500/10',
-    leftBorder: 'border-l-emerald-500',
-    shadow: 'hover:shadow-emerald-500/5'
-  },
-  Medium: {
-    color: 'text-amber-400',
-    border: 'border-amber-500/30',
-    bg: 'bg-amber-500/10',
-    leftBorder: 'border-l-amber-500',
-    shadow: 'hover:shadow-amber-500/5'
-  },
-  Hard: {
-    color: 'text-rose-500',
-    border: 'border-rose-500/30',
-    bg: 'bg-rose-500/10',
-    leftBorder: 'border-l-rose-500',
-    shadow: 'hover:shadow-rose-500/5'
-  }
-};
+const DC = { Easy: '#00b8a3', Medium: '#ffc01e', Hard: '#ff375f' };
 
-const CATEGORY_TAG_COLORS: Record<string, string> = {
-  'ALGORITHMS': 'text-purple-400 bg-purple-500/10 border-purple-500/20',
-  'DATA STRUCTURES': 'text-blue-400 bg-blue-500/10 border-blue-500/20',
-  'COMP. PROG': 'text-cyan-400 bg-cyan-500/10 border-cyan-500/20',
-};
+// Generate fake heatmap data (52 weeks × 7 days)
+const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => {
+  const r = Math.sin(i * 0.3) * 0.5 + Math.random();
+  if (i > 340) return r > 0.6 ? (r > 0.85 ? 3 : r > 0.72 ? 2 : 1) : 0;
+  return r > 0.7 ? (r > 0.9 ? 3 : r > 0.8 ? 2 : 1) : 0;
+});
 
-export const LeetCodeDashboard: React.FC<LeetCodeDashboardProps> = ({ onPlayEpisode }) => {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedDifficulty, setSelectedDifficulty] = useState<string>('All');
-  const [selectedStatus, setSelectedStatus] = useState<string>('All');
-  
-  // Real-time daily countdown timer state
-  const [timeRemaining, setTimeRemaining] = useState('08:00:00');
+const heatColors = ['#161b22', '#0e4429', '#006d32', '#26a641'];
+
+export const LeetCodeDashboard = ({ onPlayEpisode }: Props) => {
+  const [filter, setFilter] = useState<'All'|'Easy'|'Medium'|'Hard'>('All');
+  const [search, setSearch] = useState('');
+  const [countdown, setCountdown] = useState('');
 
   useEffect(() => {
-    const updateTimer = () => {
-      const now = new Date();
-      const target = new Date();
-      target.setHours(24, 0, 0, 0); // Reset at midnight
-      const diff = target.getTime() - now.getTime();
-      if (diff <= 0) {
-        setTimeRemaining('00:00:00');
-        return;
-      }
-      const h = Math.floor(diff / (1000 * 60 * 60));
-      const m = Math.floor((diff / (1000 * 60)) % 60);
-      const s = Math.floor((diff / 1000) % 60);
-      setTimeRemaining(
-        `${String(h).padStart(2, '0')}:${String(m).padStart(2, '0')}:${String(s).padStart(2, '0')}`
-      );
+    const tick = () => {
+      const d = new Date(); d.setHours(24, 0, 0, 0);
+      const ms = Math.max(0, d.getTime() - Date.now());
+      setCountdown(`${String(Math.floor(ms/3.6e6)).padStart(2,'0')}:${String(Math.floor((ms%3.6e6)/6e4)).padStart(2,'0')}:${String(Math.floor((ms%6e4)/1e3)).padStart(2,'0')}`);
     };
-
-    updateTimer();
-    const interval = setInterval(updateTimer, 1000);
-    return () => clearInterval(interval);
+    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
 
-  // Filter dummy challenges
-  const filteredChallenges = useMemo(() => {
-    return DUMMY_CHALLENGES.filter((ch) => {
-      const matchesSearch =
-        ch.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ch.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        ch.category.toLowerCase().includes(searchQuery.toLowerCase());
+  const visible = useMemo(() => PROBLEMS.filter(p => {
+    if (filter !== 'All' && p.diff !== filter) return false;
+    if (search && !p.title.toLowerCase().includes(search.toLowerCase())) return false;
+    return true;
+  }), [filter, search]);
 
-      const matchesDiff = selectedDifficulty === 'All' || ch.difficulty === selectedDifficulty;
-
-      const matchesStatus =
-        selectedStatus === 'All' ||
-        (selectedStatus === 'Solved' && ch.done) ||
-        (selectedStatus === 'Todo' && !ch.done);
-
-      return matchesSearch && matchesDiff && matchesStatus;
-    });
-  }, [searchQuery, selectedDifficulty, selectedStatus]);
-
-  // Statistics calculations
-  const stats = useMemo(() => {
-    const total = DUMMY_CHALLENGES.length;
-    const solved = DUMMY_CHALLENGES.filter((c) => c.done).length;
-    const percent = Math.round((solved / total) * 100);
-
-    const easy = DUMMY_CHALLENGES.filter((c) => c.difficulty === 'Easy');
-    const easySolved = easy.filter((c) => c.done).length;
-
-    const medium = DUMMY_CHALLENGES.filter((c) => c.difficulty === 'Medium');
-    const mediumSolved = medium.filter((c) => c.done).length;
-
-    const hard = DUMMY_CHALLENGES.filter((c) => c.difficulty === 'Hard');
-    const hardSolved = hard.filter((c) => c.done).length;
-
-    return {
-      total,
-      solved,
-      percent,
-      easy: { total: easy.length, solved: easySolved, pct: easy.length > 0 ? (easySolved / easy.length) * 100 : 0 },
-      medium: { total: medium.length, solved: mediumSolved, pct: medium.length > 0 ? (mediumSolved / medium.length) * 100 : 0 },
-      hard: { total: hard.length, solved: hardSolved, pct: hard.length > 0 ? (hardSolved / hard.length) * 100 : 0 }
-    };
-  }, []);
-
-  const handlePlay = (ch: Challenge) => {
-    synthSound.click();
-    onPlayEpisode(ch.id);
-  };
-
-  const handleResetFilters = () => {
-    synthSound.click();
-    setSearchQuery('');
-    setSelectedDifficulty('All');
-    setSelectedStatus('All');
-  };
+  const solved = PROBLEMS.filter(p => p.solved).length;
 
   return (
-    <div className="w-full max-w-6xl mx-auto px-4 sm:px-6 py-10 flex flex-col gap-10 font-sans text-paper">
-      
-      {/* Premium Tech Header */}
-      <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6 border border-white/5 bg-zinc-950/40 backdrop-blur-md p-8 rounded-2xl relative overflow-hidden shadow-2xl">
-        <div className="absolute top-0 left-0 w-full h-[1px] bg-gradient-to-r from-transparent via-purple-500 to-transparent"></div>
-        <div className="absolute inset-0 bg-mg-tone bg-[size:5px_5px] opacity-[0.02] pointer-events-none"></div>
+    <div style={{ background: '#1a1a2e' }} className="w-full min-h-[calc(100vh-56px)]">
+      <div className="max-w-[1200px] mx-auto px-8 py-8">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
 
-        <div>
-          <span className="font-mono text-[9px] uppercase tracking-[0.25em] text-purple-400 font-bold block mb-1">DEVELOPER DASHBOARD</span>
-          <h1 className="text-3xl font-bold tracking-tight bg-gradient-to-r from-paper to-white/70 bg-clip-text text-transparent">
-            Welcome Back, <span className="font-mono text-purple-400">akrist</span>
-          </h1>
-          <p className="font-mono text-[10px] text-white/35 mt-1.5 flex items-center gap-2">
-            <span className="w-1.5 h-1.5 rounded-full bg-crt animate-pulse"></span>
-            SHELL STABLE | VERSION 2.4.1
-          </p>
-        </div>
+          {/* ═══ LEFT COLUMN ═══ */}
+          <div className="flex flex-col gap-6">
 
-        {/* Global HUD metrics */}
-        <div className="flex flex-wrap gap-8 font-mono text-xs">
-          <div className="flex flex-col gap-1 border-r border-white/5 pr-6">
-            <span className="text-[9px] text-white/35 uppercase tracking-wider">Solved Ratio</span>
-            <span className="text-xl font-bold text-crt">
-              {stats.solved}<span className="text-xs text-white/20"> / {stats.total}</span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-1 border-r border-white/5 pr-6">
-            <span className="text-[9px] text-white/35 uppercase tracking-wider">Experience</span>
-            <span className="text-xl font-bold text-[#b9ff00]">
-              230 <span className="text-[10px] text-white/40">XP</span>
-            </span>
-          </div>
-          <div className="flex flex-col gap-1">
-            <span className="text-[9px] text-white/35 uppercase tracking-wider">Active Streak</span>
-            <span className="text-xl font-bold text-amber-400 flex items-center gap-1">
-              🔥 3 Days
-            </span>
-          </div>
-        </div>
-      </div>
-
-      {/* Grid Layout Split */}
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
-        
-        {/* Left Column: Challenges List & Search (8 cols) */}
-        <div className="lg:col-span-8 flex flex-col gap-6">
-          
-          {/* Header Row for List */}
-          <div className="flex justify-between items-center select-none">
-            <h2 className="font-bebas text-2xl tracking-widest text-paper/80">CHALLENGE LOGS</h2>
-            <span className="font-mono text-[9px] text-white/20 uppercase tracking-widest">// ACTIVE ASSIGNMENTS</span>
-          </div>
-
-          {/* Spacious Search & Filter Bar */}
-          <div className="flex flex-col sm:flex-row gap-4 p-4 border border-white/5 bg-zinc-950/20 rounded-xl">
-            {/* Search Input */}
-            <div className="relative flex-1">
-              <span className="absolute inset-y-0 left-3.5 flex items-center text-white/30 text-xs">🔍</span>
-              <input
-                type="text"
-                placeholder="Search by title, tag..."
-                className="w-full bg-zinc-900/40 border border-white/5 hover:border-zinc-800 focus:border-purple-500/50 rounded-lg pl-10 pr-4 py-2.5 font-mono text-xs text-paper focus:outline-none transition-all"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                onMouseEnter={() => synthSound.hover()}
-              />
-            </div>
-
-            {/* Quick Pills/Dropdowns */}
-            <div className="flex gap-2.5">
-              <select
-                className="bg-zinc-900/40 border border-white/5 rounded-lg px-3 py-2 font-mono text-xs text-white/60 focus:outline-none focus:border-purple-500/50"
-                value={selectedDifficulty}
-                onChange={(e) => {
-                  synthSound.click();
-                  setSelectedDifficulty(e.target.value);
-                }}
-                onMouseEnter={() => synthSound.hover()}
-              >
-                <option value="All">All Difficulties</option>
-                <option value="Easy">Easy</option>
-                <option value="Medium">Medium</option>
-                <option value="Hard">Hard</option>
-              </select>
-
-              <select
-                className="bg-zinc-900/40 border border-white/5 rounded-lg px-3 py-2 font-mono text-xs text-white/60 focus:outline-none focus:border-purple-500/50"
-                value={selectedStatus}
-                onChange={(e) => {
-                  synthSound.click();
-                  setSelectedStatus(e.target.value);
-                }}
-                onMouseEnter={() => synthSound.hover()}
-              >
-                <option value="All">All Statuses</option>
-                <option value="Solved">Solved</option>
-                <option value="Todo">Todo</option>
-              </select>
-            </div>
-
-            {/* Clear filters shortcut */}
-            {(searchQuery || selectedDifficulty !== 'All' || selectedStatus !== 'All') && (
-              <button
-                onClick={handleResetFilters}
-                className="font-mono text-[10px] text-purple-400 hover:text-purple-300 hover:underline cursor-pointer flex items-center justify-center"
-              >
-                Reset [×]
-              </button>
-            )}
-          </div>
-
-          {/* Cards List Layout */}
-          <div className="flex flex-col gap-4">
-            {filteredChallenges.length === 0 ? (
-              <div className="text-center py-16 border border-dashed border-white/5 rounded-2xl bg-zinc-950/10">
-                <p className="font-mono text-xs text-white/35">No matching challenges found.</p>
-                <button
-                  onClick={handleResetFilters}
-                  className="mt-3 font-mono text-[10px] text-purple-400 hover:underline"
+            {/* Study Plan Banner */}
+            <motion.div
+              initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.4 }}
+              className="rounded-xl overflow-hidden relative"
+              style={{ background: 'linear-gradient(135deg, #2d1f3d 0%, #1a1a2e 100%)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <div className="absolute inset-0 opacity-20" style={{ backgroundImage: 'radial-gradient(circle at 80% 20%, rgba(255,55,95,0.3), transparent 60%)' }} />
+              <div className="relative p-6 flex items-center justify-between">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded" style={{ background: 'rgba(255,55,95,0.15)', color: '#ff375f' }}>Featured</span>
+                    <span className="text-[10px] text-white/30 font-mono">{countdown} remaining</span>
+                  </div>
+                  <h3 className="text-lg font-bold text-white">Daily Challenge: Merge K Sorted Lists</h3>
+                  <p className="text-sm text-white/40 mt-1">Solve today's challenge to maintain your streak</p>
+                </div>
+                <motion.button
+                  whileHover={{ scale: 1.03 }} whileTap={{ scale: 0.97 }}
+                  onClick={() => onPlayEpisode('p3')}
+                  className="shrink-0 px-5 py-2.5 rounded-lg text-sm font-semibold cursor-pointer"
+                  style={{ background: '#ff375f', color: '#fff', boxShadow: '0 4px 16px rgba(255,55,95,0.3)' }}
                 >
-                  Clear Filters
-                </button>
+                  Solve →
+                </motion.button>
               </div>
-            ) : (
-              filteredChallenges.map((ch) => {
-                const diffTheme = DIFFICULTY_THEMES[ch.difficulty];
-                const catColor = CATEGORY_TAG_COLORS[ch.category] || 'text-zinc-400 bg-zinc-500/10 border-zinc-500/20';
+            </motion.div>
 
-                return (
-                  <div
-                    key={ch.id}
-                    onClick={() => handlePlay(ch)}
-                    onMouseEnter={() => synthSound.hover()}
-                    className={`flex flex-col md:flex-row justify-between items-start md:items-center gap-4 p-6 bg-zinc-900/10 border-l-[3px] border border-white/5 hover:border-white/10 ${diffTheme.leftBorder} ${diffTheme.shadow} rounded-r-2xl cursor-pointer transition-all duration-300 hover:-translate-y-0.5`}
+            {/* Toolbar: Search + Difficulty Tabs */}
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.15 }}
+              className="flex flex-col sm:flex-row gap-3 items-stretch sm:items-center"
+            >
+              {/* Search */}
+              <div className="relative flex-1">
+                <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/20" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                </svg>
+                <input value={search} onChange={e => setSearch(e.target.value)}
+                  placeholder="Search problems..."
+                  className="w-full h-9 pl-9 pr-3 rounded-lg text-[13px] text-white/80 placeholder-white/20 focus:outline-none"
+                  style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                />
+              </div>
+              {/* Diff tabs */}
+              <div className="flex rounded-lg overflow-hidden" style={{ border: '1px solid rgba(255,255,255,0.06)' }}>
+                {(['All','Easy','Medium','Hard'] as const).map(d => {
+                  const isActive = filter === d;
+                  const c = d !== 'All' ? DC[d] : null;
+                  return (
+                    <button key={d} onClick={() => setFilter(d)}
+                      className="px-4 h-9 text-[12px] font-medium cursor-pointer transition-all"
+                      style={{
+                        background: isActive ? 'rgba(255,255,255,0.06)' : 'transparent',
+                        color: isActive ? (c || '#fff') : 'rgba(255,255,255,0.3)',
+                        borderRight: d !== 'Hard' ? '1px solid rgba(255,255,255,0.06)' : 'none',
+                      }}
+                    >{d}</button>
+                  );
+                })}
+              </div>
+            </motion.div>
+
+            {/* Problem Table */}
+            <motion.div initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }}
+              className="rounded-xl overflow-hidden"
+              style={{ border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              {/* Table header */}
+              <div className="grid grid-cols-[40px_1fr_80px_70px_80px] items-center h-10 px-4 text-[11px] font-medium text-white/25 uppercase tracking-wider select-none"
+                style={{ background: 'rgba(255,255,255,0.02)', borderBottom: '1px solid rgba(255,255,255,0.06)' }}
+              >
+                <span></span>
+                <span>Title</span>
+                <span className="text-center">Difficulty</span>
+                <span className="text-center">Rate</span>
+                <span className="text-right">Reward</span>
+              </div>
+
+              {/* Table rows */}
+              <AnimatePresence mode="popLayout">
+                {visible.length === 0 ? (
+                  <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                    className="py-16 text-center text-sm text-white/20">No problems found</motion.div>
+                ) : visible.map((p, i) => (
+                  <motion.div key={p.id} layout
+                    initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, height: 0 }}
+                    transition={{ delay: i * 0.05 }}
+                    onClick={() => onPlayEpisode(p.id)}
+                    className="grid grid-cols-[40px_1fr_80px_70px_80px] items-center px-4 py-3.5 cursor-pointer transition-colors group"
+                    style={{
+                      background: i % 2 === 0 ? 'rgba(255,255,255,0.01)' : 'transparent',
+                      borderBottom: '1px solid rgba(255,255,255,0.03)',
+                    }}
+                    whileHover={{ backgroundColor: 'rgba(255,255,255,0.04)' }}
                   >
-                    {/* Left: Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex flex-wrap items-center gap-2 mb-1.5">
-                        <span className={`font-mono text-[9px] font-bold px-2 py-0.5 rounded border ${catColor}`}>
-                          {ch.category}
-                        </span>
-                        <span className="font-mono text-[10px] text-white/30">
-                          ⏱ {ch.min} mins
-                        </span>
-                        <span className="font-mono text-[10px] text-white/30">
-                          Acceptance: {ch.acceptance}
-                        </span>
-                      </div>
-                      
-                      <h3 className="text-base font-semibold text-paper flex items-center gap-2">
-                        {ch.title}
-                        {ch.done && (
-                          <span className="text-crt text-xs flex items-center" title="Solved">
-                            <svg className="w-4 h-4 fill-none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
-                              <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                          </span>
-                        )}
-                        {ch.active && (
-                          <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" title="In Progress"></span>
-                        )}
-                      </h3>
-                      
-                      <p className="font-sans text-xs text-white/50 leading-relaxed font-light mt-1.5">
-                        {ch.description}
-                      </p>
+                    {/* Status */}
+                    <div className="flex justify-center">
+                      {p.solved ? (
+                        <div className="w-5 h-5 rounded-full flex items-center justify-center" style={{ background: 'rgba(0,184,163,0.15)' }}>
+                          <svg className="w-3 h-3" style={{ color: DC.Easy }} fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={3}>
+                            <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                          </svg>
+                        </div>
+                      ) : (
+                        <div className="w-5 h-5 rounded-full" style={{ border: '2px solid rgba(255,255,255,0.08)' }} />
+                      )}
                     </div>
 
-                    {/* Right: Difficulty, XP & CTA */}
-                    <div className="flex items-center gap-5 w-full md:w-auto justify-between md:justify-end border-t md:border-t-0 border-white/5 pt-3 md:pt-0 shrink-0">
-                      <div className="flex flex-col items-start md:items-end">
-                        <span className={`font-mono text-[10px] font-bold uppercase tracking-wider ${diffTheme.color}`}>
-                          {ch.difficulty}
-                        </span>
-                        <span className="font-mono text-xs text-[#b9ff00] font-bold mt-0.5">
-                          +{ch.xp} XP
-                        </span>
+                    {/* Title + tags */}
+                    <div className="min-w-0 pl-1">
+                      <span className="text-[13px] text-white/80 group-hover:text-white transition-colors font-medium">
+                        {p.num}. {p.title}
+                      </span>
+                      <div className="flex gap-1 mt-1">
+                        {p.tags.map(t => (
+                          <span key={t} className="text-[10px] px-1.5 py-0.5 rounded text-white/25"
+                            style={{ background: 'rgba(255,255,255,0.04)' }}>{t}</span>
+                        ))}
                       </div>
+                    </div>
 
-                      <button className="bg-white/5 hover:bg-purple-500 hover:text-black border border-white/10 hover:border-purple-400/30 text-white/80 text-[10px] font-bold py-2 px-4 rounded-lg transition-all cursor-pointer uppercase font-mono tracking-wider">
-                        {ch.done ? 'Review' : ch.active ? 'Resume' : 'Solve'}
-                      </button>
+                    {/* Difficulty */}
+                    <div className="text-center">
+                      <span className="text-[11px] font-semibold" style={{ color: DC[p.diff] }}>{p.diff}</span>
+                    </div>
+
+                    {/* Acceptance */}
+                    <div className="text-center text-[12px] text-white/30">{p.rate}</div>
+
+                    {/* XP */}
+                    <div className="text-right">
+                      <span className="text-[12px] font-bold font-mono" style={{ color: '#a3e635' }}>+{p.xp}</span>
+                    </div>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
+          </div>
+
+          {/* ═══ RIGHT SIDEBAR ═══ */}
+          <div className="flex flex-col gap-6">
+
+            {/* User Card */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.25 }}
+              className="rounded-xl p-5"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-12 h-12 rounded-full flex items-center justify-center text-lg font-bold" style={{ background: 'linear-gradient(135deg, #ff375f, #ff6b6b)', color: '#fff' }}>A</div>
+                <div>
+                  <div className="text-sm font-semibold text-white">akrist</div>
+                  <div className="text-[11px] text-white/30 font-mono">Rank #142</div>
+                </div>
+              </div>
+
+              {/* Progress bars */}
+              <div className="flex flex-col gap-3">
+                {([
+                  { label: 'Easy', solved: 1, total: 1, color: DC.Easy },
+                  { label: 'Medium', solved: 0, total: 1, color: DC.Medium },
+                  { label: 'Hard', solved: 0, total: 1, color: DC.Hard },
+                ]).map(s => (
+                  <div key={s.label}>
+                    <div className="flex justify-between text-[11px] mb-1">
+                      <span style={{ color: s.color }} className="font-medium">{s.label}</span>
+                      <span className="text-white/30 font-mono">{s.solved}/{s.total}</span>
+                    </div>
+                    <div className="h-[6px] rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.04)' }}>
+                      <motion.div className="h-full rounded-full" style={{ backgroundColor: s.color }}
+                        initial={{ width: 0 }}
+                        animate={{ width: `${s.total ? (s.solved/s.total)*100 : 0}%` }}
+                        transition={{ duration: 0.8, delay: 0.5 }}
+                      />
                     </div>
                   </div>
-                );
-              })
-            )}
-          </div>
-        </div>
-
-        {/* Right Column: Statistics & Highlights (4 cols) */}
-        <div className="lg:col-span-4 flex flex-col gap-8">
-          
-          {/* Circular solved stats */}
-          <div className="bg-zinc-950/20 border border-white/5 p-6 rounded-2xl flex flex-col items-center gap-6">
-            <h3 className="font-bebas text-lg tracking-widest text-white/50 self-start w-full border-b border-white/5 pb-2 uppercase">
-              Operational Statistics
-            </h3>
-
-            {/* Glowing SVG Ring */}
-            <div className="relative flex items-center justify-center w-36 h-36">
-              <svg className="w-full h-full transform -rotate-90" viewBox="0 0 100 100">
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  className="stroke-white/5"
-                  strokeWidth="6"
-                  fill="transparent"
-                />
-                <circle
-                  cx="50"
-                  cy="50"
-                  r="40"
-                  className="stroke-purple-500 transition-all duration-700 ease-out"
-                  strokeWidth="6"
-                  fill="transparent"
-                  strokeDasharray={`${2 * Math.PI * 40}`}
-                  strokeDashoffset={`${2 * Math.PI * 40 * (1 - stats.percent / 100)}`}
-                  strokeLinecap="round"
-                  style={{ filter: 'drop-shadow(0 0 4px rgba(139, 92, 246, 0.4))' }}
-                />
-              </svg>
-              {/* Overlay Statistics text */}
-              <div className="absolute flex flex-col items-center text-center font-mono select-none">
-                <span className="text-3xl font-black text-paper leading-none">{stats.percent}%</span>
-                <span className="text-[8px] text-white/30 mt-1 tracking-widest uppercase">SOLVED</span>
-                <span className="text-[10px] text-white/50 font-bold mt-0.5">{stats.solved} / {stats.total}</span>
-              </div>
-            </div>
-
-            {/* Difficulty Metrics breakdown list */}
-            <div className="w-full flex flex-col gap-4 font-mono text-xs select-none">
-              {/* Easy breakdown */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-emerald-400 font-bold tracking-wider">EASY</span>
-                  <span className="text-white/60">{stats.easy.solved} / {stats.easy.total}</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-emerald-400 rounded-full"
-                    style={{ width: `${stats.easy.pct}%` }}
-                  ></div>
-                </div>
+                ))}
               </div>
 
-              {/* Medium breakdown */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-amber-400 font-bold tracking-wider">MEDIUM</span>
-                  <span className="text-white/60">{stats.medium.solved} / {stats.medium.total}</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-amber-400 rounded-full"
-                    style={{ width: `${stats.medium.pct}%` }}
-                  ></div>
-                </div>
+              {/* Stats row */}
+              <div className="grid grid-cols-3 gap-2 mt-5 pt-4" style={{ borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+                {[
+                  { n: `${solved}`, label: 'Solved' },
+                  { n: '230', label: 'XP' },
+                  { n: '3 🔥', label: 'Streak' },
+                ].map(s => (
+                  <div key={s.label} className="text-center">
+                    <div className="text-base font-bold text-white">{s.n}</div>
+                    <div className="text-[10px] text-white/25 mt-0.5">{s.label}</div>
+                  </div>
+                ))}
               </div>
+            </motion.div>
 
-              {/* Hard breakdown */}
-              <div className="flex flex-col gap-1.5">
-                <div className="flex justify-between items-center text-[10px]">
-                  <span className="text-rose-500 font-bold tracking-wider">HARD</span>
-                  <span className="text-white/60">{stats.hard.solved} / {stats.hard.total}</span>
-                </div>
-                <div className="h-1 bg-white/5 rounded-full overflow-hidden">
-                  <div
-                    className="h-full bg-rose-500 rounded-full"
-                    style={{ width: `${stats.hard.pct}%` }}
-                  ></div>
-                </div>
-              </div>
-            </div>
-          </div>
-
-          {/* Daily Challenge Spotlight */}
-          <div className="bg-gradient-to-b from-purple-500/10 to-zinc-950/40 border border-purple-500/20 p-6 rounded-2xl flex flex-col gap-4 relative overflow-hidden shadow-xl">
-            <div className="absolute top-0 right-0 w-20 h-20 bg-purple-500/5 rounded-full blur-2xl pointer-events-none"></div>
-
-            <div className="flex justify-between items-center border-b border-white/5 pb-2 select-none">
-              <h3 className="font-bebas text-lg tracking-widest text-purple-400 uppercase">
-                Daily Assignment
-              </h3>
-              <span className="font-mono text-[10px] text-amber-400 flex items-center gap-1 font-bold">
-                ⏱ {timeRemaining}
-              </span>
-            </div>
-
-            <div className="flex flex-col gap-1">
-              <div className="flex items-center gap-2 select-none">
-                <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded border border-rose-500/20 bg-rose-500/5 text-rose-500 uppercase">
-                  Hard
-                </span>
-                <span className="text-[#b9ff00] font-mono font-bold text-[10px]">
-                  +300 XP
-                </span>
-              </div>
-
-              <h4 className="text-lg font-bold text-paper tracking-wide mt-1.5 hover:text-purple-400 transition-colors">
-                Optimal Sacrifice (3-SAT)
-              </h4>
-
-              <p className="font-sans text-xs text-white/50 leading-relaxed font-light mt-1">
-                Formulate a reduction proof showing Griffith's apostle sacrifice decision matches the 3-satisfiability problem bounds.
-              </p>
-            </div>
-
-            <button
-              onClick={() => handlePlay(DUMMY_CHALLENGES[2])}
-              className="w-full bg-purple-500 hover:bg-purple-400 text-black font-mono text-xs font-bold py-2.5 rounded-lg tracking-wider active:translate-y-[1px] transition-all cursor-pointer text-center uppercase"
+            {/* Contribution Heatmap */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}
+              className="rounded-xl p-5"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
             >
-              Solve Challenge
-            </button>
+              <div className="flex justify-between items-center mb-4">
+                <span className="text-sm font-medium text-white/60">42 submissions in the past year</span>
+              </div>
+              {/* Heatmap grid */}
+              <div className="flex gap-[3px] overflow-hidden">
+                {Array.from({ length: 52 }, (_, week) => (
+                  <div key={week} className="flex flex-col gap-[3px]">
+                    {Array.from({ length: 7 }, (_, day) => {
+                      const idx = week * 7 + day;
+                      const level = heatmapData[idx] || 0;
+                      return (
+                        <motion.div key={day}
+                          className="w-[10px] h-[10px] rounded-[2px]"
+                          style={{ background: heatColors[level] }}
+                          initial={{ opacity: 0, scale: 0 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.4 + idx * 0.0008, duration: 0.15 }}
+                        />
+                      );
+                    })}
+                  </div>
+                ))}
+              </div>
+              {/* Legend */}
+              <div className="flex items-center justify-end gap-1 mt-3">
+                <span className="text-[10px] text-white/20 mr-1">Less</span>
+                {heatColors.map((c, i) => (
+                  <div key={i} className="w-[10px] h-[10px] rounded-[2px]" style={{ background: c }} />
+                ))}
+                <span className="text-[10px] text-white/20 ml-1">More</span>
+              </div>
+            </motion.div>
+
+            {/* Trending Topics */}
+            <motion.div initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.45 }}
+              className="rounded-xl p-5"
+              style={{ background: 'rgba(255,255,255,0.02)', border: '1px solid rgba(255,255,255,0.06)' }}
+            >
+              <h4 className="text-sm font-medium text-white/60 mb-3">Trending Topics</h4>
+              <div className="flex flex-wrap gap-2">
+                {['Array','Hash Table','Dynamic Programming','String','Binary Search','Stack','Graph','Tree'].map(t => (
+                  <span key={t} className="text-[11px] px-3 py-1.5 rounded-full cursor-pointer transition-colors text-white/40 hover:text-white/70"
+                    style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.06)' }}
+                  >{t}</span>
+                ))}
+              </div>
+            </motion.div>
           </div>
 
         </div>
-
       </div>
-
     </div>
   );
 };

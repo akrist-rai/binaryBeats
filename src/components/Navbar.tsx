@@ -1,5 +1,4 @@
 import React from 'react';
-import { synthSound } from '../utils/audio';
 
 interface NavbarProps {
   activeTab: string;
@@ -9,94 +8,61 @@ interface NavbarProps {
   onLogout: () => void;
 }
 
-export const Navbar: React.FC<NavbarProps> = ({
-  activeTab,
-  xp,
-  username,
-  onNavigate,
-  onLogout,
-}) => {
-  const handleNavigate = (tab: string, event: React.MouseEvent | React.KeyboardEvent) => {
-    event.preventDefault();
-    synthSound.click();
-    onNavigate(tab);
-  };
-
-  const handleKeyDown = (tab: string, event: React.KeyboardEvent) => {
-    if (event.key === 'Enter' || event.key === ' ') {
-      handleNavigate(tab, event);
-    }
-  };
-
-  const handleLogoutClick = () => {
-    synthSound.click();
-    onLogout();
-  };
+export const Navbar: React.FC<NavbarProps> = ({ activeTab, xp, username, onNavigate, onLogout }) => {
+  const tabs = [
+    { id: 'home', label: 'Problems' },
+    { id: 'blitz', label: 'Contest' },
+    { id: 'leaderboard', label: 'Leaderboard' },
+  ];
 
   return (
-    <nav className="relative z-50 w-full flex items-center justify-between h-[56px] px-6 bg-[#06060e]/92 backdrop-blur-md border-b border-white/10 select-none">
-      {/* Brand logo */}
+    <nav className="relative z-50 w-full flex items-center justify-between h-14 px-6 select-none"
+      style={{ background: 'rgba(9,9,11,0.95)', borderBottom: '1px solid rgba(255,255,255,0.06)', backdropFilter: 'blur(12px)' }}
+    >
+      {/* Logo */}
       <div
-        className="font-bebas text-lg font-black tracking-[0.18em] text-paper cursor-pointer flex items-center select-none outline-none focus:text-mg-acc"
-        onClick={(e) => handleNavigate('home', e)}
-        onKeyDown={(e) => handleKeyDown('home', e)}
-        role="link"
-        tabIndex={0}
+        className="text-base font-bold tracking-tight text-white cursor-pointer flex items-center gap-0.5"
+        onClick={() => onNavigate('home')}
+        role="link" tabIndex={0}
+        onKeyDown={e => { if (e.key === 'Enter') onNavigate('home'); }}
       >
-        <span className="text-mg-acc text-[1.25em]">B</span>INARY BEATS
+        <span style={{ color: '#ef4444' }}>B</span>inary<span className="text-white/40 font-normal ml-1">Beats</span>
       </div>
 
-      {/* Navigation middle links */}
-      <div className="flex items-center gap-1.5">
-        <a
-          href="#home"
-          className={`font-mono text-[9px] tracking-widest uppercase py-1 px-3.5 border border-transparent transition-all duration-150 ${activeTab === 'home'
-              ? 'text-mg-acc border-mg-acc bg-mg-acc/5 font-bold'
-              : 'text-white/35 hover:text-white/60 hover:border-white/10 hover:bg-white/[0.02]'
-            }`}
-          onClick={(e) => handleNavigate('home', e)}
-        >
-          Home
-        </a>
-
-        <a
-          href="#blitz"
-          className={`font-mono text-[9px] tracking-widest uppercase py-1 px-3.5 border border-transparent transition-all duration-150 ${activeTab === 'blitz'
-              ? 'text-mg-acc border-mg-acc bg-mg-acc/5 font-bold'
-              : 'text-white/35 hover:text-white/60 hover:border-white/10 hover:bg-white/[0.02]'
-            }`}
-          onClick={(e) => handleNavigate('blitz', e)}
-        >
-          blitz
-        </a>
-
-        <a
-          href="#leaderboard"
-          className={`font-mono text-[9px] tracking-widest uppercase py-1 px-3.5 border border-transparent transition-all duration-150 ${activeTab === 'leaderboard'
-              ? 'text-mg-acc border-mg-acc bg-mg-acc/5 font-bold'
-              : 'text-white/35 hover:text-white/60 hover:border-white/10 hover:bg-white/[0.02]'
-            }`}
-          onClick={(e) => handleNavigate('leaderboard', e)}
-        >
-          Leaderboard
-        </a>
+      {/* Center tabs */}
+      <div className="flex items-center gap-1">
+        {tabs.map(t => (
+          <button
+            key={t.id}
+            onClick={() => onNavigate(t.id)}
+            className="px-4 py-1.5 rounded-lg text-xs font-medium cursor-pointer transition-all"
+            style={{
+              background: activeTab === t.id ? 'rgba(239,68,68,0.08)' : 'transparent',
+              color: activeTab === t.id ? '#ef4444' : 'rgba(255,255,255,0.35)',
+              border: `1px solid ${activeTab === t.id ? 'rgba(239,68,68,0.2)' : 'transparent'}`,
+            }}
+          >
+            {t.label}
+          </button>
+        ))}
       </div>
 
-      {/* Right connection details & status */}
-      <div className="flex items-center gap-4">
-        <span className="flex items-center gap-1.5 font-mono text-[9px] tracking-wider text-white/35">
-          <span className="w-1.5 h-1.5 rounded-full bg-crt animate-pulse"></span>
-          <span className="font-semibold text-white/50">{username}</span>
-        </span>
+      {/* Right side */}
+      <div className="flex items-center gap-4 text-xs font-mono">
+        <div className="flex items-center gap-1.5 text-white/40">
+          <span className="w-1.5 h-1.5 rounded-full bg-emerald-400 animate-pulse" />
+          <span className="font-medium text-white/60">{username}</span>
+        </div>
 
-        <span className="font-mono text-[9px] text-paper bg-white/[0.03] px-2.5 py-1 border border-white/10 flex items-center gap-1.5">
-          <span className="text-crt animate-pulse">⚡</span>
-          <span className="font-bold">{xp} XP</span>
-        </span>
+        <div className="flex items-center gap-1.5 px-2.5 py-1 rounded-md" style={{ background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.06)' }}>
+          <span style={{ color: '#a3e635' }}>⚡</span>
+          <span className="font-bold text-white/80">{xp} XP</span>
+        </div>
 
         <button
-          className="font-mono text-[9px] tracking-widest uppercase border border-white/15 bg-white/5 hover:border-mg-acc hover:text-mg-acc hover:bg-mg-acc/5 py-1 px-3 cursor-pointer transition-all duration-150 active:translate-y-[1px]"
-          onClick={handleLogoutClick}
+          onClick={onLogout}
+          className="px-3 py-1 rounded-md text-white/30 hover:text-white/60 cursor-pointer transition-colors"
+          style={{ border: '1px solid rgba(255,255,255,0.06)' }}
         >
           Logout
         </button>

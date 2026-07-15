@@ -22,7 +22,7 @@ the filename alone tells you _where_ the image goes and _what shape_ it is.
 
 | Code | Folder | Used in | Typical content |
 |------|--------|---------|-----------------|
-| `BG` | `backgrounds/` | `BG_IMAGES` (heroDefault, bountyBg, leaderboardBg, profileBg, seriesBg) | Wide-landscape full-bleed page backgrounds |
+| `BG` | `backgrounds/` | `BG_IMAGES` (heroDefault, bountyBg, leaderboardBg, profileBg, blitzBg) | Wide-landscape full-bleed page backgrounds |
 | `AC` | `arc-covers/`  | `DEFAULT_ARC_COVERS` (arc 1–9) | Portrait cover art, one per learning arc |
 | `EP` | `episodes/`    | `getEpisodeImage()` (72+ episode IDs) | Episode thumbnail cards |
 | `AV` | `avatars/`     | `AVATAR_IMAGES` | Square profile-picture options |
@@ -48,7 +48,7 @@ public/images/
 │   ├── 0xBG002w.jpeg     bountyBg         – JJK cobalt-blue + orange action scene (1.78:1)
 │   ├── 0xBG003w.jpeg     leaderboardBg    – fire silhouette, arms outstretched (1.78:1)
 │   ├── 0xBG004w.jpeg     profileBg        – three-face close-up study (1.78:1)
-│   └── 0xBG005w.jpeg     seriesBg         – black/pink rooftop fight (1.5:1)
+│   └── 0xBG005w.jpeg     blitzBg         – black/pink rooftop fight (1.5:1)
 │
 ├── arc-covers/           9 files   0xAC001p – 0xAC009p
 │   ├── 0xAC001p.jpeg     Arc 1 Algorithms        – "Romance Dawn" One Piece poster
@@ -75,7 +75,7 @@ public/images/
 │   └── 0xEP077t – 0xEP083t   Tall-portrait spares (ratio < 0.58, mobile/splash)
 │
 ├── avatars/             23 files   0xAV001s – 0xAV023s
-│   ├── 0xAV001s – 0xAV005s   "Blue-neon bunny" series (cobalt + neon-red, painterly)
+│   ├── 0xAV001s – 0xAV005s   "Blue-neon bunny" blitz (cobalt + neon-red, painterly)
 │   ├── 0xAV006s – 0xAV007s   STARBOY graphic poster art
 │   ├── 0xAV008s              Berserk Guts portrait
 │   └── 0xAV009s – 0xAV023s   Assorted anime/graphic square art
@@ -94,7 +94,7 @@ defined in `src/styles/App.css :root`:
 | Token | Hex | Role in imagery |
 |-------|-----|-----------------|
 | `--cyber-blue` | `#00d4ff` | Highlight strokes, neon accents |
-| Cobalt field | `#0000cc–#1a1aff` | Dominant background hue across bunny series, JJK art |
+| Cobalt field | `#0000cc–#1a1aff` | Dominant background hue across bunny blitz, JJK art |
 | `--red` / accent | `#ff2020–#ff6a00` | Character outlines, flame, neon rabbits |
 | `--gold` | `#ffd700` | STARBOY lettering, eclipse rings |
 | Near-black | `#050510` | Page-level background, matches `--bg` token |

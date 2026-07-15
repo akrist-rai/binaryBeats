@@ -423,13 +423,13 @@ export const EPISODES: Episode[] = [
     "id": "S1E3_A6",
     "arcId": 6,
     "n": 3,
-    "title": "Serious Series \u2014 Sliding Window & Two Pointers",
-    "description": "When Saitama gets serious, every punch carries maximum efficiency \u2014 zero wasted motion. Master the sliding window technique: implement maximum subarray sum (Kadane's), longest substring without repeating characters, and minimum window substring. Then solve the classic two-pointer problem of container with most water. Each solution must run in O(n) time \u2014 anything slower is unworthy of the Serious Series.",
+    "title": "Serious blitz \u2014 Sliding Window & Two Pointers",
+    "description": "When Saitama gets serious, every punch carries maximum efficiency \u2014 zero wasted motion. Master the sliding window technique: implement maximum subarray sum (Kadane's), longest substring without repeating characters, and minimum window substring. Then solve the classic two-pointer problem of container with most water. Each solution must run in O(n) time \u2014 anything slower is unworthy of the Serious blitz.",
     "type": "ctf",
     "min": 40,
     "xp": 220,
     "done": false,
-    "art": "SERIOUS\nSERIES\n\u2500\u2500\u2500\u2500\u2500",
+    "art": "SERIOUS\nblitz\n\u2500\u2500\u2500\u2500\u2500",
     "bg": "#0d0d00"
   },
   {

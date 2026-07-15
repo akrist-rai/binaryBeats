@@ -2,8 +2,7 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCfHandle } from "../../hooks/useCfHandle";
 import { useVerdictPolling } from "../../hooks/useVerdictPolling";
-import { getProblemset } from "../../lib/problemCache";
-import { CfApiError, fetchUserStatus, problemKey, problemUrl } from "../../lib/codeforces";
+import { CfApiError, fetchProblemset, fetchUserStatus, problemKey, problemUrl } from "../../lib/codeforces";
 import {
   DUEL_VICTORY_BONUS_XP,
   NoProblemsError,
@@ -123,7 +122,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
       setStartError(null);
 
       try {
-        const catalog = await getProblemset();
+        const catalog = await fetchProblemset();
 
         const meSubs = await fetchUserStatus(handle);
         const meBaseline = meSubs[0]?.id ?? 0;
@@ -144,7 +143,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
           handles.push(rival.handle);
           ratings[rival.handle.toLowerCase()] = rival.rating ?? null;
           baselineSubmissionId[rival.handle.toLowerCase()] = rivalBaseline;
-          targets = buildDuelTargets(effectiveRating({ rating: user?.rating }), effectiveRating({ rating: rival.rating ?? undefined }));
+          targets = buildDuelTargets(effectiveRating({ rating: user?.rating }), effectiveRating({ rating: rival.rating }));
         } else {
           targets = buildSoloTargets(effectiveRating({ rating: user?.rating }));
         }
@@ -199,12 +198,12 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
   const linked = !!handle;
 
   return (
-    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 bg-[#0a0a0f] relative pb-12">
+    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 relative pb-12">
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
             <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Codeforces Arena</span>
-            <h2 className="text-2xl md:text-3xl font-bold font-heading text-white mt-1 tracking-tight">
+            <h2 className="text-2xl md:text-3xl font-bold font-heading gradient-text-cool mt-1 tracking-tight">
               Blitz &amp; Duel
             </h2>
             <p className="text-xs font-mono text-zinc-500 mt-1">Real problems. Real verdicts. Rating-matched.</p>

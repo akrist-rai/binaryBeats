@@ -21,10 +21,10 @@ export const HandleLinkCard: React.FC<HandleLinkCardProps> = ({ validating, erro
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-xl mx-auto w-full rounded-xl border border-white/[0.08] bg-[#111116] p-8 text-center"
+      className="max-w-xl mx-auto w-full rounded-xl border border-[#c3f73a]/15 bg-[#111116] p-8 text-center glow-acc"
     >
       <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Step 01 — Connect</span>
-      <h3 className="text-xl font-heading font-bold text-white mt-3 mb-2">Link your Codeforces handle</h3>
+      <h3 className="text-xl font-heading font-bold gradient-text-cool mt-3 mb-2">Link your Codeforces handle</h3>
       <p className="text-sm text-zinc-400 leading-relaxed max-w-md mx-auto mb-6">
         No password, no OAuth — your public profile and submissions are all this needs to pick
         rating-matched problems and detect when you solve them.

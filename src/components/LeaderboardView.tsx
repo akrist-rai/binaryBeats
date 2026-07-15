@@ -31,32 +31,74 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
     { rank: 142, username: 'akrist', avatar: 'AK', rating: 1420, solved: 121, tier: 'Novice', streak: 3, accent: '#7c5cfc' }
   ];
 
+  const podium = [users[1], users[0], users[2]]; // 2nd, 1st, 3rd — classic podium order
+  const rest = users.filter(u => u.rank > 3);
+
   const visibleUsers = useMemo(() => {
-    return users.filter(u => u.username.toLowerCase().includes(search.toLowerCase()));
-  }, [search]);
+    return rest.filter(u => u.username.toLowerCase().includes(search.toLowerCase()));
+  }, [search, rest]);
 
   return (
-    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 bg-[#0a0a0f] relative pb-12">
+    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 relative pb-12">
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
-        
+
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-heading text-white mb-2 tracking-tight">Leaderboard</h2>
-            <p className="text-xs font-mono text-zinc-500">Global developer rankings</p>
+            <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Global Standings</span>
+            <h2 className="text-2xl md:text-3xl font-bold font-heading gradient-text-cool mb-1 tracking-tight mt-1">Leaderboard</h2>
+            <p className="text-xs font-mono text-zinc-500">Ranked by rating across every C++ arena</p>
           </div>
 
           <div className="relative w-full md:w-72">
             <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
               <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
             </svg>
-            <input 
-              value={search} 
+            <input
+              value={search}
               onChange={e => setSearch(e.target.value)}
               placeholder="Search users..."
               className="w-full h-10 pl-10 pr-4 rounded-lg text-xs font-mono text-white bg-[#111116] placeholder-zinc-600 focus:outline-none border border-white/[0.08] focus:border-[#c3f73a]/30 transition-colors"
             />
           </div>
+        </div>
+
+        {/* Podium — top 3 */}
+        <div className="grid grid-cols-3 gap-3 md:gap-6 items-end">
+          {podium.map((u) => {
+            const isFirst = u.rank === 1;
+            const isMe = u.username === currentUser;
+            return (
+              <motion.div
+                key={u.username}
+                initial={{ opacity: 0, y: 30 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ delay: isFirst ? 0 : 0.1, type: 'spring', stiffness: 200, damping: 20 }}
+                className={`relative flex flex-col items-center rounded-xl border p-5 ${
+                  isFirst
+                    ? 'border-[#c3f73a]/30 bg-gradient-to-b from-[#c3f73a]/[0.08] to-transparent glow-acc pb-8 order-2'
+                    : u.rank === 2
+                      ? 'border-white/[0.08] bg-[#111116] pb-6 order-1'
+                      : 'border-white/[0.08] bg-[#111116] pb-6 order-3'
+                }`}
+              >
+                <span className={`absolute -top-3 font-mono font-black text-xs rounded-full w-7 h-7 flex items-center justify-center ${
+                  isFirst ? 'bg-[#c3f73a] text-black' : 'bg-white/10 text-zinc-300 border border-white/[0.15]'
+                }`}>#{u.rank}</span>
+                <div
+                  className={`rounded-full flex items-center justify-center font-bold font-mono text-white mt-3 mb-3 ${isFirst ? 'w-16 h-16 text-lg' : 'w-12 h-12 text-sm'}`}
+                  style={{ backgroundColor: u.accent, boxShadow: isFirst ? `0 0 30px -6px ${u.accent}` : 'none' }}
+                >
+                  {u.avatar}
+                </div>
+                <span className={`font-semibold truncate max-w-full ${isFirst ? 'text-white text-sm' : 'text-zinc-300 text-xs'}`}>
+                  {u.username}{isMe && <span className="text-[#c3f73a]"> (you)</span>}
+                </span>
+                <span className="text-[9px] font-mono text-zinc-500 mt-0.5">{u.tier}</span>
+                <span className={`font-mono font-bold mt-2 ${isFirst ? 'text-xl text-[#c3f73a]' : 'text-base text-white'}`}>{u.rating}</span>
+              </motion.div>
+            );
+          })}
         </div>
 
         {/* Main layout */}
@@ -82,7 +124,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                   visibleUsers.map((u) => {
                     const isMe = u.username === currentUser;
                     return (
-                      <motion.div 
+                      <motion.div
                         key={u.username} layout
                         initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                         className={`grid grid-cols-[60px_1fr_90px_80px_70px] items-center px-6 py-4 transition-colors border-l-2 ${
@@ -90,17 +132,13 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                         }`}
                       >
                         <div className="flex items-center">
-                          <span className={`text-xs font-mono font-bold ${
-                            u.rank === 1 ? 'text-amber-400' : 
-                            u.rank === 2 ? 'text-zinc-300' : 
-                            u.rank === 3 ? 'text-amber-600' : 'text-zinc-500'
-                          }`}>
+                          <span className="text-xs font-mono font-bold text-zinc-500">
                             #{u.rank}
                           </span>
                         </div>
 
                         <div className="flex items-center gap-3">
-                          <div 
+                          <div
                             className="w-8 h-8 rounded-full flex items-center justify-center text-[10px] font-bold text-white font-mono"
                             style={{ backgroundColor: u.accent }}
                           >
@@ -136,14 +174,14 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                 <div>
                   <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-1">Global Standing</span>
                   <div className="flex items-baseline gap-2">
-                    <span className="text-2xl font-mono font-bold text-[#c3f73a]">#142</span>
+                    <span className="text-2xl font-mono font-bold text-glow text-[#c3f73a]">#142</span>
                     <span className="text-[10px] font-mono text-zinc-500">Top 12.4%</span>
                   </div>
                 </div>
                 <div>
                   <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-1">Rating Trend</span>
                   <div className="h-10 mt-1 relative flex items-end">
-                    <svg className="w-full h-full text-[#c3f73a]" viewBox="0 0 100 30" fill="none">
+                    <svg className="w-full h-full text-[#35e8ff]" viewBox="0 0 100 30" fill="none">
                       <path d="M0,25 Q15,22 30,23 T60,12 T90,8" stroke="currentColor" strokeWidth="2" fill="none" />
                       <circle cx="90" cy="8" r="2.5" fill="white" className="animate-pulse" />
                     </svg>

@@ -1,8 +1,7 @@
 import { useState } from "react";
-import { DEFAULT_CODE, type BlitzLanguage } from "../lib/wandbox";
+import { DEFAULT_CPP_CODE } from "../lib/wandbox";
 
 interface CodeDraft {
-  language: BlitzLanguage;
   code: string;
   stdin: string;
 }
@@ -28,21 +27,12 @@ function persistDraft(problemKey: string, draft: CodeDraft) {
   }
 }
 
-/** Persists a per-problem code/language/stdin draft in localStorage, keyed by problemKey. */
+/** Persists a per-problem C++ code/stdin draft in localStorage, keyed by problemKey. */
 export function useCodeDraft(problemKey: string) {
   const [draft, setDraft] = useState<CodeDraft>(() => {
     const existing = readAllDrafts()[problemKey];
-    return existing ?? { language: "cpp", code: DEFAULT_CODE.cpp, stdin: "" };
+    return existing ?? { code: DEFAULT_CPP_CODE, stdin: "" };
   });
-
-  const setLanguage = (language: BlitzLanguage) => {
-    setDraft((prev) => {
-      const untouched = prev.code === DEFAULT_CODE[prev.language];
-      const next: CodeDraft = { ...prev, language, code: untouched ? DEFAULT_CODE[language] : prev.code };
-      persistDraft(problemKey, next);
-      return next;
-    });
-  };
 
   const setCode = (code: string) => {
     setDraft((prev) => {
@@ -60,5 +50,5 @@ export function useCodeDraft(problemKey: string) {
     });
   };
 
-  return { draft, setLanguage, setCode, setStdin };
+  return { draft, setCode, setStdin };
 }

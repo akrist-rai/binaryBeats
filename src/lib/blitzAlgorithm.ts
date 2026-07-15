@@ -1,6 +1,5 @@
-import type { CfUser } from "./codeforces";
+import type { CfProblem } from "./codeforces";
 import { problemKey } from "./codeforces";
-import type { CachedProblem } from "./problemCache";
 
 export const RATING_MIN = 800;
 export const RATING_MAX = 3500;
@@ -27,7 +26,7 @@ export function snapRating(raw: number): number {
 }
 
 /** A player's rating for algorithm purposes — unrated players default to the 800 baseline. */
-export function effectiveRating(user: Pick<CfUser, "rating">): number {
+export function effectiveRating(user: { rating?: number | null }): number {
   return snapRating(user.rating ?? RATING_MIN);
 }
 
@@ -81,7 +80,7 @@ const WIDEN_STEPS = [0, 100, 200, 300, 400];
  * NoProblemsError if a target has no candidates even at the widest window.
  */
 export function selectProblems(
-  catalog: CachedProblem[],
+  catalog: CfProblem[],
   targets: number[],
   solvedKeys: Set<string>
 ): SessionProblem[] {
@@ -89,7 +88,7 @@ export function selectProblems(
   const pickedKeys = new Set<string>();
 
   for (const target of targets) {
-    let candidates: CachedProblem[] = [];
+    let candidates: CfProblem[] = [];
 
     for (const widen of WIDEN_STEPS) {
       candidates = catalog.filter((p) => {

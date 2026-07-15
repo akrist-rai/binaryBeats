@@ -1,98 +1,70 @@
-// Thin client for the public Codeforces API (https://codeforces.com/apiHelp).
-// All endpoints used here are CORS-enabled and require no API key.
+// Client for OUR OWN backend (server/, a small Koa API), which in turn talks to
+// the public Codeforces API. The backend centralizes rate-limiting, caching,
+// and payload trimming so every browser tab isn't independently hammering
+// Codeforces or re-fetching the ~9000-problem catalog.
 
 export interface CfUser {
   handle: string;
-  rating?: number;
-  maxRating?: number;
-  rank?: string;
-  maxRank?: string;
-  avatar?: string;
-  titlePhoto?: string;
+  rating: number | null;
+  maxRating: number | null;
+  rank: string | null;
 }
 
 export interface CfProblem {
   contestId: number;
   index: string;
   name: string;
-  rating?: number;
-  tags: string[];
-  type: string;
+  rating: number;
 }
 
 export interface CfSubmission {
   id: number;
   creationTimeSeconds: number;
-  problem: CfProblem;
-  verdict?: string;
+  verdict: string | null;
+  problem: { contestId: number; index: string };
 }
 
 export type CfErrorKind = "NOT_FOUND" | "RATE_LIMITED" | "API_FAILED" | "NETWORK";
 
 export class CfApiError extends Error {
   kind: CfErrorKind;
-  comment?: string;
 
-  constructor(kind: CfErrorKind, message: string, comment?: string) {
+  constructor(kind: CfErrorKind, message: string) {
     super(message);
     this.name = "CfApiError";
     this.kind = kind;
-    this.comment = comment;
   }
 }
 
-const API_BASE = "https://codeforces.com/api";
-const MIN_REQUEST_GAP_MS = 2000;
+// Relative — proxied to the Koa backend (server/) by Vite's dev-server proxy.
+const API_BASE = "/api/cf";
 
-// Module-level politeness throttle: chain every request so consecutive calls
-// (e.g. polling two handles in a duel) are always spaced out, without callers
-// having to coordinate timing themselves.
-let requestQueue: Promise<void> = Promise.resolve();
-let lastDispatchAt = 0;
-
-function throttledSlot(): Promise<void> {
-  const slot = requestQueue.then(async () => {
-    const wait = Math.max(0, lastDispatchAt + MIN_REQUEST_GAP_MS - Date.now());
-    if (wait > 0) await new Promise((r) => setTimeout(r, wait));
-    lastDispatchAt = Date.now();
-  });
-  requestQueue = slot;
-  return slot;
-}
-
-function classifyFailure(comment: string | undefined): CfErrorKind {
-  const c = (comment || "").toLowerCase();
-  if (c.includes("not found")) return "NOT_FOUND";
-  if (c.includes("limit")) return "RATE_LIMITED";
+function classifyStatus(status: number): CfErrorKind {
+  if (status === 404) return "NOT_FOUND";
+  if (status === 429) return "RATE_LIMITED";
   return "API_FAILED";
 }
 
-async function cfGet<T>(method: string, params: Record<string, string>): Promise<T> {
-  await throttledSlot();
-
-  const query = new URLSearchParams(params).toString();
-  const url = `${API_BASE}/${method}${query ? `?${query}` : ""}`;
-
+async function apiGet<T>(path: string): Promise<T> {
   let res: Response;
   try {
-    res = await fetch(url);
+    res = await fetch(`${API_BASE}${path}`);
   } catch {
-    throw new CfApiError("NETWORK", "Could not reach Codeforces.");
+    throw new CfApiError("NETWORK", "Could not reach the Binary Beats API.");
   }
 
-  let body: { status: string; result?: T; comment?: string };
+  let body: { error?: string; message?: string } & Partial<T>;
   try {
     body = await res.json();
   } catch {
-    throw new CfApiError("NETWORK", "Codeforces returned an unreadable response.");
+    throw new CfApiError("NETWORK", "The Binary Beats API returned an unreadable response.");
   }
 
-  if (body.status !== "OK") {
-    const kind = classifyFailure(body.comment);
-    throw new CfApiError(kind, body.comment || "Codeforces API request failed.", body.comment);
+  if (!res.ok) {
+    throw new CfApiError(classifyStatus(res.status), body.message || "Request failed.");
   }
 
-  return body.result as T;
+  return body as T;
 }
 
 export function isValidHandleFormat(handle: string): boolean {
@@ -100,18 +72,19 @@ export function isValidHandleFormat(handle: string): boolean {
 }
 
 export async function fetchUserInfo(handles: string[]): Promise<CfUser[]> {
-  return cfGet<CfUser[]>("user.info", { handles: handles.join(";") });
+  const { users } = await apiGet<{ users: CfUser[] }>(`/user/${handles.map(encodeURIComponent).join(";")}`);
+  return users;
 }
 
 export async function fetchProblemset(): Promise<CfProblem[]> {
-  const result = await cfGet<{ problems: CfProblem[] }>("problemset.problems", {});
-  return result.problems;
+  const { problems } = await apiGet<{ problems: CfProblem[] }>("/problemset");
+  return problems;
 }
 
 export async function fetchUserStatus(handle: string, count?: number): Promise<CfSubmission[]> {
-  const params: Record<string, string> = { handle, from: "1" };
-  if (count) params.count = String(count);
-  return cfGet<CfSubmission[]>("user.status", params);
+  const qs = count ? `?count=${count}` : "";
+  const { submissions } = await apiGet<{ submissions: CfSubmission[] }>(`/status/${encodeURIComponent(handle)}${qs}`);
+  return submissions;
 }
 
 export function problemKey(p: { contestId: number; index: string }): string {

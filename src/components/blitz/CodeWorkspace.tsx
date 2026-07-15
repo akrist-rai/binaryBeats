@@ -1,15 +1,13 @@
 import React, { useState } from "react";
 import { useCodeDraft } from "../../hooks/useCodeDraft";
-import { LANGUAGE_META, runCode, type BlitzLanguage, type RunResult } from "../../lib/wandbox";
+import { runCode, type RunResult } from "../../lib/wandbox";
 
 interface CodeWorkspaceProps {
   problemKey: string;
 }
 
-const LANGUAGES: BlitzLanguage[] = ["cpp", "python", "java"];
-
 export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ problemKey }) => {
-  const { draft, setLanguage, setCode, setStdin } = useCodeDraft(problemKey);
+  const { draft, setCode, setStdin } = useCodeDraft(problemKey);
   const [running, setRunning] = useState(false);
   const [result, setResult] = useState<RunResult | null>(null);
   const [copied, setCopied] = useState(false);
@@ -17,7 +15,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ problemKey }) => {
   const handleRun = async () => {
     setRunning(true);
     setResult(null);
-    const r = await runCode(draft.language, draft.code, draft.stdin);
+    const r = await runCode(draft.code, draft.stdin);
     setResult(r);
     setRunning(false);
   };
@@ -35,18 +33,9 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({ problemKey }) => {
   return (
     <div className="rounded-lg border border-white/[0.08] bg-[#0a0a0f] p-4 flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <div className="flex rounded-lg border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-[11px] gap-0.5">
-          {LANGUAGES.map((lang) => (
-            <button
-              key={lang}
-              onClick={() => setLanguage(lang)}
-              className={`px-2.5 py-1 rounded-md transition-colors cursor-pointer ${
-                draft.language === lang ? "bg-white text-zinc-950 font-bold" : "text-zinc-500 hover:text-white"
-              }`}
-            >
-              {LANGUAGE_META[lang].label}
-            </button>
-          ))}
+        <div className="flex items-center gap-1.5 h-7 px-2.5 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#c3f73a]">
+          <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a]" />
+          C++17
         </div>
         <span className="text-[9px] font-mono text-zinc-600">
           real compile + run via Wandbox — sample/custom input only, not the judge's tests

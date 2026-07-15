@@ -1,25 +1,11 @@
-// Real code execution via Wandbox (https://wandbox.org/), a free, public,
+// Real C++ compile + run via Wandbox (https://wandbox.org/), a free, public,
 // CORS-enabled compile-and-run service. No API key, no server of our own needed.
 
-export type BlitzLanguage = "cpp" | "python" | "java";
+const WANDBOX_URL = "https://wandbox.org/api/compile.json";
+const COMPILER = "gcc-13.2.0";
+const COMPILER_OPTIONS = "warning,gnu++17";
 
-interface LanguageMeta {
-  label: string;
-  compiler: string;
-  options?: string;
-}
-
-export const LANGUAGE_META: Record<BlitzLanguage, LanguageMeta> = {
-  cpp: { label: "C++17", compiler: "gcc-13.2.0", options: "warning,gnu++17" },
-  python: { label: "Python 3", compiler: "cpython-3.13.8" },
-  java: { label: "Java", compiler: "openjdk-jdk-21+35" },
-};
-
-export const DEFAULT_CODE: Record<BlitzLanguage, string> = {
-  cpp: "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n",
-  python: "def main():\n    pass\n\nmain()\n",
-  java: "public class Main {\n    public static void main(String[] args) {\n        \n    }\n}\n",
-};
+export const DEFAULT_CPP_CODE = "#include <bits/stdc++.h>\nusing namespace std;\n\nint main() {\n    \n    return 0;\n}\n";
 
 export interface RunResult {
   success: boolean;
@@ -27,8 +13,6 @@ export interface RunResult {
   output: string;
   stderr: string;
 }
-
-const WANDBOX_URL = "https://wandbox.org/api/compile.json";
 
 interface WandboxResponse {
   status: string;
@@ -38,20 +22,13 @@ interface WandboxResponse {
   program_error?: string;
 }
 
-export async function runCode(language: BlitzLanguage, code: string, stdin: string): Promise<RunResult> {
-  const meta = LANGUAGE_META[language];
-
-  // Wandbox writes the source to prog.java, so a top-level `public class` trips javac's
-  // filename check. Only affects this scratch run — Codeforces doesn't require `public`
-  // either, and the code you copy out is untouched.
-  const submittedCode = language === "java" ? code.replace(/\bpublic\s+class\b/, "class") : code;
-
+export async function runCode(code: string, stdin: string): Promise<RunResult> {
   let res: Response;
   try {
     res = await fetch(WANDBOX_URL, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ code: submittedCode, compiler: meta.compiler, options: meta.options, stdin }),
+      body: JSON.stringify({ code, compiler: COMPILER, options: COMPILER_OPTIONS, stdin }),
     });
   } catch {
     return { success: false, output: "", stderr: "Could not reach the run service — check your connection and retry." };

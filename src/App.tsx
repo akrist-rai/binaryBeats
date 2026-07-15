@@ -18,7 +18,7 @@ export default function App() {
     const saved = localStorage.getItem("bb_sound");
     return saved !== "false";
   });
-  const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string; lang: string } | null>(null);
+  const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string } | null>(null);
 
   useEffect(() => {
     document.documentElement.style.setProperty("--mg-acc", "#c3f73a");
@@ -54,7 +54,7 @@ export default function App() {
     setActiveTab(tab);
   };
 
-  const handleShareSolution = (details: { problemTitle: string; code: string; lang: string }) => {
+  const handleShareSolution = (details: { problemTitle: string; code: string }) => {
     setSharedCode(details);
     setActiveTab("community");
   };

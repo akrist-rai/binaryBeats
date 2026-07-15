@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface CommunityViewProps {
   playSound: (type: 'click' | 'hover') => void;
   onAddXp: (amount: number) => void;
-  sharedCode: { problemTitle: string; code: string; lang: string } | null;
+  sharedCode: { problemTitle: string; code: string } | null;
   onClearSharedCode: () => void;
 }
 
@@ -71,64 +71,64 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     { id: 'a2', message: 'syntax_scripter unlocked badge "Night Owl"', time: '2m ago', icon: '🏆' },
     { id: 'a3', message: 'byte_boss upvoted a solution to Merge K Sorted Lists', time: '5m ago', icon: '👍' },
     { id: 'a4', message: 'git_gud joined clan Bit Shifters', time: '12m ago', icon: '🛡️' },
-    { id: 'a5', message: 'cache_flow registered for Binary Blitz #04', time: '20m ago', icon: '🎫' },
+    { id: 'a5', message: 'cache_flow started a Blitz & Duel session', time: '20m ago', icon: '🎫' },
   ]);
 
   // Threads State
   const [threads, setThreads] = useState<ForumThread[]>([
     {
       id: 't1',
-      title: 'Two Sum: Javascript 99.8% Speed O(N) Hashmap solution',
+      title: 'Two Sum: 99.8th percentile O(N) unordered_map solution',
       author: 'byte_boss',
       avatar: 'BB',
       tag: 'Solutions',
       upvotes: 42,
       commentsCount: 3,
       date: '2h ago',
-      content: 'Using a JavaScript Map provides sub-millisecond retrieval compared to objects. Highly recommended to store values mapping to indexes.',
+      content: 'An unordered_map gives amortized O(1) lookups vs a sorted map\'s O(log N). Highly recommended for storing value-to-index lookups on the first pass.',
       comments: [
-        { id: 'c1_1', author: 'syntax_scripter', avatar: 'SS', content: 'Clean solution! Can also be solved with an object in slightly slower runtimes due to hashing overhead.', date: '1h ago' },
+        { id: 'c1_1', author: 'syntax_scripter', avatar: 'SS', content: 'Clean solution! std::map also works but the ordering overhead makes it noticeably slower here.', date: '1h ago' },
         { id: 'c1_2', author: 'compile_king', avatar: 'CK', content: 'Very neat. O(N) space complexity is negligible for these sizes.', date: '45m ago' }
       ]
     },
     {
       id: 't2',
-      title: 'Binary Blitz #04 prep thread - what topics to expect?',
+      title: 'Blitz & Duel prep thread — what rating band should I expect?',
       author: 'compile_king',
       avatar: 'CK',
       tag: 'Contest',
       upvotes: 18,
       commentsCount: 2,
       date: '4h ago',
-      content: 'Blitz matches typically feature stacks, arrays, heap problems, and basic dynamic programming. Let us use this thread to coordinate training!',
+      content: 'Solo Blitz draws a 4-problem staircase around your linked Codeforces rating, and Duel anchors 60/40 toward the lower-rated player. Use this thread to coordinate training and compare draws!',
       comments: [
-        { id: 'c2_1', author: 'cache_flow', avatar: 'CF', content: 'Hoping for a stack challenge. Parenthesis manipulation matches my core libraries!', date: '3h ago' }
+        { id: 'c2_1', author: 'cache_flow', avatar: 'CF', content: 'Got a 1900-2200 band on my last Blitz session. Segment trees and binary search carried me through.', date: '3h ago' }
       ]
     },
     {
       id: 't3',
-      title: 'Recursion vs Loop stack overhead in modern runtimes',
+      title: 'Recursion vs iterative stack overhead on deep trees',
       author: 'syntax_scripter',
       avatar: 'SS',
       tag: 'General',
       upvotes: 27,
       commentsCount: 1,
       date: '1d ago',
-      content: 'In V8, recursive calls push scopes to the callstack, risking overflows. Loop iteration with manual stack objects is far safer for nested trees.',
+      content: 'Deep recursion risks a real stack overflow well before you hit any algorithmic limit, especially on skewed/unbalanced trees. Converting to an explicit std::stack-based iteration is the safer bet for anything that isn\'t guaranteed shallow.',
       comments: [
-        { id: 'c3_1', author: 'byte_boss', avatar: 'BB', content: 'Correct. Tailwind recursive trees also suffer stack limits. Loop arrays is standard practice.', date: '18h ago' }
+        { id: 'c3_1', author: 'byte_boss', avatar: 'BB', content: 'Confirmed on GCC/Clang too — no guaranteed tail-call optimization, so iterative + explicit stack is standard practice for deep DFS.', date: '18h ago' }
       ]
     },
     {
       id: 't4',
-      title: 'Compiler warnings for vectors in older C++ frameworks',
+      title: 'Compiler warnings for vector reserve() on older C++ standards',
       author: 'cache_flow',
       avatar: 'CF',
       tag: 'Bugs',
       upvotes: 5,
       commentsCount: 0,
       date: '2d ago',
-      content: 'Seeing warnings about capacity reservations on C++17 compilers. Will verify optimization directives and update the codebase.',
+      content: 'Seeing warnings about capacity reservations when compiling under -std=c++14. Will verify the optimization directives and update to c++17.',
       comments: []
     }
   ]);
@@ -147,9 +147,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   // Handle Shared Code from Code Editor
   useEffect(() => {
     if (sharedCode) {
-      setNewTitle(`My ${sharedCode.lang.toUpperCase()} solution for ${sharedCode.problemTitle}`);
+      setNewTitle(`My C++ solution for ${sharedCode.problemTitle}`);
       setNewTag('Solutions');
-      setNewContent(`Here is my accepted solution written in ${sharedCode.lang.toUpperCase()}:\n\n\`\`\`${sharedCode.lang}\n${sharedCode.code}\n\`\`\``);
+      setNewContent(`Here is my accepted C++ solution:\n\n\`\`\`cpp\n${sharedCode.code}\n\`\`\``);
       setIsCreatorOpen(true);
       onClearSharedCode(); // clear to avoid re-opening
     }
@@ -323,17 +323,18 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   }, [threads, selectedTag, searchQuery]);
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] text-white bg-[#0a0a0f] relative pb-12">
+    <div className="w-full min-h-[calc(100vh-64px)] text-white relative pb-12">
       <div className="w-full px-12 py-8 relative z-10 max-w-7xl mx-auto">
-        
+
         {/* Hub Header & Navigation sub-tabs */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.08] pb-6 mb-6">
           <div>
-            <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight text-white mb-2">
+            <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Engineering Guilds</span>
+            <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight gradient-text-cool mb-2 mt-1">
               Community Hub
             </h2>
             <p className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase">
-              Sync templates, review solutions, and coordinate within engineering guilds
+              Share C++ solutions, review code, and coordinate within engineering guilds
             </p>
           </div>
 
@@ -821,7 +822,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       type="text"
                       value={newTitle}
                       onChange={e => setNewTitle(e.target.value)}
-                      placeholder="E.g., JS runtime recursive stack optimization"
+                      placeholder="E.g., std::vector capacity reservation tricks"
                       className="h-10 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30"
                     />
                   </div>

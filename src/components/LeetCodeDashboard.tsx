@@ -4,7 +4,7 @@ import { motion, AnimatePresence } from 'motion/react';
 interface Props {
   onAddXp: (amount: number) => void;
   playSound: (type: 'click' | 'hover') => void;
-  onShareSolution: (details: { problemTitle: string; code: string; lang: string }) => void;
+  onShareSolution: (details: { problemTitle: string; code: string }) => void;
 }
 
 interface Problem {
@@ -19,11 +19,7 @@ interface Problem {
   desc: string;
   constraints: string[];
   examples: { input: string; output: string; explanation?: string }[];
-  templates: {
-    javascript: string;
-    python: string;
-    cpp: string;
-  };
+  template: string;
 }
 
 const PROBLEMS: Problem[] = [
@@ -45,11 +41,7 @@ const PROBLEMS: Problem[] = [
     examples: [
       { input: 'nums = [2,7,11,15], target = 9', output: '[0,1]', explanation: 'Because nums[0] + nums[1] == 9, we return [0, 1].' }
     ],
-    templates: {
-      javascript: `/**\n * @param {number[]} nums\n * @param {number} target\n * @return {number[]}\n */\nfunction twoSum(nums, target) {\n    const map = new Map();\n    for (let i = 0; i < nums.length; i++) {\n        const diff = target - nums[i];\n        if (map.has(diff)) {\n            return [map.get(diff), i];\n        }\n        map.set(nums[i], i);\n    }\n    return [];\n}`,
-      python: `class Solution:\n    def twoSum(self, nums: List[int], target: int) -> List[int]:\n        hashmap = {}\n        for i, num in enumerate(nums):\n            diff = target - num\n            if diff in hashmap:\n                return [hashmap[diff], i]\n            hashmap[num] = i\n        return []`,
-      cpp: `class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> hashmap;\n        for (int i = 0; i < nums.size(); i++) {\n            int diff = target - nums[i];\n            if (hashmap.count(diff)) {\n                return {hashmap[diff], i};\n            }\n            hashmap[nums[i]] = i;\n        }\n        return {};\n    }\n};`
-    }
+    template: `class Solution {\npublic:\n    vector<int> twoSum(vector<int>& nums, int target) {\n        unordered_map<int, int> hashmap;\n        for (int i = 0; i < nums.size(); i++) {\n            int diff = target - nums[i];\n            if (hashmap.count(diff)) {\n                return {hashmap[diff], i};\n            }\n            hashmap[nums[i]] = i;\n        }\n        return {};\n    }\n};`
   },
   {
     id: 'p2',
@@ -69,11 +61,7 @@ const PROBLEMS: Problem[] = [
       { input: 's = "()[]{}"', output: 'true' },
       { input: 's = "(]"', output: 'false' }
     ],
-    templates: {
-      javascript: `/**\n * @param {string} s\n * @return {boolean}\n */\nfunction isValid(s) {\n    const stack = [];\n    const map = { ")": "(", "}": "{", "]": "[" };\n    for (let char of s) {\n        if (char === "(" || char === "{" || char === "[") {\n            stack.push(char);\n        } else if (stack.pop() !== map[char]) {\n            return false;\n        }\n    }\n    return stack.length === 0;\n}`,
-      python: `class Solution:\n    def isValid(self, s: str) -> bool:\n        stack = []\n        mapping = {")": "(", "}": "{", "]": "["}\n        for char in s:\n            if char in mapping.values():\n                stack.append(char)\n            elif char in mapping:\n                if not stack or stack.pop() != mapping[char]:\n                    return False\n        return not stack`,
-      cpp: `class Solution {\npublic:\n    bool isValid(string s) {\n        stack<char> st;\n        for (char c : s) {\n            if (c == \'(\' || c == \'{\' || c == \'[\') {\n                st.push(c);\n            } else {\n                if (st.empty()) return false;\n                if (c == \')\' && st.top() != \'(\') return false;\n                if (c == \'}\' && st.top() != \'{\') return false;\n                if (c == \']\' && st.top() != \'[\') return false;\n                st.pop();\n            }\n        }\n        return st.empty();\n    }\n};`
-    }
+    template: `class Solution {\npublic:\n    bool isValid(string s) {\n        stack<char> st;\n        for (char c : s) {\n            if (c == \'(\' || c == \'{\' || c == \'[\') {\n                st.push(c);\n            } else {\n                if (st.empty()) return false;\n                if (c == \')\' && st.top() != \'(\') return false;\n                if (c == \'}\' && st.top() != \'{\') return false;\n                if (c == \']\' && st.top() != \'[\') return false;\n                st.pop();\n            }\n        }\n        return st.empty();\n    }\n};`
   },
   {
     id: 'p3',
@@ -93,11 +81,7 @@ const PROBLEMS: Problem[] = [
     examples: [
       { input: 'lists = [[1,4,5],[1,3,4],[2,6]]', output: '[1,1,2,3,4,4,5,6]', explanation: 'Merging lists: 1->1->2->3->4->4->5->6' }
     ],
-    templates: {
-      javascript: `/**\n * Definition for singly-linked list.\n * function ListNode(val, next) {\n *     this.val = (val===undefined ? 0 : val)\n *     this.next = (next===undefined ? null : next)\n * }\n */\n/**\n * @param {ListNode[]} lists\n * @return {ListNode}\n */\nfunction mergeKLists(lists) {\n    // Solve using priority queue or divide-and-conquer\n    return null;\n}`,
-      python: `# Definition for singly-linked list.\n# class ListNode:\n#     def __init__(self, val=0, next=None):\n#         self.val = val\n#         self.next = next\nclass Solution:\n    def mergeKLists(self, lists: List[Optional[ListNode]]) -> Optional[ListNode]:\n        # Add implementation here\n        return None`,
-      cpp: `/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\nclass Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Merge lists\n        return nullptr;\n    }\n};`
-    }
+    template: `/**\n * Definition for singly-linked list.\n * struct ListNode {\n *     int val;\n *     ListNode *next;\n *     ListNode() : val(0), next(nullptr) {}\n *     ListNode(int x) : val(x), next(nullptr) {}\n *     ListNode(int x, ListNode *next) : val(x), next(next) {}\n * };\n */\nclass Solution {\npublic:\n    ListNode* mergeKLists(vector<ListNode*>& lists) {\n        // Merge lists\n        return nullptr;\n    }\n};`
   },
 ];
 
@@ -126,11 +110,22 @@ const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => {
   };
 });
 
+// C++ syntax highlighting token sets
+const CPP_TYPES = new Set(['int', 'float', 'double', 'bool', 'char', 'void', 'auto', 'long', 'short', 'unsigned', 'size_t', 'string', 'vector', 'unordered_map', 'map', 'set', 'stack', 'queue', 'pair', 'struct']);
+const CPP_KEYWORDS = new Set(['class', 'public', 'private', 'protected', 'virtual', 'override', 'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue', 'new', 'delete', 'const', 'static', 'namespace', 'using', 'template', 'typename', 'nullptr', 'true', 'false']);
+
+// Hero terminal typewriter script
+const HERO_TERMINAL_LINES = [
+  'g++ -O2 -std=c++17 solution.cpp -o run',
+  './run < sample.txt',
+  '✓ Accepted · 4ms · 2.1 MB',
+];
+
 // Autocomplete words
 const AUTOCOMPLETE_WORDS = [
-  'nums', 'target', 'map', 'length', 'push', 'pop', 'isValid', 
-  'stack', 'Solution', 'result', 'return', 'const', 'function', 
-  'let', 'char', 'hashmap', 'twoSum', 'mergeKLists'
+  'nums', 'target', 'unordered_map', 'size', 'push_back', 'pop_back', 'isValid',
+  'stack', 'Solution', 'result', 'return', 'const', 'vector',
+  'auto', 'char', 'hashmap', 'twoSum', 'mergeKLists', 'nullptr'
 ];
 
 export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props) => {
@@ -138,6 +133,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [countdown, setCountdown] = useState('');
+  const [typedLine, setTypedLine] = useState(0);
+  const [typedChars, setTypedChars] = useState(0);
   const [activeChallenge, setActiveChallenge] = useState<Problem | null>(null);
   
   const [solvedChallenges, setSolvedChallenges] = useState<string[]>(() => {
@@ -145,8 +142,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     return saved ? JSON.parse(saved) : ['p1']; // Default Two Sum solved
   });
 
-  // Editor states
-  const [editorLang, setEditorLang] = useState<'javascript' | 'python' | 'cpp'>('javascript');
+  // Editor state — C++ only
   const [editorCode, setEditorCode] = useState('');
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [compileStatus, setCompileStatus] = useState<'idle' | 'running' | 'success' | 'claimed'>('idle');
@@ -181,6 +177,21 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     };
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
+
+  // Hero terminal — typewriter effect cycling through a compile/run trace
+  useEffect(() => {
+    const currentLine = HERO_TERMINAL_LINES[typedLine];
+    if (typedChars < currentLine.length) {
+      const t = setTimeout(() => setTypedChars(c => c + 1), 32);
+      return () => clearTimeout(t);
+    }
+    const isLastLine = typedLine === HERO_TERMINAL_LINES.length - 1;
+    const holdThenAdvance = setTimeout(() => {
+      setTypedLine((typedLine + 1) % HERO_TERMINAL_LINES.length);
+      setTypedChars(0);
+    }, isLastLine ? 2200 : 500);
+    return () => clearTimeout(holdThenAdvance);
+  }, [typedChars, typedLine]);
 
   const handleEditorScroll = () => {
     if (textareaRef.current) {
@@ -225,29 +236,20 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
   const openChallenge = (prob: Problem) => {
     playSound('click');
     setActiveChallenge(prob);
-    setEditorCode(prob.templates[editorLang]);
+    setEditorCode(prob.template);
     setCustomTestsInput(JSON.stringify(prob.examples, null, 2));
     setCompileStatus(solvedChallenges.includes(prob.id) ? 'claimed' : 'idle');
     setTerminalLogs(['Compile system idle. Workspace fully synced. Ready to test inputs.']);
     setWorkspaceTab('solution');
   };
 
-  useEffect(() => {
-    if (activeChallenge) {
-      setEditorCode(activeChallenge.templates[editorLang]);
-    }
-  }, [editorLang, activeChallenge]);
-
   const commands = useMemo(() => {
     const list = [
       { name: 'Run Local Code Tests', desc: 'Simulate parameters locally', action: () => runCode() },
       { name: 'Submit Solution Code', desc: 'Deploy compiler target tests', action: () => submitCode() },
       { name: 'Reset Workspace Template', desc: 'Restore original stub structure', action: () => {
-        if (activeChallenge) setEditorCode(activeChallenge.templates[editorLang]);
+        if (activeChallenge) setEditorCode(activeChallenge.template);
       }},
-      { name: 'Switch language: JavaScript', desc: 'Toggle JS active tab', action: () => setEditorLang('javascript') },
-      { name: 'Switch language: Python', desc: 'Toggle PY active tab', action: () => setEditorLang('python') },
-      { name: 'Switch language: C++', desc: 'Toggle CPP active tab', action: () => setEditorLang('cpp') },
       { name: 'View Problem Specifications', desc: 'Focus instructions tab', action: () => setWorkspaceTab('readme') },
       { name: 'Edit Test Case Arrays', desc: 'Focus JSON tests tab', action: () => setWorkspaceTab('tests') },
     ];
@@ -259,15 +261,14 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
           if (activeChallenge) {
             onShareSolution({
               problemTitle: activeChallenge.title,
-              code: editorCode,
-              lang: editorLang
+              code: editorCode
             });
           }
         }
       });
     }
     return list.filter(cmd => cmd.name.toLowerCase().includes(commandQuery.toLowerCase()));
-  }, [commandQuery, activeChallenge, editorCode, editorLang, compileStatus]);
+  }, [commandQuery, activeChallenge, editorCode, compileStatus]);
 
   const runCode = () => {
     playSound('click');
@@ -391,43 +392,49 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   };
 
-  const getHighlightedCode = (code: string, lang: string) => {
+  const getHighlightedCode = (code: string) => {
     let escaped = code
       .replace(/&/g, '&amp;')
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
-      
+
     // 1. Extract comments first to prevent matching keywords/strings inside them
     const comments: string[] = [];
-    const commentRegex = lang === 'python' ? /(#.*)/g : /(\/\/.*|\/\*[\s\S]*?\*\/)/g;
-    escaped = escaped.replace(commentRegex, (match) => {
+    escaped = escaped.replace(/(\/\/.*|\/\*[\s\S]*?\*\/)/g, (match) => {
       comments.push(match);
       return `__COMMENT_${comments.length - 1}__`;
     });
 
     // 2. Extract strings next to prevent matching keywords inside them
     const strings: string[] = [];
-    escaped = escaped.replace(/(['"`])([\s\S]*?)\1/g, (match) => {
+    escaped = escaped.replace(/(['"])([\s\S]*?)\1/g, (match) => {
       strings.push(match);
       return `__STRING_${strings.length - 1}__`;
     });
 
-    // 3. Highlight keywords and numbers safely
-    const jsKeywords = /\b(function|const|let|var|return|if|else|for|while|do|class|import|export|from|new|try|catch|finally|throw|typeof|instanceof)\b/g;
-    const pyKeywords = /\b(def|class|return|if|elif|else|for|in|while|try|except|finally|import|from|as|print|lambda|and|or|not|is|None|Self)\b/g;
-    const cppKeywords = /\b(class|public|private|protected|virtual|override|int|float|double|bool|char|void|vector|unordered_map|map|set|stack|queue|return|if|else|for|while)\b/g;
-    
-    const keywords = lang === 'python' ? pyKeywords : lang === 'cpp' ? cppKeywords : jsKeywords;
-    escaped = escaped.replace(keywords, '<span class="syntax-keyword">$1</span>');
+    // 3. Types + keywords in a single pass (avoids one pass's <span> markup
+    // being re-matched by the next, e.g. the literal word "class" inside
+    // class="syntax-type" attributes)
+    escaped = escaped.replace(/\b([A-Za-z_]\w*)\b/g, (word) => {
+      if (CPP_TYPES.has(word)) return `<span class="syntax-type">${word}</span>`;
+      if (CPP_KEYWORDS.has(word)) return `<span class="syntax-keyword">${word}</span>`;
+      return word;
+    });
+
+    // 4. Numbers
     escaped = escaped.replace(/\b(\d+)\b/g, '<span class="syntax-number">$1</span>');
 
-    // 4. Restore strings wrapped in span tags
+    // 5. Preprocessor directives (#include, #define, ...) — safe to wrap whole
+    // lines now since none of their tokens match the type/keyword sets above
+    escaped = escaped.replace(/^(\s*#\w+.*)$/gm, '<span class="syntax-preproc">$1</span>');
+
+    // 6. Restore strings wrapped in span tags
     escaped = escaped.replace(/__STRING_(\d+)__/g, (_, idx) => {
       const originalString = strings[parseInt(idx, 10)];
       return `<span class="syntax-string">${originalString}</span>`;
     });
 
-    // 5. Restore comments wrapped in span tags
+    // 7. Restore comments wrapped in span tags
     escaped = escaped.replace(/__COMMENT_(\d+)__/g, (_, idx) => {
       const originalComment = comments[parseInt(idx, 10)];
       return `<span class="syntax-comment">${originalComment}</span>`;
@@ -461,29 +468,64 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                 animate="visible"
                 variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
               >
-                {/* Top bar */}
+                {/* Headline */}
                 <motion.div
-                  className="flex items-center justify-between mb-6"
-                  variants={{ hidden: { opacity: 0, y: -10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
+                  className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-6"
+                  variants={{ hidden: { opacity: 0, y: -14 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16,1,0.3,1] } } }}
                 >
-                  <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-600 tracking-wider uppercase">
-                    <span>Binary Beats</span>
-                    <span className="text-zinc-800">/</span>
-                    <span className="text-zinc-400">Problem Set</span>
+                  <div>
+                    <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-600 tracking-wider uppercase mb-3">
+                      <span>Binary Beats</span>
+                      <span className="text-zinc-800">/</span>
+                      <span className="text-zinc-400">Problem Set</span>
+                    </div>
+                    <h1 className="text-4xl md:text-[46px] font-heading font-extrabold tracking-tight leading-[1.05] gradient-text-cool">
+                      Welcome back, akrist
+                    </h1>
+                    <p className="text-sm text-zinc-500 mt-2 font-sans">Ready to ship some C++ today?</p>
                   </div>
-                  <div className="flex items-center gap-4">
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                      <span className="relative flex h-2 w-2">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c3f73a] opacity-50" />
-                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c3f73a]" />
-                      </span>
-                      <span className="text-zinc-500">1,248 coders online</span>
+
+                  {/* Live compile terminal — decorative, reinforces the C++-only identity */}
+                  <div className="w-full lg:w-[380px] rounded-xl border border-white/[0.08] bg-[#0a0a0f] overflow-hidden shrink-0">
+                    <div className="h-8 flex items-center gap-1.5 px-3.5 border-b border-white/[0.06] bg-white/[0.015]">
+                      <span className="w-2 h-2 rounded-full bg-rose-500/40" />
+                      <span className="w-2 h-2 rounded-full bg-amber-500/40" />
+                      <span className="w-2 h-2 rounded-full bg-emerald-500/40" />
+                      <span className="ml-2 text-[9px] font-mono text-zinc-600 uppercase tracking-wider">bash</span>
                     </div>
-                    <div className="h-3 w-px bg-white/[0.08]" />
-                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
-                      <span className="text-zinc-600">Reset in</span>
-                      <span className="text-white font-bold tabular-nums">{countdown}</span>
+                    <div className="p-4 font-mono text-[11px] leading-relaxed min-h-[86px]">
+                      {HERO_TERMINAL_LINES.map((line, i) => {
+                        if (i > typedLine) return null;
+                        const isCurrent = i === typedLine;
+                        const isResult = line.startsWith('✓');
+                        const shown = isCurrent ? line.slice(0, typedChars) : line;
+                        return (
+                          <div key={i} className={isCurrent ? '' : 'opacity-40'}>
+                            {!isResult && <span className="text-[#35e8ff]">$ </span>}
+                            <span className={isResult ? 'text-[#c3f73a] font-bold' : 'text-zinc-300'}>{shown}</span>
+                            {isCurrent && <span className="inline-block w-[6px] h-[12px] bg-[#c3f73a] ml-0.5 -mb-[1px] animate-caret align-middle" />}
+                          </div>
+                        );
+                      })}
                     </div>
+                  </div>
+                </motion.div>
+
+                {/* Meta strip */}
+                <motion.div
+                  className="flex items-center justify-between mb-6 pt-5 border-t border-white/[0.06]"
+                  variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.4 } } }}
+                >
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c3f73a] opacity-50" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c3f73a]" />
+                    </span>
+                    <span className="text-zinc-500">1,248 coders online</span>
+                  </div>
+                  <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
+                    <span className="text-zinc-600">Daily reset in</span>
+                    <span className="text-white font-bold tabular-nums">{countdown}</span>
                   </div>
                 </motion.div>
 
@@ -497,7 +539,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   >
                     <div className="flex items-center gap-2 mb-3">
                       <motion.div
-                        className="w-8 h-8 rounded-lg bg-[#c3f73a]/10 border border-[#c3f73a]/20 flex items-center justify-center text-sm font-bold text-[#c3f73a] font-mono"
+                        className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/10 border border-[#c3f73a]/20 flex items-center justify-center text-sm font-bold text-[#c3f73a] font-mono"
                         whileHover={{ scale: 1.1 }}
                         transition={{ type: 'spring', stiffness: 400, damping: 15 }}
                       >A</motion.div>
@@ -509,13 +551,13 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     <div className="mb-4">
                       <div className="flex items-end gap-2 mb-1">
                         <motion.span
-                          className="text-4xl font-mono font-black text-white leading-none"
+                          className="text-5xl font-mono font-black text-white leading-none text-glow"
                           initial={{ opacity: 0, scale: 0.75 }}
                           animate={{ opacity: 1, scale: 1 }}
                           transition={{ delay: 0.2, duration: 0.5, type: 'spring', stiffness: 200, damping: 18 }}
                         >1,842</motion.span>
                         <motion.span
-                          className="text-sm font-mono text-[#c3f73a] mb-1"
+                          className="text-sm font-mono text-[#c3f73a] mb-1.5 font-bold"
                           initial={{ opacity: 0, x: -10 }}
                           animate={{ opacity: 1, x: 0 }}
                           transition={{ delay: 0.45, duration: 0.35 }}
@@ -590,7 +632,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     <div className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-4">Current Streak</div>
                     <div className="flex items-center gap-3 mb-4">
                       <motion.div
-                        className="text-4xl font-mono font-black text-white leading-none"
+                        className="text-4xl font-mono font-black text-white leading-none text-glow-acc2"
                         initial={{ scale: 0.4, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.3, type: 'spring', stiffness: 280, damping: 16 }}
@@ -649,18 +691,18 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                 {/* LEFT: Problem list */}
                 <div className="flex flex-col gap-4">
 
-                  {/* Daily challenge — compact, monochrome */}
+                  {/* Daily challenge — accent CTA */}
                   <div
                     onClick={() => { const s = PROBLEMS.find(p => p.id === 'p3'); if (s) openChallenge(s); }}
-                    className="flex items-center justify-between gap-4 rounded-lg border border-white/10 bg-white/[0.02] px-4 py-3 cursor-pointer hover:border-white/20 transition-all group"
+                    className="relative flex items-center justify-between gap-4 rounded-lg border border-[#c3f73a]/20 bg-gradient-to-r from-[#c3f73a]/[0.06] to-[#35e8ff]/[0.04] px-4 py-3 cursor-pointer hover:border-[#c3f73a]/40 transition-all group overflow-hidden"
                   >
-                    <div className="flex items-center gap-3 min-w-0">
-                      <span className="shrink-0 text-[9px] font-mono font-bold tracking-[0.15em] uppercase text-white border border-white/25 bg-white/5 px-1.5 py-0.5 rounded">Daily</span>
+                    <div className="flex items-center gap-3 min-w-0 relative z-10">
+                      <span className="shrink-0 text-[9px] font-mono font-bold tracking-[0.15em] uppercase text-black bg-[#c3f73a] px-1.5 py-0.5 rounded">Daily</span>
                       <span className="text-sm font-semibold text-white truncate">23. Merge K Sorted Lists</span>
                       <span className="shrink-0 text-[10px] font-mono text-zinc-300 border border-white/10 bg-white/[0.02] px-1.5 py-0.5 rounded uppercase tracking-wider">Hard</span>
                     </div>
-                    <div className="flex items-center gap-4 shrink-0">
-                      <span className="text-[10px] font-mono text-zinc-500 hidden md:block">+50 XP bonus</span>
+                    <div className="flex items-center gap-4 shrink-0 relative z-10">
+                      <span className="text-[10px] font-mono text-[#c3f73a] font-bold hidden md:block">+50 XP bonus</span>
                       <span className="text-[10px] font-mono text-zinc-400 group-hover:text-white transition-colors">Solve →</span>
                     </div>
                   </div>
@@ -905,25 +947,9 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                 {/* Environment Controls */}
                 <div className="flex items-center gap-3">
-                  {/* Language Selector in Drizzle pill style */}
-                  <div className="flex items-center gap-0.5 border border-white/[0.08] bg-[#111116] p-0.5 rounded-lg font-mono text-xs">
-                    {(['javascript', 'python', 'cpp'] as const).map(lang => (
-                      <button
-                        key={lang}
-                        onClick={() => {
-                          playSound('click');
-                          setEditorLang(lang);
-                        }}
-                        onMouseEnter={() => playSound('hover')}
-                        className={`px-3 h-7 rounded-md font-bold uppercase tracking-wider cursor-pointer transition-colors ${
-                          editorLang === lang 
-                            ? 'bg-[#c3f73a] text-black shadow-sm' 
-                            : 'text-zinc-500 hover:text-zinc-300'
-                        }`}
-                      >
-                        {lang === 'javascript' ? 'JS' : lang === 'python' ? 'PY' : 'C++'}
-                      </button>
-                    ))}
+                  <div className="flex items-center gap-1.5 h-8 px-3 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 font-mono text-[11px] font-bold uppercase tracking-wider text-[#c3f73a]">
+                    <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a]" />
+                    C++17
                   </div>
 
                   <button
@@ -1035,7 +1061,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     <div className="h-10 bg-white/[0.01] border-b border-white/[0.08] flex items-center justify-between px-5 select-none">
                       <div className="flex items-center gap-1 h-full">
                         {[
-                          { id: 'solution', label: `solution.${editorLang === 'javascript' ? 'js' : editorLang === 'python' ? 'py' : 'cpp'}` },
+                          { id: 'solution', label: 'solution.cpp' },
                           { id: 'readme', label: 'instructions.md' },
                           { id: 'tests', label: 'test-cases.json' }
                         ].map(tab => (
@@ -1085,7 +1111,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                             <pre 
                               ref={codeHighlightRef}
                               className="absolute inset-0 p-5 text-xs text-zinc-300 leading-relaxed overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
-                              dangerouslySetInnerHTML={{ __html: getHighlightedCode(editorCode, editorLang) }}
+                              dangerouslySetInnerHTML={{ __html: getHighlightedCode(editorCode) }}
                             />
 
                             {/* Textarea */}
@@ -1210,7 +1236,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         <span className="text-zinc-800">|</span>
                         <span>UTF-8</span>
                         <span className="text-zinc-800">|</span>
-                        <span className="uppercase text-white font-bold">{editorLang}</span>
+                        <span className="uppercase text-white font-bold">C++17</span>
                       </div>
                     </div>
                   </div>
@@ -1302,8 +1328,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         onClick={() => {
                           onShareSolution({
                             problemTitle: activeChallenge.title,
-                            code: editorCode,
-                            lang: editorLang
+                            code: editorCode
                           });
                         }}
                         onMouseEnter={() => playSound('hover')}

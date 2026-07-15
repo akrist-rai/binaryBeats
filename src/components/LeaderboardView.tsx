@@ -40,12 +40,12 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
       {/* Dynamic background lighting */}
       <div className="absolute top-[30%] left-[30%] w-[450px] h-[300px] rounded-full bg-mg-acc/5 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-[1000px] mx-auto px-8 py-10 flex flex-col gap-6 relative z-10">
+      <div className="w-full px-12 py-10 flex flex-col gap-6 relative z-10">
         
         {/* Header grid */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <h2 className="text-3xl font-bold font-bebas tracking-wider uppercase mb-1">
+            <h2 className="text-xl font-bold font-mono tracking-widest uppercase mb-1">
               Developer Rankings
             </h2>
             <p className="text-xs text-zinc-500 font-mono uppercase tracking-wider">
@@ -68,7 +68,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
               value={search} 
               onChange={e => setSearch(e.target.value)}
               placeholder="Search user..."
-              className="w-full h-10 pl-9 pr-3 rounded-lg text-xs text-white bg-zinc-950/80 placeholder-zinc-600 focus:outline-none transition-colors border border-zinc-900 focus:border-zinc-700 shadow-inner"
+              className="w-full h-10 pl-9 pr-3 rounded text-xs text-white bg-zinc-950/80 placeholder-zinc-600 focus:outline-none transition-colors border border-zinc-900 focus:border-zinc-700 shadow-inner"
             />
           </div>
         </div>
@@ -76,7 +76,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
         {/* Main layout */}
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 items-start">
           {/* Leaderboard Table (Col Span 2) */}
-          <div className="lg:col-span-2 rounded-2xl overflow-hidden glass-panel border border-zinc-900 shadow-xl flex flex-col">
+          <div className="lg:col-span-2 rounded overflow-hidden glass-panel border border-zinc-900 shadow-xl flex flex-col">
             {/* Table Header */}
             <div className="grid grid-cols-[60px_1fr_90px_80px_70px] items-center h-12 px-6 text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900/60 bg-zinc-950/40 select-none">
               <span>Rank</span>
@@ -173,7 +173,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
             <motion.div 
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
-              className="rounded-2xl glass-panel p-5"
+              className="rounded glass-panel p-5"
             >
               <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 border-b border-zinc-900 pb-2">
                 Your Arena Status
@@ -217,7 +217,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.1 }}
-              className="rounded-2xl glass-panel p-5 text-[10px] text-zinc-500"
+              className="rounded glass-panel p-5 text-[10px] text-zinc-500"
             >
               <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 border-b border-zinc-900 pb-2">
                 Arena Tier Guide

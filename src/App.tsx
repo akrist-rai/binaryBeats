@@ -6,14 +6,6 @@ import { LeaderboardView } from "./components/LeaderboardView";
 import { CommunityView } from "./components/CommunityView";
 import { synthSound } from "./utils/audio";
 
-const THEMES: Record<string, string> = {
-  crimson: "#ff2a38",
-  cyber: "#00f5ff",
-  matrix: "#00ff66",
-  volt: "#ccff00",
-  violet: "#bd00ff",
-};
-
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [xp, setXp] = useState(() => {
@@ -25,20 +17,15 @@ export default function App() {
     const saved = localStorage.getItem("bb_sound");
     return saved !== "false";
   });
-  const [theme, setTheme] = useState(() => {
-    return localStorage.getItem("bb_theme") || "crimson";
-  });
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string; lang: string } | null>(null);
 
-  // Sync theme accent color with HTML styles
+  // Set accent color
   useEffect(() => {
     if (typeof document !== "undefined") {
-      const hex = THEMES[theme] || THEMES.crimson;
-      document.documentElement.style.setProperty("--mg-acc", hex);
+      document.documentElement.style.setProperty("--mg-acc", "#7c5cfc");
     }
-  }, [theme]);
+  }, []);
 
-  // Update XP dynamically
   const handleAddXp = (amount: number) => {
     setXp((prev) => {
       const next = prev + amount;
@@ -47,7 +34,6 @@ export default function App() {
     });
   };
 
-  // Audio helper with mute functionality
   const playSound = (type: "click" | "hover") => {
     if (!soundEnabled) return;
     if (type === "click") synthSound.click();
@@ -62,15 +48,9 @@ export default function App() {
     });
   };
 
-  const handleThemeChange = (newTheme: string) => {
-    playSound("click");
-    setTheme(newTheme);
-    localStorage.setItem("bb_theme", newTheme);
-  };
-
   const handleLogout = () => {
     playSound("click");
-    alert("Logout initiated. Returning to control shell...");
+    alert("Logging out...");
   };
 
   const handleTabChange = (tab: string) => {
@@ -84,8 +64,7 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#030308] text-zinc-100 flex flex-col font-sans selection:bg-mg-acc/30 selection:text-white">
-      {/* Navbar component */}
+    <div className="w-full min-h-screen bg-[#0c0c10] text-zinc-100 flex flex-col font-sans">
       <Navbar
         activeTab={activeTab}
         xp={xp}
@@ -93,8 +72,6 @@ export default function App() {
         onNavigate={handleTabChange}
         onLogout={handleLogout}
         onHoverSound={() => playSound("hover")}
-        theme={theme}
-        onThemeChange={handleThemeChange}
         soundEnabled={soundEnabled}
         onToggleSound={handleToggleSound}
       />
@@ -131,4 +108,3 @@ export default function App() {
     </div>
   );
 }
-

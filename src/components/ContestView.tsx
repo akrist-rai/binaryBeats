@@ -56,13 +56,13 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
       {/* Decorative ambient neon background glow */}
       <div className="absolute top-[20%] left-[50%] -translate-x-1/2 w-[500px] h-[300px] rounded-full bg-mg-acc/5 blur-[120px] pointer-events-none" />
 
-      <div className="max-w-[1000px] mx-auto px-8 py-10 flex flex-col gap-8 relative z-10">
+      <div className="w-full px-12 py-10 flex flex-col gap-8 relative z-10">
         
         {/* Banner with Tech styling */}
         <motion.div 
           initial={{ opacity: 0, y: 15 }}
           animate={{ opacity: 1, y: 0 }}
-          className="relative rounded-2xl overflow-hidden glass-panel p-8 tech-corners"
+          className="relative rounded overflow-hidden glass-panel p-8 tech-corners"
         >
           <div className="flex flex-col md:flex-row md:items-center justify-between gap-6">
             <div className="flex flex-col">
@@ -72,7 +72,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
                 </span>
                 <span className="text-zinc-500 text-[11px] uppercase tracking-wider">Weekly Speed Match</span>
               </div>
-              <h2 className="text-3xl font-bold font-bebas tracking-wider uppercase mb-1">
+              <h2 className="text-xl font-bold font-mono tracking-widest uppercase mb-1">
                 Binary Blitz #04: The Redundancy Run
               </h2>
               <p className="text-sm text-zinc-400 font-light max-w-xl">
@@ -81,7 +81,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
             </div>
 
             {/* Countdown digital display */}
-            <div className="flex flex-col items-center justify-center bg-zinc-950/80 border border-zinc-900 px-6 py-4 rounded-xl min-w-[200px] shadow-inner font-mono text-center">
+            <div className="flex flex-col items-center justify-center bg-zinc-950/80 border border-zinc-900 px-6 py-4 rounded min-w-[200px] shadow-inner font-mono text-center">
               <span className="text-[10px] text-zinc-500 uppercase tracking-widest mb-1.5 font-bold">Starts In</span>
               <div className="flex items-center gap-1.5 text-2xl font-bold text-white tracking-widest font-mono">
                 <span className="text-glow">{countdown.hours}</span>
@@ -104,7 +104,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}
-              className="rounded-2xl glass-panel p-6"
+              className="rounded glass-panel p-6"
             >
               <h3 className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 border-b border-zinc-900 pb-2">
                 Arena Parameters
@@ -117,7 +117,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
                   { label: 'Challenges', value: '4 Questions' },
                   { label: 'Registered', value: registered ? '1,430 Coders' : '1,429 Coders' }
                 ].map((item, idx) => (
-                  <div key={idx} className="bg-zinc-950/50 border border-zinc-900/60 p-3.5 rounded-xl text-center">
+                  <div key={idx} className="bg-zinc-950/50 border border-zinc-900/60 p-3.5 rounded text-center">
                     <span className="text-[9px] text-zinc-500 uppercase block mb-1">{item.label}</span>
                     <span className="text-xs font-bold text-zinc-200 block">{item.value}</span>
                   </div>
@@ -125,7 +125,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
               </div>
 
               {/* Registration and Actions */}
-              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded-xl border border-zinc-900 bg-zinc-950/40">
+              <div className="flex flex-col sm:flex-row items-center justify-between gap-4 p-4 rounded border border-zinc-900 bg-zinc-950/40">
                 <div>
                   <span className="text-[11px] font-mono text-zinc-400 block font-semibold">
                     {registered ? '✓ ACCESS GRANTED' : 'RESERVE COMPILING TICKET'}
@@ -141,7 +141,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
                       key="registered"
                       initial={{ opacity: 0, scale: 0.95 }}
                       animate={{ opacity: 1, scale: 1 }}
-                      className="px-5 py-2 rounded-lg bg-zinc-900 border border-zinc-800 text-glow text-zinc-200 text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(255,255,255,0.02)]"
+                      className="px-5 py-2 rounded bg-zinc-900 border border-zinc-800 text-glow text-zinc-200 text-xs font-mono font-bold uppercase tracking-wider shadow-[0_0_10px_rgba(255,255,255,0.02)]"
                     >
                       Registered ⚡
                     </motion.div>
@@ -152,7 +152,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
                       whileTap={{ scale: 0.97 }}
                       onClick={handleRegister}
                       onMouseEnter={() => playSound('hover')}
-                      className="px-6 py-2.5 rounded-lg bg-mg-acc text-black font-mono font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-[0_0_15px_var(--mg-acc)] cursor-pointer"
+                      className="px-6 py-2.5 rounded bg-mg-acc text-black font-mono font-bold text-xs uppercase tracking-wider hover:brightness-110 shadow-[0_0_15px_var(--mg-acc)] cursor-pointer"
                     >
                       Register Now
                     </motion.button>
@@ -166,7 +166,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2 }}
-              className="rounded-2xl glass-panel overflow-hidden"
+              className="rounded glass-panel overflow-hidden"
             >
               <div className="p-6 pb-2">
                 <h3 className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest">
@@ -210,7 +210,7 @@ export const ContestView: React.FC<ContestProps> = ({ playSound, onAddXp }) => {
               initial={{ opacity: 0, x: 15 }}
               animate={{ opacity: 1, x: 0 }}
               transition={{ delay: 0.3 }}
-              className="rounded-2xl glass-panel p-6 font-mono"
+              className="rounded glass-panel p-6 font-mono"
             >
               <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-4 border-b border-zinc-900 pb-2">
                 Arena Regulations

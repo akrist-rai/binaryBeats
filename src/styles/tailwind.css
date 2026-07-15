@@ -1,174 +1,69 @@
-@import url('https://fonts.googleapis.com/css2?family=Share+Tech+Mono&family=Bebas+Neue&family=Outfit:wght@300;400;600;800&family=Inter:wght@300;400;500;600;700;800&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
-  --font-mono: 'Share Tech Mono', monospace;
-  --font-disp: 'Outfit', sans-serif;
-  --font-sans: 'Inter', sans-serif;
-  --font-bebas: 'Bebas Neue', sans-serif;
+  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
+  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
 
-  --color-void: #030308;
-  --color-void2: #0a0a14;
-  --color-red: #ff2a38;
-  --color-lime: #ccff00;
-  --color-crt: #00ff55;
-  --color-paper: #f5f2eb;
-  --color-muted: #8a8aaa;
-  --color-dim: #151525;
+  --color-mg-acc: var(--mg-acc, #7c5cfc);
 
-  --color-mg-acc: var(--mg-acc, #ff2a38);
-
-  /* Background image patterns */
-  --background-image-mg-tone: radial-gradient(circle, rgba(255, 255, 255, .08) 1px, transparent 1px);
-  --background-image-mg-tone-fine: radial-gradient(circle, rgba(255, 255, 255, .06) 0.8px, transparent 0.8px);
-  --background-image-mg-tone-coarse: radial-gradient(circle, rgba(255, 255, 255, .12) 1.5px, transparent 1.5px);
-  --background-image-mg-tone-lines: repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255, 255, 255, .04) 4px, rgba(255, 255, 255, .04) 5px);
-  --background-image-mg-tone-acc: radial-gradient(circle, color-mix(in srgb, var(--mg-acc, #ff2a38) 25%, transparent) 1px, transparent 1px);
-  --background-image-mg-speed: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 4.2deg, rgba(255, 255, 255, .025) 4.2deg, rgba(255, 255, 255, .025) 4.8deg);
-  --background-image-mg-speed-acc: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 4.2deg, color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent) 4.2deg, color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent) 4.8deg);
-  --background-image-mg-speed-h: repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255, 255, 255, .018) 18px, rgba(255, 255, 255, .018) 19px, transparent 19px, transparent 36px);
-  --background-image-scanlines: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
-
-  /* Animations & Keyframes */
+  /* Animations */
   --animate-mg-spin: mgSpin 18s linear infinite;
-  --animate-mg-burst: mgBurst .4s ease-out forwards;
-  --animate-mg-flash: mgFlash .35s ease-out forwards;
-  --animate-ticker: tickerScroll 55s linear infinite;
 
   @keyframes mgSpin {
-    to {
-      transform: rotate(360deg);
-    }
-  }
-
-  @keyframes mgBurst {
-    0% {
-      opacity: .9;
-      transform: scale(.6) rotate(0deg);
-    }
-
-    60% {
-      opacity: .4;
-      transform: scale(1.1) rotate(18deg);
-    }
-
-    100% {
-      opacity: 0;
-      transform: scale(1.3) rotate(28deg);
-    }
-  }
-
-  @keyframes mgFlash {
-    0% {
-      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .9);
-    }
-
-    100% {
-      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0);
-    }
-  }
-
-  @keyframes tickerScroll {
-    0% {
-      transform: translateX(0);
-    }
-
-    100% {
-      transform: translateX(-50%);
-    }
+    to { transform: rotate(360deg); }
   }
 }
 
-/* Base resets & layout rules */
+/* Base resets */
 @layer base {
   html {
-    font-size: 20px;
+    font-size: 16px;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
 
-  html,
-  body,
-  #app {
-    background-color: #030308;
-    color: #f5f2eb;
+  html, body, #app {
+    background-color: #0c0c10;
+    color: #e4e4e7;
     margin: 0;
     padding: 0;
     min-height: 100vh;
     width: 100%;
-    font-family: 'Inter', sans-serif;
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
     overflow-x: hidden;
+    letter-spacing: -0.01em;
+  }
+
+  ::selection {
+    background: rgba(124, 92, 252, 0.3);
+    color: white;
   }
 }
 
-/* Custom premium styling utilities */
+/* Minimal glass panel */
 .glass-panel {
-  background: rgba(8, 8, 16, 0.6);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
+  background: rgba(18, 18, 24, 0.7);
+  backdrop-filter: blur(20px);
+  -webkit-backdrop-filter: blur(20px);
+  border: 1px solid rgba(255, 255, 255, 0.06);
 }
 
-.glass-panel-hover:hover {
-  border-color: color-mix(in srgb, var(--mg-acc, #ff2a38) 40%, transparent);
-  box-shadow: 0 0 20px color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent);
-}
-
-.glow-hover:hover {
-  box-shadow: 0 0 15px color-mix(in srgb, var(--mg-acc, #ff2a38) 20%, transparent);
-}
-
+/* Text glow — subtle */
 .text-glow {
-  text-shadow: 0 0 8px color-mix(in srgb, var(--mg-acc, #ff2a38) 50%, transparent);
+  text-shadow: 0 0 12px rgba(124, 92, 252, 0.4);
 }
 
-/* Tech corner indicator decorations */
-.tech-corners::before {
-  content: '';
-  position: absolute;
-  top: 4px;
-  left: 4px;
-  width: 8px;
-  height: 8px;
-  border-top: 1.5px solid var(--mg-acc, #ff2a38);
-  border-left: 1.5px solid var(--mg-acc, #ff2a38);
-}
+/* Syntax Highlighting */
+.syntax-keyword { color: #7c5cfc; font-weight: 600; }
+.syntax-string { color: #34d399; }
+.syntax-number { color: #fbbf24; }
+.syntax-comment { color: #52525b; font-style: italic; }
+.syntax-function { color: #60a5fa; }
+.syntax-type { color: #a78bfa; }
+.syntax-builtin { color: #f472b6; }
 
-.tech-corners::after {
-  content: '';
-  position: absolute;
-  bottom: 4px;
-  right: 4px;
-  width: 8px;
-  height: 8px;
-  border-bottom: 1.5px solid var(--mg-acc, #ff2a38);
-  border-right: 1.5px solid var(--mg-acc, #ff2a38);
-}
-
-/* Syntax Highlighting Styles */
-.syntax-keyword {
-  color: var(--mg-acc, #ff2a38);
-  font-weight: 600;
-}
-.syntax-string {
-  color: #10b981; /* Emerald green */
-}
-.syntax-number {
-  color: #f59e0b; /* Amber */
-}
-.syntax-comment {
-  color: #71717a; /* Zinc 500 */
-  font-style: italic;
-}
-.syntax-function {
-  color: #3b82f6; /* Blue */
-}
-.syntax-type {
-  color: #a855f7; /* Purple */
-}
-.syntax-builtin {
-  color: #ec4899; /* Pink */
-}
-
-/* Editor Scrollbar styling */
+/* Scrollbar */
 .custom-scrollbar::-webkit-scrollbar {
   width: 6px;
   height: 6px;
@@ -177,48 +72,30 @@
   background: transparent;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb {
-  background: rgba(255, 255, 255, 0.1);
+  background: rgba(255, 255, 255, 0.08);
   border-radius: 3px;
 }
 .custom-scrollbar::-webkit-scrollbar-thumb:hover {
-  background: rgba(255, 255, 255, 0.2);
+  background: rgba(255, 255, 255, 0.15);
 }
 
-/* Hide scrollbar defaults */
-.no-scrollbar::-webkit-scrollbar {
-  display: none;
-}
-.no-scrollbar {
-  -ms-overflow-style: none;
-  scrollbar-width: none;
-}
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
 
-/* Autocomplete Floating container animation */
+/* Autocomplete popup */
 @keyframes popup {
-  from {
-    opacity: 0;
-    transform: translateY(4px) scale(0.98);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0) scale(1);
-  }
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
 }
 .animate-popup {
-  animation: popup 0.12s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: popup 0.15s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-/* Activity Ticker Feed animations */
+/* Activity feed animation */
 @keyframes slideInUp {
-  from {
-    opacity: 0;
-    transform: translateY(8px);
-  }
-  to {
-    opacity: 1;
-    transform: translateY(0);
-  }
+  from { opacity: 0; transform: translateY(6px); }
+  to { opacity: 1; transform: translateY(0); }
 }
 .animate-feed-item {
-  animation: slideInUp 0.3s cubic-bezier(0.16, 1, 0.3, 1) forwards;
+  animation: slideInUp 0.25s cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }

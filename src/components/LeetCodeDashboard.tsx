@@ -102,21 +102,15 @@ const PROBLEMS: Problem[] = [
 ];
 
 const DC = {
-  Easy: { text: 'text-zinc-400', bg: 'bg-zinc-900', border: 'border-zinc-800' },
-  Medium: { text: 'text-zinc-200', bg: 'bg-zinc-800', border: 'border-zinc-700' },
-  Hard: { text: 'text-white font-bold', bg: 'bg-zinc-700', border: 'border-zinc-600' }
+  Easy: { text: 'text-emerald-400', bg: 'bg-emerald-500/10', border: 'border-emerald-500/20' },
+  Medium: { text: 'text-amber-400', bg: 'bg-amber-500/10', border: 'border-amber-500/20' },
+  Hard: { text: 'text-rose-400 font-semibold', bg: 'bg-rose-500/10', border: 'border-rose-500/20' }
 };
 
-// Theme colored heatmap grids
-const themeHeatColors: Record<string, string[]> = {
-  crimson: ['#121214', '#281214', '#5f181d', '#ff2a38'],
-  cyber: ['#121214', '#0c2227', '#0c6675', '#00f5ff'],
-  matrix: ['#121214', '#0d2415', '#166e2c', '#00ff66'],
-  volt: ['#121214', '#21240c', '#606e16', '#ccff00'],
-  violet: ['#121214', '#1e0c24', '#5d166e', '#bd00ff']
-};
+// Static purple theme heatmap colors
+const purpleHeatColors = ['#18181b', '#1e1b4b', '#4338ca', '#7c5cfc'];
 
-// Generate fake activity logs for heatmap tooltips
+// Generate activity logs for heatmap
 const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => {
   const r = Math.sin(i * 0.3) * 0.5 + Math.random();
   let val = 0;
@@ -132,7 +126,7 @@ const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => {
   };
 });
 
-// Autocomplete suggestions based on keywords
+// Autocomplete words
 const AUTOCOMPLETE_WORDS = [
   'nums', 'target', 'map', 'length', 'push', 'pop', 'isValid', 
   'stack', 'Solution', 'result', 'return', 'const', 'function', 
@@ -140,9 +134,6 @@ const AUTOCOMPLETE_WORDS = [
 ];
 
 export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props) => {
-  const activeTheme = localStorage.getItem('bb_theme') || 'crimson';
-  const heatColors = themeHeatColors[activeTheme] || themeHeatColors.crimson;
-
   const [filter, setFilter] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
@@ -160,8 +151,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
   const [terminalLogs, setTerminalLogs] = useState<string[]>([]);
   const [compileStatus, setCompileStatus] = useState<'idle' | 'running' | 'success' | 'claimed'>('idle');
   
-  // Workspace specific layout tabs
-  // 'solution': editor panel, 'readme': full-screen problem details, 'tests': custom test case suite input
   const [workspaceTab, setWorkspaceTab] = useState<'solution' | 'readme' | 'tests'>('solution');
   const [consoleTab, setConsoleTab] = useState<'output' | 'cases' | 'hardware'>('output');
 
@@ -193,7 +182,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
 
-  // Sync scroll between textarea, gutter, and highlight pre
   const handleEditorScroll = () => {
     if (textareaRef.current) {
       const { scrollTop, scrollLeft } = textareaRef.current;
@@ -205,7 +193,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   };
 
-  // Keyboard shortcut listener (Ctrl+P / Cmd+P for Command Palette)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if ((e.ctrlKey || e.metaKey) && e.key === 'p') {
@@ -251,7 +238,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   }, [editorLang, activeChallenge]);
 
-  // Command palette commands
   const commands = useMemo(() => {
     const list = [
       { name: 'Run Local Code Tests', desc: 'Simulate parameters locally', action: () => runCode() },
@@ -333,7 +319,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     setCompileStatus('claimed');
   };
 
-  // Cursor coordinates parsing
   const updateCursorPosition = (e: React.SyntheticEvent<HTMLTextAreaElement>) => {
     const textarea = e.currentTarget;
     const textBeforeCursor = textarea.value.substring(0, textarea.selectionStart);
@@ -343,7 +328,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
       col: lines[lines.length - 1].length + 1
     });
 
-    // Simple Autocomplete lookup
     const lastWord = textBeforeCursor.match(/\b[a-zA-Z]{1,15}$/);
     if (lastWord) {
       const matchWord = lastWord[0].toLowerCase();
@@ -354,7 +338,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
         setSuggestions(filtered);
         setActiveSuggestionIdx(0);
         setShowSuggestions(true);
-        // Estimate position based on coordinates
         setSuggestionMenuPos({
           top: Math.min(220, lines.length * 18 + 20),
           left: Math.min(300, (lines[lines.length - 1].length) * 8 + 40)
@@ -367,7 +350,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   };
 
-  // Autocomplete key hooks (Arrow keys to navigate, Tab/Enter to autocomplete, Esc to close)
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (showSuggestions) {
       if (e.key === 'ArrowDown') {
@@ -402,7 +384,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
       setEditorCode(newCode);
       setShowSuggestions(false);
       
-      // Reset cursor position
       setTimeout(() => {
         textarea.focus();
         textarea.selectionStart = textarea.selectionEnd = startIdx + word.length;
@@ -410,7 +391,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   };
 
-  // Syntax highlighting parser
   const getHighlightedCode = (code: string, lang: string) => {
     let escaped = code
       .replace(/&/g, '&amp;')
@@ -424,22 +404,20 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     const keywords = lang === 'python' ? pyKeywords : lang === 'cpp' ? cppKeywords : jsKeywords;
     escaped = escaped.replace(keywords, '<span class="syntax-keyword">$1</span>');
     
-    // strings
     escaped = escaped.replace(/(['"`])(.*?)\1/g, '<span class="syntax-string">$1$2$1</span>');
-    // numbers
     escaped = escaped.replace(/\b(\d+)\b/g, '<span class="syntax-number">$1</span>');
-    // comments
     escaped = escaped.replace(/(\/\/.*|\/\*[\s\S]*?\*\/|#.*)/g, '<span class="syntax-comment">$1</span>');
     
     return escaped;
   };
 
   return (
-    <div style={{ background: '#000000' }} className="w-full min-h-[calc(100vh-64px)] text-white relative">
-      {/* Absolute glowing gradient background */}
-      <div className="absolute top-[10%] left-[20%] w-[600px] h-[300px] rounded-full bg-mg-acc/5 blur-[150px] pointer-events-none" />
+    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 relative flex flex-col bg-[#0c0c10]">
+      {/* Soft ambient glow */}
+      <div className="absolute top-[5%] left-[15%] w-[500px] h-[300px] rounded-full bg-mg-acc/[0.04] blur-[150px] pointer-events-none" />
 
-      <div className="max-w-[1250px] mx-auto px-8 py-8 relative z-10">
+      {/* Main Container */}
+      <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 relative z-10 flex-1 flex flex-col gap-8">
         <AnimatePresence mode="wait">
           {!activeChallenge ? (
             /* Dashboard Home Panel */
@@ -448,9 +426,9 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8"
+              className="grid grid-cols-1 lg:grid-cols-[1fr_340px] gap-10 items-start"
             >
-              {/* ═══ LEFT COLUMN ═══ */}
+              {/* ═══ LEFT COLUMN (Full Width Utilization) ═══ */}
               <div className="flex flex-col gap-6">
                 
                 {/* Spotlight Banner - Premium Glass design */}
@@ -458,23 +436,22 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   initial={{ opacity: 0, y: 12 }}
                   animate={{ opacity: 1, y: 0 }}
                   transition={{ duration: 0.4 }}
-                  className="rounded-2xl relative glass-panel p-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-6 hover:border-zinc-800 transition-colors shadow-2xl overflow-hidden group"
+                  className="rounded-xl border border-white/[0.06] bg-white/[0.03] p-6 flex items-center justify-between gap-6 hover:border-white/[0.1] transition-colors overflow-hidden group relative"
                 >
-                  <div className="absolute top-0 right-0 w-[200px] h-full bg-gradient-to-r from-transparent via-white/[0.03] to-transparent -translate-x-[200px] group-hover:translate-x-[400px] transition-transform duration-1000 ease-out" />
                   <div>
-                    <div className="flex items-center gap-2 mb-2">
-                      <span className="text-[10px] font-mono uppercase tracking-widest px-2 py-0.5 rounded bg-mg-acc text-black font-bold shadow-[0_0_8px_var(--mg-acc)]">
-                        Daily Spotlight
+                    <div className="flex items-center gap-3 mb-2">
+                      <span className="text-xs font-semibold px-2.5 py-1 rounded-md bg-mg-acc/15 text-mg-acc">
+                        Daily Challenge
                       </span>
-                      <span className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase font-semibold">
-                        ⏱ {countdown} Remaining
+                      <span className="text-xs text-zinc-500">
+                        {countdown} remaining
                       </span>
                     </div>
-                    <h3 className="text-xl font-bold text-white font-mono uppercase tracking-wide">
+                    <h3 className="text-lg font-semibold text-white">
                       Merge K Sorted Lists
                     </h3>
-                    <p className="text-xs text-zinc-400 mt-1 font-light max-w-[450px]">
-                      Synthesize multiple arrays into one sorted sequence. Spotlight task guarantees a bonus +50 XP!
+                    <p className="text-sm text-zinc-400 mt-1 leading-relaxed max-w-[500px]">
+                      Merge multiple sorted arrays into one. Bonus +50 XP for daily completion.
                     </p>
                   </div>
                   
@@ -484,9 +461,9 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       if (spotlight) openChallenge(spotlight);
                     }}
                     onMouseEnter={() => playSound('hover')}
-                    className="shrink-0 px-6 py-2.5 rounded-lg text-xs font-mono uppercase tracking-wider font-bold cursor-pointer border border-zinc-800 bg-zinc-950/80 hover:bg-white hover:text-black hover:border-white transition-all duration-300 shadow-md"
+                    className="shrink-0 px-5 py-2.5 rounded-lg bg-mg-acc hover:brightness-110 text-white text-sm font-medium cursor-pointer transition-all shadow-[0_0_20px_rgba(124,92,252,0.2)]"
                   >
-                    Solve Challenge
+                    Solve Now
                   </button>
                 </motion.div>
 
@@ -495,31 +472,31 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   initial={{ opacity: 0 }} 
                   animate={{ opacity: 1 }} 
                   transition={{ delay: 0.15 }}
-                  className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center font-mono"
+                  className="flex gap-4 items-center"
                 >
                   {/* Search Input */}
                   <div className="relative flex-1">
-                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                    <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                       <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                     </svg>
                     <input 
                       value={search} 
                       onChange={e => setSearch(e.target.value)}
                       placeholder="Search problems..."
-                      className="w-full h-10 pl-10 pr-3 rounded-lg text-[13px] text-white bg-zinc-950/80 placeholder-zinc-600 focus:outline-none transition-colors border border-zinc-900 focus:border-zinc-700 shadow-inner"
+                      className="w-full h-10 pl-10 pr-4 rounded-lg text-sm text-white bg-white/[0.04] placeholder-zinc-600 focus:outline-none transition-colors border border-white/[0.06] focus:border-white/[0.12]"
                     />
                   </div>
 
                   {/* Filter Status Reset Badge */}
                   {selectedTag && (
-                    <div className="flex items-center gap-1.5 px-3 py-1 bg-mg-acc/10 border border-mg-acc/20 rounded-lg text-[10px] text-zinc-300">
-                      <span>CATEGORY: {selectedTag}</span>
+                    <div className="flex items-center gap-2 px-3 py-1.5 bg-mg-acc/10 border border-mg-acc/20 rounded-lg text-xs text-zinc-300">
+                      <span>{selectedTag}</span>
                       <button 
                         onClick={() => {
                           playSound('click');
                           setSelectedTag(null);
                         }}
-                        className="text-mg-acc hover:text-white cursor-pointer ml-1 font-bold font-sans text-xs"
+                        className="text-mg-acc hover:text-white cursor-pointer font-bold text-sm leading-none"
                       >
                         ×
                       </button>
@@ -527,7 +504,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   )}
 
                   {/* Difficulty Selector Tabs */}
-                  <div className="flex rounded-lg overflow-hidden border border-zinc-900 bg-zinc-950/80 p-0.5 shadow-inner">
+                  <div className="flex rounded-lg overflow-hidden border border-white/[0.06] bg-white/[0.03] p-0.5">
                     {(['All', 'Easy', 'Medium', 'Hard'] as const).map(d => {
                       const isActive = filter === d;
                       return (
@@ -538,14 +515,13 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                             setFilter(d);
                           }}
                           onMouseEnter={() => playSound('hover')}
-                          className="px-4 h-8 rounded text-[11px] font-semibold tracking-wider cursor-pointer uppercase transition-colors relative"
-                          style={{ color: isActive ? '#ffffff' : '#71717a' }}
+                          className={`px-4 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors relative ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
                         >
                           {isActive && (
                             <motion.span
                               layoutId="activeFilterBg"
-                              className="absolute inset-0 bg-zinc-900 border border-zinc-800 rounded shadow-md"
-                              transition={{ type: 'spring', stiffness: 350, damping: 28 }}
+                              className="absolute inset-0 bg-white/[0.08] rounded-md"
+                              transition={{ type: 'spring', stiffness: 400, damping: 30 }}
                             />
                           )}
                           <span className="relative z-10">{d}</span>
@@ -555,24 +531,24 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   </div>
                 </motion.div>
 
-                {/* Problem List */}
+                {/* Problem List (Stretched full screen width) */}
                 <motion.div 
                   initial={{ opacity: 0, y: 8 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ delay: 0.2 }}
-                  className="rounded-2xl overflow-hidden border border-zinc-900 bg-zinc-950/30 backdrop-blur-sm shadow-xl"
+                  className="rounded-xl overflow-hidden border border-white/[0.06] bg-white/[0.02]"
                 >
                   {/* Table Header */}
-                  <div className="grid grid-cols-[50px_1fr_110px_80px_100px] items-center h-12 px-6 text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900 bg-zinc-950/60 select-none">
+                  <div className="grid grid-cols-[44px_1fr_100px_80px_90px] items-center h-11 px-6 text-xs font-medium text-zinc-500 border-b border-white/[0.06] select-none">
                     <span></span>
                     <span>Title</span>
                     <span className="text-center">Difficulty</span>
                     <span className="text-center">Rate</span>
-                    <span className="text-right">Reward</span>
+                    <span className="text-right">XP</span>
                   </div>
 
                   {/* Table Rows */}
-                  <div className="flex flex-col divide-y divide-zinc-900/40">
+                  <div className="flex flex-col divide-y divide-white/[0.04]">
                     <AnimatePresence mode="popLayout">
                       {visible.length === 0 ? (
                         <motion.div 
@@ -580,7 +556,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           initial={{ opacity: 0 }} 
                           animate={{ opacity: 1 }} 
                           exit={{ opacity: 0 }}
-                          className="py-16 text-center text-sm text-zinc-500 font-mono"
+                          className="py-16 text-center text-sm text-zinc-500"
                         >
                           No problems found
                         </motion.div>
@@ -598,27 +574,27 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                               transition={{ delay: i * 0.04 }}
                               onClick={() => openChallenge(p)}
                               onMouseEnter={() => playSound('hover')}
-                              className="grid grid-cols-[50px_1fr_110px_80px_100px] items-center px-6 py-4 cursor-pointer transition-colors hover:bg-white/[0.015] group"
+                              className="grid grid-cols-[44px_1fr_100px_80px_90px] items-center px-6 py-4 cursor-pointer transition-colors hover:bg-white/[0.03] group"
                             >
-                              {/* Status circle */}
+                              {/* Status */}
                               <div className="flex justify-center">
                                 {isSolved ? (
-                                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-mg-acc text-black text-[9px] font-black shadow-[0_0_6px_var(--mg-acc)]">
+                                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-emerald-500 text-white text-xs">
                                     ✓
                                   </div>
                                 ) : (
-                                  <div className="w-5 h-5 rounded-full border border-zinc-800 bg-transparent group-hover:border-zinc-700 transition-colors" />
+                                  <div className="w-5 h-5 rounded-full border-2 border-zinc-700 group-hover:border-zinc-500 transition-colors" />
                                 )}
                               </div>
 
                               {/* Title & Tags */}
-                              <div className="min-w-0 pl-1 font-mono">
-                                <span className="text-[13px] font-semibold text-zinc-300 group-hover:text-white transition-colors">
-                                  {String(p.num).padStart(3, '0')}. {p.title}
+                              <div className="min-w-0 pl-2">
+                                <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
+                                  {p.num}. {p.title}
                                 </span>
-                                <div className="flex gap-1.5 mt-1.5">
+                                <div className="flex gap-1.5 mt-1">
                                   {p.tags.map(t => (
-                                    <span key={t} className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded text-zinc-500 bg-zinc-950 border border-zinc-900">
+                                    <span key={t} className="text-xs px-2 py-0.5 rounded-md text-zinc-500 bg-white/[0.04]">
                                       {t}
                                     </span>
                                   ))}
@@ -626,18 +602,18 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                               </div>
 
                               {/* Difficulty */}
-                              <div className="text-center font-mono uppercase tracking-wider text-[10px]">
-                                <span className={`px-2 py-0.5 rounded border ${theme.text} ${theme.bg} ${theme.border} shadow-sm`}>
+                              <div className="text-center">
+                                <span className={`text-xs px-2.5 py-1 rounded-md border ${theme.text} ${theme.bg} ${theme.border}`}>
                                   {p.diff}
                                 </span>
                               </div>
 
                               {/* Acceptance */}
-                              <div className="text-center text-xs font-mono text-zinc-500">{p.rate}</div>
+                              <div className="text-center text-sm text-zinc-500">{p.rate}</div>
 
                               {/* Reward */}
-                              <div className="text-right font-mono text-xs font-bold text-zinc-300 group-hover:text-white group-hover:text-glow transition-all">
-                                +{p.xp} XP
+                              <div className="text-right text-sm font-medium text-zinc-400 group-hover:text-white transition-colors">
+                                +{p.xp}
                               </div>
                             </motion.div>
                           );
@@ -649,55 +625,50 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
               </div>
 
               {/* ═══ RIGHT SIDEBAR ═══ */}
-              <div className="flex flex-col gap-6 font-mono">
+              <div className="flex flex-col gap-6">
 
-                {/* Profile card with Circular Progress indicator */}
+                {/* Profile card */}
                 <motion.div 
                   initial={{ opacity: 0, y: 12 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ delay: 0.25 }}
-                  className="rounded-2xl p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl relative"
+                  className="rounded-xl p-5 border border-white/[0.06] bg-white/[0.03] relative"
                 >
-                  <div className="flex items-center gap-4 mb-6">
-                    {/* SVG Radial Meter */}
+                  <div className="flex items-center gap-4 mb-5">
                     <div className="relative w-14 h-14 flex items-center justify-center">
                       <svg className="w-full h-full transform -rotate-90" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r="24" className="stroke-zinc-900/60 fill-none" strokeWidth="4" />
+                        <circle cx="28" cy="28" r="24" className="stroke-white/[0.06] fill-none" strokeWidth="3.5" />
                         <circle 
-                          cx="28" 
-                          cy="28" 
-                          r="24" 
+                          cx="28" cy="28" r="24" 
                           className="stroke-mg-acc fill-none" 
-                          strokeWidth="4"
+                          strokeWidth="3.5"
                           strokeDasharray={150.79}
                           strokeDashoffset={150.79 - (150.79 * pct) / 100}
                           strokeLinecap="round"
-                          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out', filter: 'drop-shadow(0 0 4px var(--mg-acc))' }}
+                          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out' }}
                         />
                       </svg>
-                      <span className="absolute text-[10px] font-bold text-white uppercase tracking-tighter">
-                        {pct}%
-                      </span>
+                      <span className="absolute text-xs font-semibold text-white">{pct}%</span>
                     </div>
                     <div>
-                      <div className="text-sm font-bold text-white uppercase tracking-wider">akrist</div>
-                      <div className="text-[10px] text-zinc-500 uppercase font-semibold">RANK #142</div>
+                      <div className="text-sm font-semibold text-white">akrist</div>
+                      <div className="text-xs text-zinc-500">Rank #142</div>
                     </div>
                   </div>
 
                   {/* Progress bars */}
-                  <div className="flex flex-col gap-3.5 text-[10px] tracking-wider">
+                  <div className="flex flex-col gap-3">
                     {([
-                      { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, text: 'text-zinc-400', barBg: 'bg-zinc-400' },
-                      { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, text: 'text-zinc-300', barBg: 'bg-zinc-200' },
-                      { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, text: 'text-white', barBg: 'bg-white' },
+                      { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, text: 'text-emerald-400', barBg: 'bg-emerald-400' },
+                      { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, text: 'text-amber-400', barBg: 'bg-amber-400' },
+                      { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, text: 'text-rose-400', barBg: 'bg-rose-400' },
                     ]).map(s => (
                       <div key={s.label}>
-                        <div className="flex justify-between mb-1 uppercase">
+                        <div className="flex justify-between mb-1.5 text-xs">
                           <span className={s.text}>{s.label}</span>
-                          <span className="text-zinc-500 font-bold">{s.solved}/{s.total}</span>
+                          <span className="text-zinc-500">{s.solved}/{s.total}</span>
                         </div>
-                        <div className="h-[5px] rounded-full overflow-hidden bg-zinc-900">
+                        <div className="h-1.5 rounded-full overflow-hidden bg-white/[0.06]">
                           <motion.div 
                             className={`h-full rounded-full ${s.barBg}`}
                             initial={{ width: 0 }}
@@ -710,43 +681,43 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   </div>
 
                   {/* Stats Row */}
-                  <div className="grid grid-cols-3 gap-2 mt-6 pt-4 border-t border-zinc-900 uppercase tracking-wider">
+                  <div className="grid grid-cols-3 gap-2 mt-5 pt-4 border-t border-white/[0.06] text-center">
                     {[
                       { n: `${solvedCount}`, label: 'Solved' },
                       { n: '230', label: 'Streak' },
                       { n: 'Top 12%', label: 'Tier' }
                     ].map(s => (
-                      <div key={s.label} className="text-center">
-                        <div className="text-xs font-bold text-white">{s.n}</div>
-                        <div className="text-[9px] text-zinc-500 mt-0.5">{s.label}</div>
+                      <div key={s.label}>
+                        <div className="text-sm font-semibold text-white">{s.n}</div>
+                        <div className="text-xs text-zinc-500 mt-0.5">{s.label}</div>
                       </div>
                     ))}
                   </div>
                 </motion.div>
 
-                {/* Submissions Heatmap - monochrome cells styled to match selected theme */}
+                {/* Submissions Heatmap */}
                 <motion.div 
                   initial={{ opacity: 0, y: 12 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ delay: 0.35 }}
-                  className="rounded-2xl p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl"
+                  className="rounded-xl p-5 border border-white/[0.06] bg-white/[0.03]"
                 >
-                  <div className="flex justify-between items-center mb-4 text-[10px] text-zinc-400 uppercase tracking-wider font-bold">
-                    <span>Submission Matrix</span>
+                  <div className="flex justify-between items-center mb-4 text-xs text-zinc-500 font-medium">
+                    <span>Activity</span>
                   </div>
                   
                   {/* Heatmap Grid */}
-                  <div className="flex gap-[3.5px] overflow-hidden justify-center">
+                  <div className="flex gap-[3px] overflow-hidden justify-center">
                     {Array.from({ length: 22 }, (_, week) => (
-                      <div key={week} className="flex flex-col gap-[3.5px]">
+                      <div key={week} className="flex flex-col gap-[3px]">
                         {Array.from({ length: 7 }, (_, day) => {
                           const idx = week * 7 + day;
                           const log = heatmapData[idx] || { val: 0, date: '', count: 'No activity' };
                           return (
                             <div 
                               key={day}
-                              className="w-[9.5px] h-[9.5px] rounded-[2.5px] cursor-pointer hover:ring-1 hover:ring-white transition-all relative group/cell"
-                              style={{ background: heatColors[log.val] }}
+                              className="w-[9px] h-[9px] rounded-[1.5px] cursor-pointer hover:ring-1 hover:ring-white transition-all relative group/cell"
+                              style={{ background: purpleHeatColors[log.val] }}
                             >
                               {/* Glowing Tooltip */}
                               <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 hidden group-hover/cell:block bg-zinc-950 border border-zinc-800 text-[8px] text-zinc-300 p-1.5 rounded shadow-xl text-center pointer-events-none z-50">
@@ -761,12 +732,12 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   </div>
 
                   {/* Legend */}
-                  <div className="flex items-center justify-end gap-1 mt-4 text-[9px] uppercase tracking-wider text-zinc-600 font-semibold">
-                    <span className="mr-1 text-[8px]">Less</span>
-                    {heatColors.map((c, i) => (
-                      <div key={i} className="w-[8px] h-[8px] rounded-[1.5px]" style={{ background: c }} />
+                  <div className="flex items-center justify-end gap-1 mt-4 text-[10px] text-zinc-600 select-none">
+                    <span className="mr-1">Less</span>
+                    {purpleHeatColors.map((c, i) => (
+                      <div key={i} className="w-2 h-2 rounded-sm" style={{ background: c }} />
                     ))}
-                    <span className="ml-1 text-[8px]">More</span>
+                    <span className="ml-1">More</span>
                   </div>
                 </motion.div>
 
@@ -775,12 +746,12 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   initial={{ opacity: 0, y: 12 }} 
                   animate={{ opacity: 1, y: 0 }} 
                   transition={{ delay: 0.45 }}
-                  className="rounded-2xl p-5 border border-zinc-900 bg-zinc-950/80 shadow-xl"
+                  className="rounded-xl p-5 border border-white/[0.06] bg-white/[0.03]"
                 >
-                  <h4 className="text-[10px] font-bold text-zinc-400 mb-3.5 uppercase tracking-wider border-b border-zinc-900 pb-2">
+                  <h4 className="text-xs font-medium text-zinc-500 mb-3 border-b border-white/[0.06] pb-2">
                     Categories
                   </h4>
-                  <div className="flex flex-wrap gap-2">
+                  <div className="flex flex-wrap gap-1.5">
                     {['Array', 'Hash Table', 'Stack', 'Heap', 'Linked List', 'String'].map(t => {
                       const isSelected = selectedTag === t;
                       return (
@@ -791,10 +762,10 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                             setSelectedTag(isSelected ? null : t);
                           }}
                           onMouseEnter={() => playSound('hover')}
-                          className={`text-[9.5px] px-2.5 py-1.5 rounded-lg border transition-all uppercase tracking-wider cursor-pointer font-bold ${
+                          className={`text-xs px-3 py-1.5 rounded-lg border transition-all cursor-pointer font-medium ${
                             isSelected 
-                              ? 'bg-mg-acc text-black border-mg-acc shadow-[0_0_8px_var(--mg-acc)]' 
-                              : 'border-zinc-900 text-zinc-500 bg-zinc-950/40 hover:text-white hover:border-zinc-700'
+                              ? 'bg-mg-acc text-white border-mg-acc' 
+                              : 'border-white/[0.06] text-zinc-500 bg-white/[0.03] hover:text-white hover:border-white/[0.12]'
                           }`}
                         >
                           {t}
@@ -807,57 +778,56 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
             </motion.div>
           ) : (
-            /* Interactive Challenge High-Fidelity IDE Workspace */
+            /* Interactive Challenge High-Fidelity IDE Workspace (Stretched fully) */
             <motion.div
               key="editor"
               initial={{ opacity: 0, scale: 0.98 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.98 }}
-              className="flex flex-col gap-6"
+              className="flex-1 flex flex-col gap-6"
             >
               {/* Workspace Header */}
-              <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-zinc-900 pb-4 select-none">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between pb-4 select-none">
+                <div className="flex items-center gap-4">
                   <button
                     onClick={() => {
                       playSound('click');
                       setActiveChallenge(null);
                     }}
                     onMouseEnter={() => playSound('hover')}
-                    className="px-3.5 h-9 rounded-lg border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white cursor-pointer font-mono text-xs transition-colors bg-zinc-950/60"
+                    className="px-3.5 py-2 rounded-lg border border-white/[0.06] hover:border-white/[0.12] text-zinc-400 hover:text-white cursor-pointer text-sm transition-colors bg-white/[0.03]"
                   >
-                    ← Dashboard
+                    ← Back
                   </button>
                   
-                  <div className="flex items-baseline gap-2 font-mono">
-                    <span className="text-xl font-bold text-zinc-100">
-                      {String(activeChallenge.num).padStart(3, '0')}. {activeChallenge.title}
+                  <div className="flex items-baseline gap-3">
+                    <span className="text-xl font-semibold text-white">
+                      {activeChallenge.num}. {activeChallenge.title}
                     </span>
-                    <span className={`text-[9px] font-bold uppercase px-2 py-0.5 rounded border ${DC[activeChallenge.diff].text} ${DC[activeChallenge.diff].bg} ${DC[activeChallenge.diff].border}`}>
+                    <span className={`text-xs font-medium px-2.5 py-1 rounded-md border ${DC[activeChallenge.diff].text} ${DC[activeChallenge.diff].bg} ${DC[activeChallenge.diff].border}`}>
                       {activeChallenge.diff}
                     </span>
                   </div>
                 </div>
 
                 {/* Workspace actions bar */}
-                <div className="flex items-center gap-3 font-mono">
-                  {/* Command Palette Button */}
+                <div className="flex items-center gap-3">
                   <button
                     onClick={() => {
                       playSound('click');
                       setCommandPaletteOpen(true);
                     }}
                     onMouseEnter={() => playSound('hover')}
-                    className="px-3 h-9 rounded-lg border border-zinc-900 bg-zinc-950/60 hover:bg-zinc-950 text-zinc-400 hover:text-white cursor-pointer transition-colors text-[10px] uppercase tracking-wider flex items-center gap-1.5"
+                    className="px-3.5 py-2 rounded-lg border border-white/[0.06] bg-white/[0.03] hover:bg-white/[0.06] text-zinc-400 hover:text-white cursor-pointer transition-colors text-sm flex items-center gap-2"
                   >
-                    <svg className="w-3.5 h-3.5 text-zinc-500" fill="none" stroke="currentColor" strokeWidth="2.5" viewBox="0 0 24 24">
+                    <svg className="w-4 h-4 text-zinc-500" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                       <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 6.75h16.5M3.75 12h16.5m-16.5 5.25h16.5" />
                     </svg>
-                    <span>Palette (Ctrl+P)</span>
+                    <span>Ctrl+P</span>
                   </button>
 
                   {/* Language Selector */}
-                  <div className="flex items-center gap-1 border border-zinc-900 bg-zinc-950/60 p-1 rounded-lg">
+                  <div className="flex items-center gap-1 border border-white/[0.06] bg-white/[0.03] p-1 rounded-lg">
                     {(['javascript', 'python', 'cpp'] as const).map(lang => (
                       <button
                         key={lang}
@@ -866,10 +836,10 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           setEditorLang(lang);
                         }}
                         onMouseEnter={() => playSound('hover')}
-                        className={`px-3 py-1.5 rounded text-[10px] uppercase tracking-wider font-semibold cursor-pointer transition-colors ${
+                        className={`px-3 py-1.5 rounded-md text-sm font-medium cursor-pointer transition-colors ${
                           editorLang === lang 
-                            ? 'bg-zinc-800 text-white border border-zinc-700/60' 
-                            : 'text-zinc-500 hover:text-zinc-300 border border-transparent'
+                            ? 'bg-white/[0.08] text-white' 
+                            : 'text-zinc-500 hover:text-zinc-300'
                         }`}
                       >
                         {lang === 'javascript' ? 'JS' : lang === 'python' ? 'PY' : 'C++'}
@@ -879,60 +849,59 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                 </div>
               </div>
 
-              {/* IDE Workspace Layout (Split Screen) */}
-              <div className="grid grid-cols-1 lg:grid-cols-[420px_1fr] gap-6 items-stretch min-h-[550px]">
+              {/* IDE Workspace Layout (Full Desktop Splitting) */}
+              <div className="flex-1 grid grid-cols-[360px_1fr] gap-6 items-stretch min-h-[500px]">
                 
-                {/* Left Pane: Stats & Spotlights */}
-                <div className="flex flex-col gap-5 rounded-2xl glass-panel p-5 overflow-y-auto max-h-[600px] border border-zinc-900 bg-zinc-950/40">
-                  <h4 className="text-[10px] font-mono font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900 pb-2 mb-1 select-none">
-                    Overview Specification
+                {/* Left Pane */}
+                <div className="flex flex-col gap-5 rounded-xl border border-white/[0.06] p-5 overflow-y-auto bg-white/[0.02]">
+                  <h4 className="text-xs font-medium text-zinc-500 border-b border-white/[0.06] pb-2 select-none">
+                    Overview
                   </h4>
 
-                  <div className="flex flex-col gap-4 font-mono">
-                    <div className="p-4 bg-zinc-950/60 rounded-xl border border-zinc-900">
-                      <div className="text-[9px] text-zinc-500 uppercase font-bold">Reward Pool</div>
-                      <div className="text-xl font-bold text-white mt-1 text-glow">+{activeChallenge.xp} XP Points</div>
-                      <div className="text-[9.5px] text-zinc-500 font-sans font-light mt-1.5 leading-relaxed">
+                  <div className="flex flex-col gap-4 text-sm">
+                    <div className="p-4 bg-white/[0.03] rounded-lg border border-white/[0.06]">
+                      <div className="text-xs text-zinc-500 mb-1">Reward</div>
+                      <div className="text-xl font-semibold text-white">+{activeChallenge.xp} XP</div>
+                      <div className="text-sm text-zinc-500 mt-1.5 leading-relaxed">
                         Completing this challenge marks it resolved and submits points directly to your clan standings.
                       </div>
                     </div>
 
                     <div className="flex flex-col gap-1.5">
-                      <span className="text-[9.5px] text-zinc-400 uppercase tracking-wider font-bold">Tags</span>
+                      <span className="text-xs text-zinc-500">Tags</span>
                       <div className="flex gap-2">
                         {activeChallenge.tags.map(t => (
-                          <span key={t} className="text-[9px] uppercase tracking-wider px-2 py-1 rounded bg-zinc-900 border border-zinc-800 text-zinc-400">
+                          <span key={t} className="text-xs px-2.5 py-1 rounded-md bg-white/[0.05] border border-white/[0.06] text-zinc-400">
                             {t}
                           </span>
                         ))}
                       </div>
                     </div>
 
-                    <div className="flex flex-col gap-1 mt-1 font-sans">
-                      <span className="text-[9.5px] text-zinc-400 uppercase tracking-wider font-mono font-bold">Acceptance Rate</span>
+                    <div className="flex flex-col gap-1.5">
+                      <span className="text-xs text-zinc-500">Acceptance Rate</span>
                       <div className="flex items-center gap-3">
-                        <div className="flex-1 h-2 rounded-full bg-zinc-900 overflow-hidden">
-                          <div className="h-full bg-zinc-500 rounded-full" style={{ width: activeChallenge.rate }} />
+                        <div className="flex-1 h-2 rounded-full bg-white/[0.06] overflow-hidden">
+                          <div className="h-full bg-mg-acc/60 rounded-full" style={{ width: activeChallenge.rate }} />
                         </div>
-                        <span className="font-mono text-xs text-zinc-300">{activeChallenge.rate}</span>
+                        <span className="text-sm text-zinc-300">{activeChallenge.rate}</span>
                       </div>
                     </div>
                   </div>
 
-                  {/* Guidelines reminder in sidebar */}
-                  <div className="mt-auto pt-4 border-t border-zinc-900 font-mono text-[9px] text-zinc-600 select-none">
-                    <span>Targeting cluster: STAGE-ENVIRONMENT-04</span>
+                  <div className="mt-auto pt-4 border-t border-white/[0.06] text-xs text-zinc-600 select-none">
+                    <span>Environment: Production</span>
                   </div>
                 </div>
 
                 {/* Right Pane: IDE Code Workspace Editor */}
                 <div className="flex flex-col gap-4">
                   
-                  {/* Advanced Code Editor Container */}
-                  <div className="flex-1 min-h-[400px] relative rounded-2xl border border-zinc-900 bg-zinc-950/60 shadow-xl overflow-hidden flex flex-col font-mono">
+                  {/* Code Editor Container */}
+                  <div className="flex-1 min-h-[420px] relative rounded-xl border border-white/[0.06] bg-[#0e0e14] overflow-hidden flex flex-col font-mono">
                     
                     {/* Monaco style Editor Tabs bar */}
-                    <div className="h-10 bg-zinc-950 border-b border-zinc-900 flex items-center justify-between px-4 select-none">
+                    <div className="h-10 bg-[#0a0a10] border-b border-white/[0.06] flex items-center justify-between px-4 select-none">
                       <div className="flex items-center gap-1.5 h-full">
                         {[
                           { id: 'solution', label: `solution.${editorLang === 'javascript' ? 'js' : editorLang === 'python' ? 'py' : 'cpp'}` },
@@ -945,9 +914,9 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                               playSound('click');
                               setWorkspaceTab(tab.id as any);
                             }}
-                            className={`h-full px-4 text-[10px] tracking-wider font-semibold cursor-pointer border-b-2 flex items-center transition-all ${
+                            className={`h-full px-4 text-xs font-medium cursor-pointer border-b-2 flex items-center transition-all ${
                               workspaceTab === tab.id
-                                ? 'border-mg-acc text-white bg-zinc-900/50'
+                                ? 'border-mg-acc text-white'
                                 : 'border-transparent text-zinc-500 hover:text-zinc-300'
                             }`}
                           >
@@ -956,18 +925,16 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         ))}
                       </div>
 
-                      {/* Code terminal controls */}
                       <div className="flex items-center gap-1.5">
-                        <span className="w-2.5 h-2.5 rounded-full bg-red-600/30 border border-red-600/50" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-yellow-600/30 border border-yellow-600/50" />
-                        <span className="w-2.5 h-2.5 rounded-full bg-green-600/30 border border-green-600/50" />
+                        <span className="w-2 h-2 rounded-full bg-red-600/30 border border-red-600/50" />
+                        <span className="w-2 h-2 rounded-full bg-yellow-600/30 border border-yellow-600/50" />
+                        <span className="w-2 h-2 rounded-full bg-green-600/30 border border-green-600/50" />
                       </div>
                     </div>
 
                     {/* Workspace active panel body */}
                     <div className="flex-1 relative flex overflow-hidden">
                       {workspaceTab === 'solution' && (
-                        /* Gutter + Syntax Editor */
                         <>
                           {/* Line numbers gutter */}
                           <div 
@@ -975,7 +942,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                             className="w-11 bg-zinc-950/80 border-r border-zinc-900/80 flex flex-col pt-5 items-end pr-2.5 text-zinc-600 text-xs select-none overflow-hidden leading-relaxed custom-scrollbar font-mono"
                           >
                             {editorCode.split('\n').map((_, idx) => (
-                              <div key={idx} className="h-[21px] flex items-center">
+                              <div key={idx} className="h-[21px] flex items-center font-bold">
                                 {idx + 1}
                               </div>
                             ))}
@@ -983,14 +950,14 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                           {/* Editor text content */}
                           <div className="flex-1 relative overflow-hidden bg-zinc-950/40">
-                            {/* Syntax Highlights (Underneath) */}
+                            {/* Highlights */}
                             <pre 
                               ref={codeHighlightRef}
                               className="absolute inset-0 p-5 text-xs text-zinc-300 leading-relaxed overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
                               dangerouslySetInnerHTML={{ __html: getHighlightedCode(editorCode, editorLang) }}
                             />
 
-                            {/* Transparent Textarea (On Top) */}
+                            {/* Textarea */}
                             <textarea
                               ref={textareaRef}
                               value={editorCode}
@@ -1007,10 +974,10 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                               spellCheck={false}
                             />
 
-                            {/* Autocomplete Popup menu */}
+                            {/* Autocomplete */}
                             {showSuggestions && (
                               <div 
-                                className="absolute bg-zinc-950 border border-zinc-800 rounded-lg shadow-2xl p-1 w-44 z-30 font-mono text-[10px] animate-popup"
+                                className="absolute bg-zinc-950 border border-zinc-800 rounded shadow-2xl p-1 w-44 z-30 font-mono text-[10px] animate-popup"
                                 style={{ top: `${suggestionMenuPos.top}px`, left: `${suggestionMenuPos.left}px` }}
                               >
                                 {suggestions.map((word, idx) => (
@@ -1020,7 +987,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                                     className={`w-full text-left px-2.5 py-1.5 rounded cursor-pointer ${
                                       idx === activeSuggestionIdx 
                                         ? 'bg-mg-acc text-black font-bold' 
-                                        : 'text-zinc-400 hover:text-white hover:bg-zinc-900/50'
+                                        : 'text-zinc-500 hover:text-white hover:bg-zinc-900/50'
                                     }`}
                                   >
                                     {word}
@@ -1030,7 +997,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                             )}
                           </div>
 
-                          {/* Code Minimap (Right Panel) */}
+                          {/* Minimap */}
                           <div className="w-16 h-full bg-zinc-950/40 border-l border-zinc-900 flex flex-col pt-5 px-1.5 overflow-hidden select-none pointer-events-none z-10">
                             {editorCode.split('\n').map((line, idx) => (
                               <div 
@@ -1044,20 +1011,19 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       )}
 
                       {workspaceTab === 'readme' && (
-                        /* Read-only specification tab */
-                        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-sans text-zinc-300 text-[13px] leading-relaxed select-text">
-                          <h3 className="font-mono text-xs font-bold text-zinc-400 uppercase tracking-widest border-b border-zinc-900 pb-2 mb-4">
+                        <div className="flex-1 p-6 overflow-y-auto custom-scrollbar font-mono text-zinc-300 text-xs leading-relaxed select-text font-light">
+                          <h3 className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest border-b border-zinc-900 pb-2 mb-4">
                             Problem Specification
                           </h3>
-                          <div className="whitespace-pre-wrap leading-relaxed mb-6 font-light">
+                          <div className="whitespace-pre-wrap leading-relaxed mb-6">
                             {activeChallenge.desc}
                           </div>
 
                           {/* Examples */}
                           <div className="flex flex-col gap-4 mb-6">
-                            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Examples</span>
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Examples</span>
                             {activeChallenge.examples.map((ex, idx) => (
-                              <div key={idx} className="bg-zinc-950 border border-zinc-900/60 p-4 rounded-xl font-mono text-[11px] leading-relaxed">
+                              <div key={idx} className="bg-zinc-950 border border-zinc-900 p-4 rounded font-mono text-[11px] leading-relaxed">
                                 <div className="mb-1"><span className="text-zinc-500 uppercase font-semibold">Input:</span> <span className="text-zinc-300">{ex.input}</span></div>
                                 <div className="mb-1"><span className="text-zinc-500 uppercase font-semibold">Output:</span> <span className="text-zinc-300">{ex.output}</span></div>
                                 {ex.explanation && (
@@ -1069,8 +1035,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                           {/* Constraints */}
                           <div className="flex flex-col gap-2 pt-2 border-t border-zinc-900">
-                            <span className="text-[10px] font-mono font-bold text-zinc-400 uppercase tracking-wider">Constraints</span>
-                            <ul className="list-disc pl-4 text-[10px] text-zinc-500 font-mono space-y-1.5">
+                            <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">Constraints</span>
+                            <ul className="list-disc pl-4 text-[10px] text-zinc-500 space-y-1.5">
                               {activeChallenge.constraints.map((c, i) => (
                                 <li key={i}>{c}</li>
                               ))}
@@ -1080,7 +1046,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       )}
 
                       {workspaceTab === 'tests' && (
-                        /* Custom tests suite editor */
                         <div className="flex-1 p-6 overflow-hidden flex flex-col bg-zinc-950/20">
                           <div className="flex justify-between items-center mb-3">
                             <span className="text-[10px] text-zinc-500 uppercase tracking-wider font-bold">
@@ -1093,21 +1058,21 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           <textarea
                             value={customTestsInput}
                             onChange={e => setCustomTestsInput(e.target.value)}
-                            className="flex-1 p-4 bg-zinc-950 border border-zinc-900 rounded-xl text-zinc-300 text-xs focus:outline-none resize-none font-mono leading-relaxed"
+                            className="flex-1 p-4 bg-zinc-950 border border-zinc-900 rounded text-zinc-300 text-xs focus:outline-none resize-none font-mono leading-relaxed"
                             spellCheck={false}
                           />
                         </div>
                       )}
                     </div>
 
-                    {/* IDE status bar footer */}
+                    {/* Status bar */}
                     <div className="h-6 bg-zinc-950 border-t border-zinc-900 flex items-center justify-between px-4 text-[9px] text-zinc-500 select-none">
                       <div className="flex items-center gap-3">
-                        <span className="flex items-center gap-1 text-glow text-green-400">
-                          <span className="w-1.5 h-1.5 rounded-full bg-green-500 animate-pulse" />
+                        <span className="flex items-center gap-1 text-glow text-mg-acc font-bold">
+                          <span className="w-1.5 h-1.5 rounded-full bg-mg-acc animate-pulse" />
                           main
                         </span>
-                        <span className="text-zinc-600">|</span>
+                        <span className="text-zinc-700">|</span>
                         <span>synced ✓</span>
                       </div>
                       <div className="flex items-center gap-3">
@@ -1122,10 +1087,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     </div>
                   </div>
 
-                  {/* Output Terminal Console */}
-                  <div className="h-40 rounded-2xl border border-zinc-900 bg-zinc-950/60 overflow-hidden flex flex-col font-mono text-[10px] shadow-lg">
-                    
-                    {/* Console Header Tabs */}
+                  {/* Console */}
+                  <div className="h-40 rounded border border-zinc-900 bg-zinc-950/60 overflow-hidden flex flex-col font-mono text-[10px] shadow-lg">
                     <div className="h-8 bg-zinc-950 border-b border-zinc-900 flex items-center justify-between px-4 text-zinc-500 font-semibold select-none uppercase tracking-wider">
                       <div className="flex gap-4 items-center h-full">
                         {[
@@ -1154,7 +1117,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       )}
                     </div>
                     
-                    {/* Console active body panel */}
                     <div className="flex-1 p-4 overflow-y-auto space-y-1 bg-zinc-950/40 custom-scrollbar">
                       {consoleTab === 'output' && (
                         terminalLogs.map((log, idx) => {
@@ -1164,7 +1126,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           return (
                             <div 
                               key={idx} 
-                              className={`${isCmd ? 'text-zinc-500 font-bold' : isSuccess ? 'text-glow text-green-400 font-bold' : isErr ? 'text-red-500' : 'text-zinc-400'}`}
+                              className={`${isCmd ? 'text-zinc-600 font-bold' : isSuccess ? 'text-glow text-green-400 font-bold' : isErr ? 'text-red-500' : 'text-zinc-400'}`}
                             >
                               {log}
                             </div>
@@ -1188,15 +1150,15 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                       {consoleTab === 'hardware' && (
                         <div className="grid grid-cols-3 gap-4 text-zinc-500 font-mono py-1.5 uppercase text-[9px]">
-                          <div className="p-2 border border-zinc-900/60 rounded bg-zinc-950/30">
+                          <div className="p-2 border border-zinc-900 rounded bg-zinc-950/30">
                             <span>Compiler RAM</span>
                             <span className="block text-white font-bold mt-1">14.2 MB</span>
                           </div>
-                          <div className="p-2 border border-zinc-900/60 rounded bg-zinc-950/30">
+                          <div className="p-2 border border-zinc-900 rounded bg-zinc-950/30">
                             <span>Execute latency</span>
                             <span className="block text-white font-bold mt-1">12 ms</span>
                           </div>
-                          <div className="p-2 border border-zinc-900/60 rounded bg-zinc-950/30">
+                          <div className="p-2 border border-zinc-900 rounded bg-zinc-950/30">
                             <span>Thread pool</span>
                             <span className="block text-white font-bold mt-1">4 / 4 Synced</span>
                           </div>
@@ -1205,9 +1167,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     </div>
                   </div>
 
-                  {/* Console Run/Submit Controls */}
+                  {/* Actions bar */}
                   <div className="flex items-center justify-between font-mono">
-                    {/* Share Solution (displays after compile success) */}
                     {(compileStatus === 'success' || compileStatus === 'claimed') ? (
                       <button
                         onClick={() => {
@@ -1218,7 +1179,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           });
                         }}
                         onMouseEnter={() => playSound('hover')}
-                        className="px-4.5 h-10 rounded-lg border border-mg-acc/30 bg-mg-acc/5 hover:bg-mg-acc/10 text-white hover:text-glow cursor-pointer text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-sm"
+                        className="px-4.5 h-10 rounded border border-mg-acc/30 bg-mg-acc/5 hover:bg-mg-acc/10 text-white hover:text-glow cursor-pointer text-xs font-semibold uppercase tracking-wider transition-colors flex items-center gap-1.5 shadow-sm"
                       >
                         <span>📢 Share Solution</span>
                       </button>
@@ -1231,7 +1192,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         disabled={compileStatus === 'running'}
                         onClick={runCode}
                         onMouseEnter={() => playSound('hover')}
-                        className="px-5 h-10 rounded-lg border border-zinc-900 hover:border-zinc-800 text-zinc-400 hover:text-white cursor-pointer text-xs font-semibold uppercase tracking-wider bg-zinc-950/60 hover:bg-zinc-950 transition-colors disabled:opacity-50"
+                        className="px-5 h-10 rounded border border-zinc-900 hover:border-zinc-800 text-zinc-500 hover:text-white cursor-pointer text-xs font-semibold uppercase tracking-wider bg-zinc-950/60 hover:bg-zinc-950 transition-colors disabled:opacity-50"
                       >
                         Run Code
                       </button>
@@ -1240,12 +1201,12 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         <button
                           onClick={claimReward}
                           onMouseEnter={() => playSound('hover')}
-                          className="px-6 h-10 rounded-lg bg-mg-acc text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_var(--mg-acc)] hover:brightness-110 cursor-pointer"
+                          className="px-6 h-10 rounded bg-mg-acc text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_15px_var(--mg-acc)] hover:brightness-110 cursor-pointer"
                         >
                           Claim Reward (+{activeChallenge.xp} XP)
                         </button>
                       ) : compileStatus === 'claimed' ? (
-                        <div className="px-5 h-10 rounded-lg border border-zinc-900 bg-zinc-950 text-glow text-green-400 flex items-center justify-center text-xs font-bold uppercase tracking-wider">
+                        <div className="px-5 h-10 rounded border border-zinc-900 bg-zinc-950 text-glow text-green-400 flex items-center justify-center text-xs font-bold uppercase tracking-wider">
                           ✓ SOLVED (+{activeChallenge.xp} XP CLAIMED)
                         </div>
                       ) : (
@@ -1253,7 +1214,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                           disabled={compileStatus === 'running'}
                           onClick={submitCode}
                           onMouseEnter={() => playSound('hover')}
-                          className="px-6 h-10 rounded-lg bg-zinc-100 hover:bg-white text-black font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 cursor-pointer"
+                          className="px-6 h-10 rounded bg-zinc-100 hover:bg-white text-black font-bold text-xs uppercase tracking-wider shadow-md hover:shadow-lg transition-all duration-300 disabled:opacity-50 cursor-pointer"
                         >
                           Submit Solution
                         </button>
@@ -1268,7 +1229,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
         </AnimatePresence>
       </div>
 
-      {/* Command Palette Dialog Modal */}
+      {/* Command Palette */}
       <AnimatePresence>
         {commandPaletteOpen && (
           <div className="fixed inset-0 z-50 flex items-start justify-center pt-24 px-4 bg-black/85 backdrop-blur-sm select-none font-mono">
@@ -1276,9 +1237,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              className="w-full max-w-[550px] border border-zinc-900 bg-zinc-950 rounded-2xl shadow-2xl overflow-hidden flex flex-col"
+              className="w-full max-w-[550px] border border-zinc-900 bg-zinc-950 rounded shadow-2xl overflow-hidden flex flex-col"
             >
-              {/* Query Input */}
               <div className="relative border-b border-zinc-900">
                 <input
                   type="text"
@@ -1290,13 +1250,12 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                 />
                 <button
                   onClick={() => setCommandPaletteOpen(false)}
-                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[10px] text-zinc-600 hover:text-white cursor-pointer uppercase tracking-wider border border-zinc-900 bg-zinc-950 px-1.5 py-0.5 rounded"
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-[9px] text-zinc-500 hover:text-white cursor-pointer uppercase tracking-wider border border-zinc-900 bg-zinc-950 px-1.5 py-0.5 rounded"
                 >
                   ESC
                 </button>
               </div>
 
-              {/* Commands List */}
               <div className="p-2 max-h-[300px] overflow-y-auto custom-scrollbar flex flex-col gap-0.5">
                 {commands.length === 0 ? (
                   <div className="py-8 text-center text-xs text-zinc-600">
@@ -1311,10 +1270,10 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         setCommandPaletteOpen(false);
                         cmd.action();
                       }}
-                      className="w-full text-left px-3.5 py-2.5 rounded-lg hover:bg-zinc-900/50 hover:border-zinc-800 border border-transparent cursor-pointer flex justify-between items-center transition-all group"
+                      className="w-full text-left px-3.5 py-2.5 rounded hover:bg-zinc-900/50 hover:border-zinc-800 border border-transparent cursor-pointer flex justify-between items-center transition-all group"
                     >
                       <div className="flex flex-col">
-                        <span className="text-[11px] font-bold text-zinc-300 group-hover:text-white transition-colors">
+                        <span className="text-[10px] font-bold text-zinc-300 group-hover:text-white transition-colors">
                           {cmd.name}
                         </span>
                         <span className="text-[9px] text-zinc-600 mt-0.5">

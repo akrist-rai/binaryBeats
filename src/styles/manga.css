@@ -1,0 +1,480 @@
+/*
+ * manga.css — Manga-inspired design system for Ephemeral v2.1
+ * Branch: feat/manga-ui
+ *
+ * DESIGN GRAMMAR BORROWED FROM MANGA:
+ *   1. Panel borders + gutters     — .mg-panel, .mg-grid, .mg-bleed
+ *   2. Speed lines                 — .mg-speed, .mg-speed-h
+ *   3. SFX / impact typography     — .mg-sfx, .mg-sfx-*, .mg-caption
+ *   4. Screentone / halftone       — .mg-tone, .mg-tone-*
+ *   5. Splash panels               — .mg-splash, .mg-stat-box
+ */
+
+/* ══════════════════════════════════════════════════════════════
+   1. PANEL SYSTEM
+   ══════════════════════════════════════════════════════════════ */
+
+/* A manga panel: hard border, no radius, tight */
+.mg-panel {
+  position: relative;
+  border: 2px solid rgba(255,255,255,.18);
+  overflow: hidden;
+  background: #0a0a12;
+}
+.mg-panel::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  border: 1px solid rgba(255,255,255,.06);
+  pointer-events: none;
+  z-index: 1;
+}
+
+/* Accent-colored panel border (set --mg-acc on element) */
+.mg-panel--accent {
+  border-color: var(--mg-acc, #e8000d);
+  box-shadow: 0 0 0 1px var(--mg-acc, #e8000d), inset 0 0 40px color-mix(in srgb, var(--mg-acc, #e8000d) 6%, transparent);
+}
+
+/* Panel grid — the gutter IS the space between */
+.mg-grid {
+  display: grid;
+  gap: 3px; /* The gutter */
+  background: rgba(255,255,255,.12); /* Gutter color */
+}
+.mg-grid > * {
+  background: #0a0a12; /* Panels hide gutter underneath */
+}
+
+/* Common grid presets */
+.mg-grid-2   { grid-template-columns: 1fr 1fr; }
+.mg-grid-3   { grid-template-columns: 1fr 1fr 1fr; }
+.mg-grid-3-2 { grid-template-columns: 2fr 1fr; }
+.mg-grid-2-3 { grid-template-columns: 1fr 2fr; }
+.mg-grid-1-3 { grid-template-columns: 1fr 3fr; }
+.mg-grid-auto { grid-template-columns: repeat(auto-fill, minmax(220px, 1fr)); }
+
+/* Span */
+.mg-span-2 { grid-column: span 2; }
+.mg-span-3 { grid-column: span 3; }
+.mg-span-r2 { grid-row: span 2; }
+
+/* BLEED — element breaks out of its panel */
+.mg-bleed {
+  position: relative;
+  z-index: 10;
+  transform: scale(1.04);
+  transform-origin: center bottom;
+}
+.mg-bleed-top {
+  margin-top: -24px;
+  z-index: 10;
+  position: relative;
+}
+
+/* Corner crop marks — manga panels sometimes have crop marks */
+.mg-crop::after, .mg-crop::before {
+  content: '';
+  position: absolute;
+  width: 10px;
+  height: 10px;
+  border-color: rgba(255,255,255,.35);
+  border-style: solid;
+  z-index: 5;
+}
+.mg-crop::before { top: 6px; left: 6px; border-width: 1px 0 0 1px; }
+.mg-crop::after  { bottom: 6px; right: 6px; border-width: 0 1px 1px 0; }
+
+
+/* ══════════════════════════════════════════════════════════════
+   2. SPEED LINES  (CSS-only, no JS needed)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Radial speed lines — radiates from center */
+.mg-speed {
+  position: relative;
+  overflow: hidden;
+}
+.mg-speed::after {
+  content: '';
+  position: absolute;
+  inset: -50%;
+  z-index: 0;
+  pointer-events: none;
+  background-image:
+    repeating-conic-gradient(
+      from 0deg at 50% 50%,
+      transparent 0deg,
+      transparent 4.2deg,
+      rgba(255,255,255,.025) 4.2deg,
+      rgba(255,255,255,.025) 4.8deg
+    );
+  opacity: 0;
+  transition: opacity .25s ease;
+  transform: rotate(0deg);
+}
+.mg-speed:hover::after { opacity: 1; animation: mgSpin 18s linear infinite; }
+@keyframes mgSpin { to { transform: rotate(360deg); } }
+
+/* Accent-colored speed lines */
+.mg-speed--acc::after {
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 50%,
+    transparent 0deg,
+    transparent 4.2deg,
+    color-mix(in srgb, var(--mg-acc, #e8000d) 12%, transparent) 4.2deg,
+    color-mix(in srgb, var(--mg-acc, #e8000d) 12%, transparent) 4.8deg
+  );
+}
+
+/* Horizontal streaks — for motion/urgency */
+.mg-speed-h {
+  position: relative;
+  overflow: hidden;
+}
+.mg-speed-h::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    90deg,
+    transparent,
+    transparent 18px,
+    rgba(255,255,255,.018) 18px,
+    rgba(255,255,255,.018) 19px,
+    transparent 19px,
+    transparent 36px
+  );
+  opacity: 0;
+  transition: opacity .2s;
+}
+.mg-speed-h:hover::before { opacity: 1; }
+
+/* Click burst — applied via JS class toggle */
+.mg-burst::after {
+  animation: mgBurst .4s ease-out forwards !important;
+  opacity: 1 !important;
+}
+@keyframes mgBurst {
+  0%   { opacity: .9; transform: scale(.6) rotate(0deg); }
+  60%  { opacity: .4; transform: scale(1.1) rotate(18deg); }
+  100% { opacity: 0;  transform: scale(1.3) rotate(28deg); }
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   3. SFX TYPOGRAPHY  (diagonal, outlined, impact)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Base SFX text — outline stroke effect */
+.mg-sfx {
+  font-family: 'Bebas Neue', var(--disp);
+  font-weight: 900;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  color: var(--paper);
+  -webkit-text-stroke: 1px rgba(255,255,255,.6);
+  paint-order: stroke fill;
+  line-height: .85;
+  display: inline-block;
+}
+
+/* Sizes */
+.mg-sfx-xs  { font-size: 1.2rem; -webkit-text-stroke-width: .8px; }
+.mg-sfx-sm  { font-size: 2rem;   -webkit-text-stroke-width: 1px; }
+.mg-sfx-md  { font-size: 3.5rem; -webkit-text-stroke-width: 1.5px; }
+.mg-sfx-lg  { font-size: 5rem;   -webkit-text-stroke-width: 2px; }
+.mg-sfx-xl  { font-size: 7rem;   -webkit-text-stroke-width: 2.5px; }
+.mg-sfx-2xl { font-size: 10rem;  -webkit-text-stroke-width: 3px; }
+
+/* Diagonal tilt — the manga classic */
+.mg-sfx-tilt  { transform: skew(-8deg) rotate(-2deg); }
+.mg-sfx-tilt2 { transform: skew(-12deg) rotate(-4deg); }
+
+/* Outlined white on dark (classic black manga panel inversion) */
+.mg-sfx-ghost {
+  color: transparent;
+  -webkit-text-stroke: 2px rgba(255,255,255,.55);
+}
+.mg-sfx-ghost-acc {
+  color: transparent;
+  -webkit-text-stroke: 2px var(--mg-acc, #e8000d);
+}
+
+/* Filled accent */
+.mg-sfx-acc {
+  color: var(--mg-acc, #e8000d);
+  -webkit-text-stroke: 1px var(--mg-acc, #e8000d);
+}
+
+/* NARRATIVE CAPTION BOX — top-left panel captions */
+.mg-caption {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: .62rem;
+  letter-spacing: .08em;
+  line-height: 1.6;
+  color: rgba(240,237,230,.85);
+  background: rgba(0,0,0,.75);
+  border: 1px solid rgba(255,255,255,.2);
+  border-left: 3px solid var(--mg-acc, rgba(255,255,255,.4));
+  padding: .45rem .8rem;
+  max-width: 280px;
+}
+.mg-caption--tl {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  z-index: 10;
+}
+.mg-caption--br {
+  position: absolute;
+  bottom: 10px;
+  right: 10px;
+  z-index: 10;
+}
+
+/* XP / IMPACT NUMBER — battle reward style */
+.mg-xp-impact {
+  font-family: 'Bebas Neue', var(--disp);
+  font-size: 2rem;
+  letter-spacing: .06em;
+  color: #b9ff00;
+  -webkit-text-stroke: 1.5px #b9ff00;
+  paint-order: stroke fill;
+  transform: skew(-6deg);
+  display: inline-block;
+  text-shadow: 0 0 20px #b9ff0066;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   4. SCREENTONE / HALFTONE PATTERNS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Classic manga screentone — dot grid */
+.mg-tone {
+  position: relative;
+}
+.mg-tone::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+  z-index: 1;
+  background-image: radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1px);
+  background-size: 8px 8px;
+}
+
+/* Fine tone (shadows / depth) */
+.mg-tone-fine::after {
+  background-image: radial-gradient(circle, rgba(255,255,255,.06) 0.8px, transparent 0.8px);
+  background-size: 5px 5px;
+}
+
+/* Coarse tone (highlight / dramatic) */
+.mg-tone-coarse::after {
+  background-image: radial-gradient(circle, rgba(255,255,255,.12) 1.5px, transparent 1.5px);
+  background-size: 12px 12px;
+}
+
+/* Diagonal line tone */
+.mg-tone-lines::after {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    transparent,
+    transparent 4px,
+    rgba(255,255,255,.04) 4px,
+    rgba(255,255,255,.04) 5px
+  );
+}
+
+/* Accent-color screentone */
+.mg-tone-acc::after {
+  background-image: radial-gradient(
+    circle,
+    color-mix(in srgb, var(--mg-acc, #e8000d) 25%, transparent) 1px,
+    transparent 1px
+  );
+  background-size: 8px 8px;
+}
+
+/* Tone overlay — covers the element (for card hover reveals) */
+.mg-tone-reveal::after { opacity: 0; transition: opacity .3s; }
+.mg-tone-reveal:hover::after { opacity: 1; }
+
+
+/* ══════════════════════════════════════════════════════════════
+   5. SPLASH PANELS  (character intro style)
+   ══════════════════════════════════════════════════════════════ */
+
+/* Full splash container */
+.mg-splash {
+  position: relative;
+  overflow: hidden;
+  background: #050508;
+}
+
+/* Splash image — fills, desaturated slightly */
+.mg-splash-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  display: block;
+  filter: contrast(1.08) saturate(.85);
+}
+
+/* Ink overlay — creates the high-contrast manga look */
+.mg-splash-ink {
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(180deg, transparent 30%, rgba(0,0,0,.7) 70%, rgba(0,0,0,.95) 100%);
+  mix-blend-mode: multiply;
+  pointer-events: none;
+}
+
+/* Speed lines behind splash */
+.mg-splash-speed {
+  position: absolute;
+  inset: -60%;
+  z-index: 0;
+  pointer-events: none;
+  background-image: repeating-conic-gradient(
+    from 0deg at 50% 80%,
+    transparent 0deg,
+    transparent 3.5deg,
+    rgba(255,255,255,.03) 3.5deg,
+    rgba(255,255,255,.03) 4.2deg
+  );
+}
+
+/* Name plate block */
+.mg-name-plate {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  padding: .6rem .8rem;
+  background: rgba(0,0,0,.85);
+  border-top: 2px solid var(--mg-acc, #e8000d);
+  z-index: 10;
+}
+
+/* Stat box — bordered sidebar panel */
+.mg-stat-box {
+  border: 1px solid rgba(255,255,255,.15);
+  border-left: 3px solid var(--mg-acc, #e8000d);
+  background: rgba(0,0,0,.7);
+  padding: .5rem .75rem;
+  display: flex;
+  flex-direction: column;
+  gap: .3rem;
+}
+.mg-stat-row {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-family: var(--mono);
+  font-size: .6rem;
+  letter-spacing: .06em;
+}
+.mg-stat-lbl { color: rgba(255,255,255,.4); min-width: 4.5rem; }
+.mg-stat-bar { flex: 1; height: 3px; background: rgba(255,255,255,.1); position: relative; overflow: hidden; }
+.mg-stat-fill { position: absolute; top: 0; left: 0; height: 100%; transition: width .6s cubic-bezier(.16,1,.3,1); }
+.mg-stat-val { font-family: var(--disp); font-size: .75rem; min-width: 2.2rem; text-align: right; }
+
+/* WANTED PANEL — manga-native wanted poster style */
+.mg-wanted {
+  position: relative;
+  border: 2px solid var(--mg-acc, #e8000d);
+  background: #f5edd0; /* sepia paper */
+  overflow: hidden;
+}
+.mg-wanted-hdr {
+  background: var(--mg-acc, #e8000d);
+  color: #f5edd0;
+  font-family: 'Bebas Neue', var(--disp);
+  font-size: 1.1rem;
+  letter-spacing: .25em;
+  text-align: center;
+  padding: .18rem .5rem;
+  border-bottom: 2px solid rgba(0,0,0,.3);
+}
+.mg-wanted-img-wrap {
+  width: 100%;
+  aspect-ratio: 3/4;
+  overflow: hidden;
+  position: relative;
+}
+.mg-wanted-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: top center;
+  filter: contrast(1.1) saturate(.75) sepia(.2);
+}
+.mg-wanted-footer {
+  background: #1a1208;
+  color: #f5edd0;
+  font-family: var(--mono);
+  text-align: center;
+  padding: .35rem .5rem;
+  font-size: .6rem;
+  letter-spacing: .06em;
+}
+.mg-wanted-bounty {
+  font-family: 'Bebas Neue', var(--disp);
+  font-size: 1.1rem;
+  letter-spacing: .04em;
+  color: var(--mg-acc, #e8000d);
+  text-align: center;
+  margin: .15rem 0;
+}
+
+
+/* ══════════════════════════════════════════════════════════════
+   UTILITY EXTRAS
+   ══════════════════════════════════════════════════════════════ */
+
+/* Panel section label */
+.mg-section-label {
+  font-family: var(--mono);
+  font-size: .55rem;
+  letter-spacing: .18em;
+  color: rgba(255,255,255,.4);
+  text-transform: uppercase;
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+}
+.mg-section-label::before, .mg-section-label::after {
+  content: '';
+  flex: 1;
+  height: 1px;
+  background: rgba(255,255,255,.1);
+}
+
+/* Ink border — thicker on one side like manga panels */
+.mg-ink-l { border-left:  3px solid rgba(255,255,255,.3); }
+.mg-ink-t { border-top:   3px solid rgba(255,255,255,.3); }
+.mg-ink-b { border-bottom:3px solid rgba(255,255,255,.3); }
+.mg-ink-r { border-right: 3px solid rgba(255,255,255,.3); }
+
+/* Diagonal rule — divides sections at an angle */
+.mg-diagonal-rule {
+  height: 3px;
+  background: linear-gradient(90deg, var(--mg-acc, #e8000d) 0%, transparent 100%);
+  transform: skew(-12deg);
+  transform-origin: left;
+  margin: .8rem 0;
+}
+
+/* Impact flash — white frame flash on click */
+@keyframes mgFlash {
+  0%   { box-shadow: inset 0 0 0 3px rgba(255,255,255,.9); }
+  100% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0); }
+}
+.mg-flash { animation: mgFlash .35s ease-out forwards; }

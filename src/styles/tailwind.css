@@ -98,3 +98,47 @@
     overflow-x: hidden;
   }
 }
+
+/* Custom premium styling utilities */
+.glass-panel {
+  background: rgba(8, 8, 16, 0.6);
+  backdrop-filter: blur(16px);
+  -webkit-backdrop-filter: blur(16px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+}
+
+.glass-panel-hover:hover {
+  border-color: color-mix(in srgb, var(--mg-acc, #ff2a38) 40%, transparent);
+  box-shadow: 0 0 20px color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent);
+}
+
+.glow-hover:hover {
+  box-shadow: 0 0 15px color-mix(in srgb, var(--mg-acc, #ff2a38) 20%, transparent);
+}
+
+.text-glow {
+  text-shadow: 0 0 8px color-mix(in srgb, var(--mg-acc, #ff2a38) 50%, transparent);
+}
+
+/* Tech corner indicator decorations */
+.tech-corners::before {
+  content: '';
+  position: absolute;
+  top: 4px;
+  left: 4px;
+  width: 8px;
+  height: 8px;
+  border-top: 1.5px solid var(--mg-acc, #ff2a38);
+  border-left: 1.5px solid var(--mg-acc, #ff2a38);
+}
+
+.tech-corners::after {
+  content: '';
+  position: absolute;
+  bottom: 4px;
+  right: 4px;
+  width: 8px;
+  height: 8px;
+  border-bottom: 1.5px solid var(--mg-acc, #ff2a38);
+  border-right: 1.5px solid var(--mg-acc, #ff2a38);
+}

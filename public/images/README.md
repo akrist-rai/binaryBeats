@@ -1,6 +1,6 @@
 # /public/images — Asset Catalogue
 
-All artwork used across the Ephemeral platform lives here, organised into
+All artwork used across the Binary Beats platform lives here, organised into
 five subfolders.  Every file follows a semantic hex-style naming scheme so
 the filename alone tells you _where_ the image goes and _what shape_ it is.
 

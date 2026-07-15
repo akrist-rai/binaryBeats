@@ -2,7 +2,7 @@ import React, { useMemo } from 'react';
 import { synthSound } from '../utils/audio';
 import type { Arc, Episode } from '../data/content';
 
-interface TransmissionsProps {
+interface transmissionsProps {
   ARCS: Arc[];
   EPISODES: Episode[];
   onPlay: (arcId: number, episodeId: string) => void;
@@ -10,10 +10,10 @@ interface TransmissionsProps {
 }
 
 const TYPE_META = {
-  ctf:      { label: 'CTF',      color: '#000', bg: '#00c85a' },
+  ctf: { label: 'CTF', color: '#000', bg: '#00c85a' },
   research: { label: 'RESEARCH', color: '#fff', bg: '#e8000d' },
-  quiz:     { label: 'QUIZ',     color: '#fff', bg: '#9b5fff' },
-  exploit:  { label: 'EXPLOIT',  color: '#fff', bg: '#9b5fff' }
+  quiz: { label: 'QUIZ', color: '#fff', bg: '#9b5fff' },
+  exploit: { label: 'EXPLOIT', color: '#fff', bg: '#9b5fff' }
 };
 
 function getEpisodeImage(epId: string, arcId: number) {
@@ -61,7 +61,7 @@ function getEpisodeImage(epId: string, arcId: number) {
     'S1E2_A8': 'photos/episodes/S9E2.jpeg',
     'S1E3_A8': 'photos/episodes/S9E3.jpeg',
   };
-  
+
   const defaultCovers: Record<number, string> = {
     1: 'photos/arc-covers/0xAC001p.jpeg',
     2: 'photos/arc-covers/0xAC002p.jpeg',
@@ -73,12 +73,12 @@ function getEpisodeImage(epId: string, arcId: number) {
     8: 'photos/arc-covers/0xAC008p.jpeg',
     9: 'photos/arc-covers/0xAC009p.jpeg'
   };
-  
+
   const raw = map[epId] || defaultCovers[arcId] || defaultCovers[1];
   return raw.startsWith('/') ? raw : '/' + raw;
 }
 
-export const Transmissions: React.FC<TransmissionsProps> = ({
+export const Transmissions: React.FC<transmissionsProps> = ({
   ARCS,
   EPISODES,
   onPlay,
@@ -89,14 +89,14 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
       const arc = ARCS.find(a => a.id === ep.arcId);
       return { ...ep, arc };
     });
-    
+
     list.sort((a, b) => {
       const actA = a.active ? 1 : 0;
       const actB = b.active ? 1 : 0;
       if (actB !== actA) return actB - actA;
       return b.xp - a.xp;
     });
-    
+
     return list.slice(0, 4);
   }, [EPISODES, ARCS]);
 
@@ -117,7 +117,7 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
     <div className="relative w-full border-t border-t-white/10 bg-[#030308]/60 p-6 md:p-12 pb-8 flex flex-col gap-6 select-none">
       <div className="relative z-10 flex items-center justify-between select-none">
         <div className="flex items-center gap-3">
-          <div className="font-bebas text-2xl font-bold tracking-[0.14em] text-paper">TRANSMISSIONS</div>
+          <div className="font-bebas text-2xl font-bold tracking-[0.14em] text-paper">transmissions</div>
           <div className="font-mono text-[10px] text-white/20">// EPISODES</div>
           <div className="font-mono text-[9px] tracking-widest py-0.5 px-2 bg-white/5 border border-white/15 text-white/50">
             {activeCount > 0 ? (
@@ -129,8 +129,8 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
             )}
           </div>
         </div>
-        <div 
-          className="font-mono text-[10px] tracking-wider text-white/40 hover:text-paper cursor-pointer transition-colors duration-150" 
+        <div
+          className="font-mono text-[10px] tracking-wider text-white/40 hover:text-paper cursor-pointer transition-colors duration-150"
           onClick={onBrowseAll}
         >
           ALL EPISODES →
@@ -143,11 +143,11 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
           const acc = tx.arc ? tx.arc.accColor : '#e8000d';
           const tm = TYPE_META[tx.type as keyof typeof TYPE_META] || TYPE_META.ctf;
           const img = getEpisodeImage(tx.id, tx.arcId);
-          
+
           return (
-            <div 
+            <div
               key={tx.id}
-              className="relative bg-[#0a0a14] border border-white/5 hover:border-[var(--tx-acc)] cursor-pointer overflow-hidden transition-all duration-200 shadow-lg group select-none flex flex-col justify-between min-h-[340px]" 
+              className="relative bg-[#0a0a14] border border-white/5 hover:border-[var(--tx-acc)] cursor-pointer overflow-hidden transition-all duration-200 shadow-lg group select-none flex flex-col justify-between min-h-[340px]"
               style={{ '--tx-acc': acc } as React.CSSProperties}
               onMouseEnter={handleMouseEnter}
               onClick={() => handlePlayClick(tx)}
@@ -155,27 +155,27 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
               <div>
                 {/* Image header wrapper */}
                 <div className="relative aspect-[16/10] overflow-hidden bg-black/40">
-                  <img 
-                    src={img} 
-                    alt={tx.title} 
-                    className="w-full h-full object-cover saturate-[0.7] brightness-[0.85] transition-all duration-300 group-hover:scale-105 group-hover:saturate-[1] group-hover:brightness-100" 
-                    onError={(e) => { e.currentTarget.style.display = 'none'; }} 
+                  <img
+                    src={img}
+                    alt={tx.title}
+                    className="w-full h-full object-cover saturate-[0.7] brightness-[0.85] transition-all duration-300 group-hover:scale-105 group-hover:saturate-[1] group-hover:brightness-100"
+                    onError={(e) => { e.currentTarget.style.display = 'none'; }}
                   />
-                  <div 
-                    className="absolute inset-0 z-2 pointer-events-none" 
+                  <div
+                    className="absolute inset-0 z-2 pointer-events-none"
                     style={{ background: `linear-gradient(0deg, ${tx.arc?.bgColor || '#06060e'}ee 0%, rgba(6,6,14,.1) 100%)` }}
                   ></div>
                   <div className="absolute inset-0 z-3 pointer-events-none bg-scanlines bg-[length:100%_4px,6px_100%] opacity-5"></div>
                   <div className="absolute top-3 left-3 z-10 font-bebas text-xl text-white/40 tracking-wider select-none">{String(idx + 1).padStart(2, '0')}</div>
-                  <div 
-                    className="absolute bottom-3 left-3 z-10 font-mono text-[9px] tracking-widest px-2 py-0.5 font-bold uppercase select-none" 
+                  <div
+                    className="absolute bottom-3 left-3 z-10 font-mono text-[9px] tracking-widest px-2 py-0.5 font-bold uppercase select-none"
                     style={{ background: tm.bg, color: tm.color }}
                   >
                     {tm.label}{tx.active && <>&nbsp;<span className="animate-pulse">◉</span></>}
                   </div>
                   <div className="absolute top-3 right-3 z-10 font-mono text-[9px] tracking-wider bg-black/60 border border-white/10 px-2 py-0.5 text-paper flex items-center gap-1">⚡ {tx.xp} XP</div>
                 </div>
-                
+
                 {/* Card body details */}
                 <div className="p-5 flex flex-col gap-1.5">
                   <div className="font-mono text-[9px] tracking-widest font-bold uppercase" style={{ color: acc }}>{tx.arc?.domain || tx.arc?.arcName}</div>
@@ -198,7 +198,7 @@ export const Transmissions: React.FC<TransmissionsProps> = ({
               {tx.active && (
                 <div className="absolute left-0 right-0 top-0 h-[2px]" style={{ background: acc }}></div>
               )}
-              
+
               <div className="absolute left-0 right-0 bottom-0 h-[2px]" style={{ background: `linear-gradient(90deg, ${acc}44, transparent)` }}></div>
             </div>
           );

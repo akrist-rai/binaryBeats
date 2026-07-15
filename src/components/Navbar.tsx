@@ -43,7 +43,7 @@ export const Navbar: React.FC<NavbarProps> = ({
         role="link"
         tabIndex={0}
       >
-        <em className="text-mg-acc not-italic">E</em>PHEMERAL
+        <span className="text-mg-acc text-[1.25em]">B</span>INARY BEATS
       </div>
 
       {/* Navigation middle links */}

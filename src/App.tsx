@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { AnimatePresence, motion } from "motion/react";
 import { Navbar } from "./components/Navbar";
 import { LeetCodeDashboard } from "./components/LeetCodeDashboard";
 import { BlitzDuelView } from "./components/blitz/BlitzDuelView";
@@ -21,7 +22,8 @@ export default function App() {
 
   useEffect(() => {
     document.documentElement.style.setProperty("--mg-acc", "#c3f73a");
-    document.documentElement.style.setProperty("--mg-bg", "#0a0a0f");
+    document.documentElement.style.setProperty("--mg-acc2", "#35e8ff");
+    document.documentElement.style.setProperty("--mg-bg", "#08080b");
     document.documentElement.style.setProperty("--mg-surface", "#111116");
   }, []);
 
@@ -58,7 +60,14 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#0a0a0f] text-zinc-200 flex flex-col font-sans noise-bg">
+    <div className="w-full min-h-screen bg-[#08080b] text-zinc-200 flex flex-col font-sans noise-bg relative overflow-x-hidden">
+      {/* Shared ambient background — aurora blobs + blueprint grid, sits behind every tab */}
+      <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
+        <div className="aurora-blob aurora-blob-acc w-[560px] h-[560px] -top-40 -left-32" />
+        <div className="aurora-blob aurora-blob-acc2 w-[480px] h-[480px] top-1/3 -right-40" />
+        <div className="absolute inset-0 grid-texture" />
+      </div>
+
       <Navbar
         activeTab={activeTab}
         xp={xp}
@@ -70,21 +79,29 @@ export default function App() {
         onToggleSound={handleToggleSound}
       />
 
-      <main className="w-full flex-1 flex flex-col relative">
-        <div className="relative z-10 flex-1 flex flex-col">
+      <main className="w-full flex-1 flex flex-col relative z-10">
+        <AnimatePresence mode="wait">
           {activeTab === "home" && (
-            <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />
+            <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
+              <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />
+            </motion.div>
           )}
           {activeTab === "blitz" && (
-            <BlitzDuelView playSound={playSound} onAddXp={handleAddXp} />
+            <motion.div key="blitz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
+              <BlitzDuelView playSound={playSound} onAddXp={handleAddXp} />
+            </motion.div>
           )}
           {activeTab === "leaderboard" && (
-            <LeaderboardView playSound={playSound} currentUser={username} />
+            <motion.div key="leaderboard" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
+              <LeaderboardView playSound={playSound} currentUser={username} />
+            </motion.div>
           )}
           {activeTab === "community" && (
-            <CommunityView playSound={playSound} onAddXp={handleAddXp} sharedCode={sharedCode} onClearSharedCode={() => setSharedCode(null)} />
+            <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
+              <CommunityView playSound={playSound} onAddXp={handleAddXp} sharedCode={sharedCode} onClearSharedCode={() => setSharedCode(null)} />
+            </motion.div>
           )}
-        </div>
+        </AnimatePresence>
       </main>
     </div>
   );

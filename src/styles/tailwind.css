@@ -1,4 +1,4 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 
 @theme {
@@ -6,7 +6,8 @@
   --font-heading: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   --font-mono: 'JetBrains Mono', 'Menlo', monospace;
   --color-mg-acc: var(--mg-acc, #c3f73a);
-  --color-mg-bg: var(--mg-bg, #0a0a0f);
+  --color-mg-acc2: var(--mg-acc2, #35e8ff);
+  --color-mg-bg: var(--mg-bg, #08080b);
   --color-mg-surface: var(--mg-surface, #111116);
   --color-mg-border: var(--mg-border, rgba(255, 255, 255, 0.08));
 }
@@ -19,7 +20,7 @@
   }
 
   html, body, #app {
-    background-color: var(--mg-bg, #0a0a0f);
+    background-color: var(--mg-bg, #08080b);
     color: #d4d4d8;
     margin: 0;
     padding: 0;
@@ -46,10 +47,45 @@
   content: '';
   position: fixed;
   inset: 0;
-  opacity: 0.012;
+  opacity: 0.015;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
   pointer-events: none;
   z-index: 0;
+}
+
+/* ─── Grid texture (compiler / blueprint motif) ─── */
+.grid-texture {
+  background-image:
+    linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+  background-size: 48px 48px;
+  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 40%, transparent 90%);
+}
+
+/* ─── Aurora / mesh-gradient background blobs ─── */
+@keyframes aurora-drift-a {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(60px, -40px) scale(1.15); }
+}
+@keyframes aurora-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 50px) scale(1.1); }
+}
+.aurora-blob {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(90px);
+  pointer-events: none;
+  will-change: transform;
+}
+.aurora-blob-acc {
+  background: radial-gradient(circle, rgba(195, 247, 58, 0.28) 0%, transparent 70%);
+  animation: aurora-drift-a 22s ease-in-out infinite;
+}
+.aurora-blob-acc2 {
+  background: radial-gradient(circle, rgba(53, 232, 255, 0.22) 0%, transparent 70%);
+  animation: aurora-drift-b 26s ease-in-out infinite;
 }
 
 /* ─── Card ─── */
@@ -83,6 +119,17 @@
 .text-glow {
   text-shadow: 0 0 20px rgba(195, 247, 58, 0.35);
 }
+.text-glow-acc2 {
+  text-shadow: 0 0 20px rgba(53, 232, 255, 0.35);
+}
+
+/* ─── Box glow ─── */
+.glow-acc {
+  box-shadow: 0 0 40px -10px rgba(195, 247, 58, 0.35);
+}
+.glow-acc2 {
+  box-shadow: 0 0 40px -10px rgba(53, 232, 255, 0.35);
+}
 
 /* ─── Gradient text ─── */
 .gradient-text {
@@ -91,15 +138,22 @@
   -webkit-text-fill-color: transparent;
   background-clip: text;
 }
+.gradient-text-cool {
+  background: linear-gradient(110deg, #ffffff 0%, #c3f73a 45%, #35e8ff 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
 
-/* ─── Syntax highlighting ─── */
+/* ─── Syntax highlighting (C++) ─── */
 .syntax-keyword { color: #c3f73a; font-weight: 600; }
 .syntax-string { color: #34d399; }
 .syntax-number { color: #fbbf24; }
-.syntax-comment { color: #3f3f46; font-style: italic; }
-.syntax-function { color: #60a5fa; }
+.syntax-comment { color: #52525b; font-style: italic; }
+.syntax-function { color: #35e8ff; }
 .syntax-type { color: #c084fc; }
 .syntax-builtin { color: #f472b6; }
+.syntax-preproc { color: #71717a; }
 
 /* ─── Scrollbar ─── */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
@@ -127,6 +181,12 @@
   50% { opacity: 0.5; }
 }
 .animate-pulse-green { animation: pulse-green 2s ease-in-out infinite; }
+
+@keyframes blink-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-caret { animation: blink-caret 1s step-end infinite; }
 
 /* ─── Green accent dot ─── */
 .accent-dot::after {

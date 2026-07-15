@@ -58,7 +58,7 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => 
             }`}
           >
             <span className="text-xs font-mono font-medium text-zinc-300 truncate">
-              {handle}
+              {session.displayHandles[handle] ?? handle}
               {handle === me && <span className="text-zinc-600"> (you)</span>}
             </span>
             <span className="text-lg font-mono font-black text-white tabular-nums">{s[handle] ?? 0}</span>

@@ -7,8 +7,10 @@ export interface BlitzSession {
   id: string;
   mode: BlitzMode;
   createdAtSeconds: number;
-  /** Lowercased handles: [me] for solo, [me, rival] for duel. */
+  /** Lowercased handles: [me] for solo, [me, rival] for duel. Used as the canonical key everywhere. */
   handles: string[];
+  /** Lowercased handle -> the canonically-cased handle, for display only. */
+  displayHandles: Record<string, string>;
   ratings: Record<string, number | null>;
   /** Newest submission id seen per handle at session creation — only submissions with a
    *  higher id than this count as a "solve" for this session. */
@@ -31,15 +33,17 @@ export function createSession(
   baselineSubmissionId: Record<string, number>,
   problems: SessionProblem[]
 ): BlitzSession {
+  const lowerHandles = handles.map((h) => h.toLowerCase());
   return {
     id: crypto.randomUUID(),
     mode,
     createdAtSeconds: Math.floor(Date.now() / 1000),
-    handles: handles.map((h) => h.toLowerCase()),
+    handles: lowerHandles,
+    displayHandles: Object.fromEntries(handles.map((h) => [h.toLowerCase(), h])),
     ratings,
     baselineSubmissionId,
     problems,
-    results: Object.fromEntries(handles.map((h) => [h.toLowerCase(), {}])),
+    results: Object.fromEntries(lowerHandles.map((h) => [h, {}])),
     xpAwarded: {},
     status: "active",
   };

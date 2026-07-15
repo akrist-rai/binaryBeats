@@ -23,23 +23,26 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#0a0a0f]/90 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#08080b]/85 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between h-14 px-6 lg:px-8">
-        {/* Logo — editorial text-based like Outfit */}
+        {/* Logo — terminal-flavored, C++-only identity */}
         <div
-          className="flex items-center gap-2 cursor-pointer group select-none"
+          className="flex items-center gap-2.5 cursor-pointer group select-none"
           onClick={() => onNavigate('home')}
           onMouseEnter={onHoverSound}
           role="link" tabIndex={0}
           onKeyDown={e => { if (e.key === 'Enter') onNavigate('home'); }}
         >
-          <span className="text-[18px] font-bold text-white tracking-tight font-[Space_Grotesk,Inter,system-ui,sans-serif]">
+          <span className="font-mono text-[13px] text-[#c3f73a]/70 group-hover:text-[#c3f73a] transition-colors">{'>_'}</span>
+          <span className="text-[17px] font-bold text-white tracking-tight font-heading">
             Binary Beats
           </span>
-          <span className="w-[6px] h-[6px] rounded-full bg-[#c3f73a] group-hover:scale-125 transition-transform" />
+          <span className="hidden sm:inline text-[9px] font-mono uppercase tracking-widest text-zinc-600 border border-white/[0.08] rounded px-1.5 py-0.5 ml-0.5">
+            C++
+          </span>
         </div>
 
-        {/* Center: Simple text nav links */}
+        {/* Center: tab nav */}
         <div className="hidden md:flex items-center gap-8">
           {tabs.map(t => {
             const isActive = activeTab === t.id;
@@ -56,7 +59,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 {isActive && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute -bottom-[19px] left-0 right-0 h-[1.5px] bg-[#c3f73a]"
+                    className="absolute -bottom-[19px] left-0 right-0 h-[1.5px] bg-gradient-to-r from-[#c3f73a] to-[#35e8ff]"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}
@@ -65,7 +68,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           })}
         </div>
 
-        {/* Right side — minimal */}
+        {/* Right side */}
         <div className="flex items-center gap-4">
           {/* Sound toggle */}
           <button
@@ -99,9 +102,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* XP counter — clean, flat */}
+          {/* XP counter */}
           <div className="flex items-center gap-1.5 text-[13px]">
-            <span className="text-[#c3f73a] font-bold font-mono">{xp}</span>
+            <span className="text-[#c3f73a] font-bold font-mono text-glow">{xp}</span>
             <span className="text-zinc-600 text-[11px] font-medium">XP</span>
           </div>
 
@@ -109,8 +112,12 @@ export const Navbar: React.FC<NavbarProps> = ({
           <div className="w-px h-4 bg-white/[0.06]" />
 
           {/* User */}
-          <div className="flex items-center gap-2.5">
-            <div className="w-7 h-7 rounded-lg bg-white/[0.06] border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-300">
+          <div
+            className="flex items-center gap-2.5 cursor-pointer"
+            onClick={onLogout}
+            onMouseEnter={onHoverSound}
+          >
+            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/20 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200">
               {username[0].toUpperCase()}
             </div>
             <span className="text-[13px] font-medium text-zinc-400 hidden sm:inline">{username}</span>

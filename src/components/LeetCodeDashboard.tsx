@@ -449,44 +449,213 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col gap-6"
+              className="flex flex-col gap-0"
             >
-              {/* ── Page header ── */}
-              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <span className="text-[10px] font-mono tracking-[0.18em] uppercase text-zinc-600">Problems</span>
-                    <span className="text-zinc-800">/</span>
-                    <span className="text-[10px] font-mono text-zinc-600">All</span>
-                  </div>
-                  <h2 className="text-xl font-bold font-heading text-white tracking-tight">Problem Set</h2>
-                </div>
-                <div className="flex items-center gap-4 text-xs font-mono">
-                  <div className="flex items-center gap-1.5">
-                    <span className="w-2 h-2 rounded-full bg-[#c3f73a]" />
-                    <span className="text-zinc-400">Daily resets in</span>
-                    <span className="text-white font-bold tabular-nums">{countdown}</span>
-                  </div>
-                  <div className="h-4 w-px bg-white/[0.08]" />
-                  <span className="text-zinc-500">{solvedCount}/{PROBLEMS.length} solved</span>
-                </div>
-              </div>
 
-              {/* ── Main two-col layout ── */}
+              {/* ══════════════════════════════════════════
+                  HERO SECTION
+              ══════════════════════════════════════════ */}
+              <motion.div
+                className="border-b border-white/[0.08] pb-8 mb-8 overflow-hidden"
+                initial="hidden"
+                animate="visible"
+                variants={{ hidden: {}, visible: { transition: { staggerChildren: 0.08 } } }}
+              >
+                {/* Top bar */}
+                <motion.div
+                  className="flex items-center justify-between mb-6"
+                  variants={{ hidden: { opacity: 0, y: -10 }, visible: { opacity: 1, y: 0, transition: { duration: 0.4 } } }}
+                >
+                  <div className="flex items-center gap-2 font-mono text-[10px] text-zinc-600 tracking-wider uppercase">
+                    <span>Binary Beats</span>
+                    <span className="text-zinc-800">/</span>
+                    <span className="text-zinc-400">Problem Set</span>
+                  </div>
+                  <div className="flex items-center gap-4">
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono">
+                      <span className="relative flex h-2 w-2">
+                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c3f73a] opacity-50" />
+                        <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c3f73a]" />
+                      </span>
+                      <span className="text-zinc-500">1,248 coders online</span>
+                    </div>
+                    <div className="h-3 w-px bg-white/[0.08]" />
+                    <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
+                      <span className="text-zinc-600">Reset in</span>
+                      <span className="text-white font-bold tabular-nums">{countdown}</span>
+                    </div>
+                  </div>
+                </motion.div>
+
+                {/* 3-panel hero grid */}
+                <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_220px_1px_220px] gap-0">
+
+                  {/* Panel 1: Rating + sparkline */}
+                  <motion.div
+                    className="pr-8"
+                    variants={{ hidden: { opacity: 0, x: -28 }, visible: { opacity: 1, x: 0, transition: { duration: 0.55, ease: [0.16,1,0.3,1] } } }}
+                  >
+                    <div className="flex items-center gap-2 mb-3">
+                      <motion.div
+                        className="w-8 h-8 rounded-lg bg-[#c3f73a]/10 border border-[#c3f73a]/20 flex items-center justify-center text-sm font-bold text-[#c3f73a] font-mono"
+                        whileHover={{ scale: 1.1 }}
+                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                      >A</motion.div>
+                      <div>
+                        <div className="text-sm font-bold text-white font-heading">akrist</div>
+                        <div className="text-[10px] font-mono text-zinc-600">Global Rank #142</div>
+                      </div>
+                    </div>
+                    <div className="mb-4">
+                      <div className="flex items-end gap-2 mb-1">
+                        <motion.span
+                          className="text-4xl font-mono font-black text-white leading-none"
+                          initial={{ opacity: 0, scale: 0.75 }}
+                          animate={{ opacity: 1, scale: 1 }}
+                          transition={{ delay: 0.2, duration: 0.5, type: 'spring', stiffness: 200, damping: 18 }}
+                        >1,842</motion.span>
+                        <motion.span
+                          className="text-sm font-mono text-[#c3f73a] mb-1"
+                          initial={{ opacity: 0, x: -10 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.45, duration: 0.35 }}
+                        >▲ +67</motion.span>
+                      </div>
+                      <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Current Rating · Division II</div>
+                    </div>
+                    <div className="flex items-end gap-[3px] h-8 mb-3">
+                      {[40,55,35,70,50,80,60,90,75,100,85,95].map((h, i) => (
+                        <motion.div
+                          key={i}
+                          className="flex-1 rounded-sm cursor-pointer"
+                          style={{ height: `${h}%`, background: i===11 ? '#c3f73a' : `rgba(195,247,58,${0.1+i*0.055})`, originY: 1 }}
+                          initial={{ scaleY: 0 }}
+                          animate={{ scaleY: 1 }}
+                          transition={{ delay: 0.3 + i*0.04, duration: 0.4, ease: 'easeOut' }}
+                          whileHover={{ scaleY: 1.2, background: '#c3f73a' }}
+                        />
+                      ))}
+                    </div>
+                    <div className="text-[9px] font-mono text-zinc-700">Rating trend · last 12 contests</div>
+                  </motion.div>
+
+                  <div className="hidden md:block bg-white/[0.06]" />
+
+                  {/* Panel 2: Solve stats */}
+                  <motion.div
+                    className="px-8 pt-6 md:pt-0"
+                    variants={{ hidden: { opacity: 0, y: 24 }, visible: { opacity: 1, y: 0, transition: { duration: 0.5, ease: [0.16,1,0.3,1] } } }}
+                  >
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-4">Problems Solved</div>
+                    <div className="space-y-3">
+                      {([
+                        { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, color: '#34d399' },
+                        { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, color: '#fbbf24' },
+                        { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, color: '#f87171' },
+                      ] as const).map((s, si) => (
+                        <div key={s.label} className="flex items-center gap-3">
+                          <div className="w-14 text-right text-xs font-mono font-bold" style={{ color: s.color }}>{s.solved}/{s.total}</div>
+                          <div className="flex-1 h-1.5 rounded-full bg-white/[0.04] overflow-hidden">
+                            <motion.div className="h-full rounded-full" style={{ backgroundColor: s.color }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${s.total ? (s.solved/s.total)*100 : 0}%` }}
+                              transition={{ delay: 0.35 + si*0.12, duration: 1, ease: [0.16,1,0.3,1] }}
+                            />
+                          </div>
+                          <span className="text-[10px] font-mono text-zinc-600 w-10">{s.label}</span>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-5 pt-4 border-t border-white/[0.06]">
+                      <div className="flex items-center justify-between">
+                        <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.65, duration:0.4 }}>
+                          <div className="text-2xl font-mono font-black text-white">{solvedCount}</div>
+                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">Total solved</div>
+                        </motion.div>
+                        <motion.div className="text-right" initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.75, duration:0.4 }}>
+                          <div className="text-2xl font-mono font-black text-white">Top {Math.max(1,100-pct)}%</div>
+                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">Global tier</div>
+                        </motion.div>
+                      </div>
+                    </div>
+                  </motion.div>
+
+                  <div className="hidden md:block bg-white/[0.06]" />
+
+                  {/* Panel 3: Streak + recent */}
+                  <motion.div
+                    className="px-8 pt-6 md:pt-0"
+                    variants={{ hidden: { opacity: 0, x: 28 }, visible: { opacity: 1, x: 0, transition: { duration: 0.55, ease: [0.16,1,0.3,1] } } }}
+                  >
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-4">Current Streak</div>
+                    <div className="flex items-center gap-3 mb-4">
+                      <motion.div
+                        className="text-4xl font-mono font-black text-white leading-none"
+                        initial={{ scale: 0.4, opacity: 0 }}
+                        animate={{ scale: 1, opacity: 1 }}
+                        transition={{ delay: 0.3, type: 'spring', stiffness: 280, damping: 16 }}
+                      >3</motion.div>
+                      <div>
+                        <motion.div className="text-base"
+                          initial={{ rotate: -25, opacity: 0 }}
+                          animate={{ rotate: 0, opacity: 1 }}
+                          transition={{ delay: 0.5, duration: 0.4, type: 'spring' }}
+                        >🔥</motion.div>
+                        <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider">days</div>
+                      </div>
+                    </div>
+                    <div className="flex gap-1 mb-5">
+                      {['M','T','W','T','F','S','S'].map((d, i) => (
+                        <motion.div key={i} className="flex-1 flex flex-col items-center gap-1"
+                          initial={{ opacity: 0, y: 10 }}
+                          animate={{ opacity: 1, y: 0 }}
+                          transition={{ delay: 0.38 + i*0.06, duration: 0.3 }}
+                        >
+                          <motion.div
+                            className={`w-full aspect-square rounded-sm ${i<3 ? 'bg-[#c3f73a]' : 'bg-white/[0.06]'}`}
+                            whileHover={{ scale: 1.25 }}
+                            transition={{ type: 'spring', stiffness: 500, damping: 15 }}
+                          />
+                          <span className="text-[8px] font-mono text-zinc-700">{d}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                    <div className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-2">Recent</div>
+                    <div className="flex flex-col gap-1.5">
+                      {[
+                        { title: 'Two Sum', status: 'Accepted', color: '#34d399' },
+                        { title: 'Valid Parens', status: 'Wrong Ans', color: '#f87171' },
+                      ].map((r, i) => (
+                        <motion.div key={i}
+                          className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0"
+                          initial={{ opacity: 0, x: 14 }}
+                          animate={{ opacity: 1, x: 0 }}
+                          transition={{ delay: 0.6 + i*0.1, duration: 0.35 }}
+                        >
+                          <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[100px]">{r.title}</span>
+                          <span className="text-[9px] font-mono font-bold" style={{ color: r.color }}>{r.status}</span>
+                        </motion.div>
+                      ))}
+                    </div>
+                  </motion.div>
+                </div>
+              </motion.div>
+
+              {/* ══════════════════════════════════════════
+                  PROBLEMS SECTION
+              ══════════════════════════════════════════ */}
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start">
 
-                {/* ── LEFT: Problem list ── */}
+                {/* LEFT: Problem list */}
                 <div className="flex flex-col gap-4">
 
-                  {/* Daily problem — compact inline banner */}
+                  {/* Daily challenge — compact */}
                   <div
                     onClick={() => { const s = PROBLEMS.find(p => p.id === 'p3'); if (s) openChallenge(s); }}
                     className="flex items-center justify-between gap-4 rounded-lg border border-[#c3f73a]/20 bg-[#c3f73a]/[0.04] px-4 py-3 cursor-pointer hover:border-[#c3f73a]/40 transition-all group"
                   >
                     <div className="flex items-center gap-3 min-w-0">
-                      <span className="shrink-0 text-[9px] font-mono font-bold tracking-[0.15em] uppercase text-[#c3f73a] border border-[#c3f73a]/30 px-1.5 py-0.5 rounded">
-                        Daily
-                      </span>
+                      <span className="shrink-0 text-[9px] font-mono font-bold tracking-[0.15em] uppercase text-[#c3f73a] border border-[#c3f73a]/30 px-1.5 py-0.5 rounded">Daily</span>
                       <span className="text-sm font-semibold text-white truncate">23. Merge K Sorted Lists</span>
                       <span className="shrink-0 text-[10px] font-mono text-rose-400 border border-rose-500/20 bg-rose-500/5 px-1.5 py-0.5 rounded uppercase tracking-wider">Hard</span>
                     </div>
@@ -496,7 +665,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     </div>
                   </div>
 
-                  {/* Filter / Search toolbar */}
+                  {/* Filter toolbar */}
                   <div className="flex flex-col sm:flex-row gap-2.5">
                     <div className="relative flex-1">
                       <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
@@ -510,30 +679,24 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       />
                     </div>
                     <div className="flex items-center gap-2">
-                      {/* Status filter */}
                       <div className="flex rounded-lg border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-[11px] gap-0.5">
                         {(['All', 'Easy', 'Medium', 'Hard'] as const).map(d => (
-                          <button
-                            key={d}
+                          <button key={d}
                             onClick={() => { playSound('click'); setFilter(d); }}
                             className={`px-3 h-7 rounded-md font-bold cursor-pointer transition-colors whitespace-nowrap ${
                               filter === d
-                                ? d === 'All' ? 'bg-white text-zinc-950'
-                                  : d === 'Easy' ? 'bg-emerald-400 text-zinc-950'
+                                ? d === 'Easy' ? 'bg-emerald-400 text-zinc-950'
                                   : d === 'Medium' ? 'bg-amber-400 text-zinc-950'
-                                  : 'bg-rose-400 text-zinc-950'
+                                  : d === 'Hard' ? 'bg-rose-400 text-zinc-950'
+                                  : 'bg-white text-zinc-950'
                                 : 'text-zinc-500 hover:text-zinc-300'
                             }`}
-                          >
-                            {d}
-                          </button>
+                          >{d}</button>
                         ))}
                       </div>
                       {selectedTag && (
-                        <button
-                          onClick={() => { playSound('click'); setSelectedTag(null); }}
-                          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[11px] font-mono text-[#c3f73a] hover:bg-[#c3f73a]/10 transition-colors cursor-pointer"
-                        >
+                        <button onClick={() => { playSound('click'); setSelectedTag(null); }}
+                          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[11px] font-mono text-[#c3f73a] cursor-pointer">
                           #{selectedTag} ×
                         </button>
                       )}
@@ -542,7 +705,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                   {/* Table header */}
                   <div className="grid grid-cols-[32px_1fr_90px_72px_72px] gap-2 items-center px-4 text-[10px] font-mono tracking-wider uppercase text-zinc-600 select-none">
-                    <span></span>
+                    <span />
                     <span>Problem</span>
                     <span className="text-center">Difficulty</span>
                     <span className="text-center">Acc %</span>
@@ -561,8 +724,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         const theme = DC[p.diff];
                         const isSolved = solvedChallenges.includes(p.id);
                         return (
-                          <motion.div
-                            key={p.id} layout
+                          <motion.div key={p.id} layout
                             initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
                             transition={{ delay: i * 0.04 }}
                             onClick={() => openChallenge(p)}
@@ -573,7 +735,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                                 : 'border-white/[0.08] bg-[#111116] hover:border-white/[0.2] hover:bg-white/[0.02]'
                             }`}
                           >
-                            {/* Status */}
                             <div className="flex justify-center">
                               {isSolved ? (
                                 <svg className="w-4 h-4 text-[#c3f73a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
@@ -583,8 +744,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                                 <div className="w-4 h-4 rounded-full border border-white/[0.15] group-hover:border-white/[0.35] transition-colors" />
                               )}
                             </div>
-
-                            {/* Title + num + tags */}
                             <div className="min-w-0">
                               <div className="flex items-center gap-2 mb-1">
                                 <span className="text-[10px] font-mono text-zinc-600 tabular-nums">{p.num}.</span>
@@ -598,84 +757,34 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                                       selectedTag === t
                                         ? 'border border-[#c3f73a]/30 bg-[#c3f73a]/5 text-[#c3f73a]'
                                         : 'border border-white/[0.05] bg-white/[0.02] text-zinc-600 hover:text-zinc-400 hover:border-white/[0.15]'
-                                    }`}>
-                                    {t}
-                                  </button>
+                                    }`}
+                                  >{t}</button>
                                 ))}
                               </div>
                             </div>
-
-                            {/* Difficulty */}
                             <div className="text-center">
-                              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${theme.text} ${theme.bg} ${theme.border}`}>
-                                {p.diff}
-                              </span>
+                              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${theme.text} ${theme.bg} ${theme.border}`}>{p.diff}</span>
                             </div>
-
-                            {/* Acceptance */}
                             <div className="text-center font-mono text-xs text-zinc-500 tabular-nums">{p.rate}</div>
-
-                            {/* XP */}
-                            <div className={`text-right font-mono text-xs font-bold tabular-nums transition-colors ${isSolved ? 'text-[#c3f73a]' : 'text-zinc-600 group-hover:text-zinc-300'}`}>
-                              +{p.xp}
-                            </div>
+                            <div className={`text-right font-mono text-xs font-bold tabular-nums transition-colors ${isSolved ? 'text-[#c3f73a]' : 'text-zinc-600 group-hover:text-zinc-300'}`}>+{p.xp}</div>
                           </motion.div>
                         );
                       })}
                     </AnimatePresence>
                   </div>
 
-                  {/* Problem count footer */}
-                  <div className="flex items-center justify-between pt-2 text-[10px] font-mono text-zinc-600">
+                  <div className="flex items-center justify-between pt-1 text-[10px] font-mono text-zinc-700">
                     <span>Showing {visible.length} of {PROBLEMS.length} problems</span>
                     <span>{solvedCount} solved · {PROBLEMS.length - solvedCount} remaining</span>
                   </div>
                 </div>
 
-                {/* ── RIGHT SIDEBAR ── */}
+                {/* RIGHT SIDEBAR */}
                 <div className="flex flex-col gap-4">
 
-                  {/* Solve progress */}
+                  {/* Topics */}
                   <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
-                    <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-4">Progress</h4>
-                    <div className="flex flex-col gap-3.5">
-                      {([
-                        { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, color: '#34d399', textColor: 'text-emerald-400' },
-                        { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, color: '#fbbf24', textColor: 'text-amber-400' },
-                        { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, color: '#f87171', textColor: 'text-rose-400' },
-                      ] as const).map(s => (
-                        <div key={s.label}>
-                          <div className="flex justify-between mb-1.5">
-                            <span className={`text-xs font-mono ${s.textColor}`}>{s.label}</span>
-                            <span className="text-xs font-mono text-zinc-500 tabular-nums">{s.solved}/{s.total}</span>
-                          </div>
-                          <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
-                            <motion.div className="h-full rounded-full" style={{ backgroundColor: s.color }}
-                              initial={{ width: 0 }}
-                              animate={{ width: `${s.total ? (s.solved / s.total) * 100 : 0}%` }}
-                              transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
-                            />
-                          </div>
-                        </div>
-                      ))}
-                    </div>
-                    <div className="mt-4 pt-3.5 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-center">
-                      {[
-                        { val: String(solvedCount), label: 'Solved' },
-                        { val: '#142', label: 'Rank' },
-                        { val: 'Top 12%', label: 'Tier' },
-                      ].map(s => (
-                        <div key={s.label}>
-                          <div className="text-sm font-mono font-bold text-white">{s.val}</div>
-                          <div className="text-[9px] font-mono text-zinc-600 mt-0.5 uppercase tracking-wider">{s.label}</div>
-                        </div>
-                      ))}
-                    </div>
-                  </div>
-
-                  {/* Algorithm topics breakdown */}
-                  <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
-                    <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-3">Topics</h4>
+                    <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-3">Filter by Topic</h4>
                     <div className="flex flex-col gap-1">
                       {[
                         { name: 'Array', count: 1 },
@@ -693,7 +802,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                               isActive
                                 ? 'bg-[#c3f73a]/8 text-[#c3f73a] border border-[#c3f73a]/20'
                                 : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] border border-transparent'
-                            }`}>
+                            }`}
+                          >
                             <span>{t.name}</span>
                             <span className={`text-[10px] tabular-nums ${isActive ? 'text-[#c3f73a]' : 'text-zinc-700'}`}>{t.count}</span>
                           </button>
@@ -706,7 +816,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
                     <div className="flex items-center justify-between mb-4">
                       <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Activity</h4>
-                      <span className="text-[10px] font-mono text-zinc-600">Last 22 weeks</span>
+                      <span className="text-[10px] font-mono text-zinc-600">22 weeks</span>
                     </div>
                     <div className="flex gap-[3px] overflow-hidden justify-center">
                       {Array.from({ length: 22 }, (_, week) => (
@@ -734,6 +844,20 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         {purpleHeatColors.map((c, i) => <div key={i} className="w-2 h-2 rounded-sm" style={{ background: c }} />)}
                       </div>
                       <span className="text-[9px] font-mono text-zinc-700">More</span>
+                    </div>
+                  </div>
+
+                  {/* Next contest */}
+                  <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Next Contest</h4>
+                      <span className="text-[9px] font-mono text-[#c3f73a] border border-[#c3f73a]/20 px-1.5 py-0.5 rounded">Upcoming</span>
+                    </div>
+                    <div className="text-sm font-bold text-white mb-1">Weekly Round #47</div>
+                    <div className="text-[11px] font-mono text-zinc-500 mb-3">Sat, Jul 19 · 20:00 IST · 2h duration</div>
+                    <div className="font-mono text-xs text-zinc-400">
+                      <span className="text-white font-bold text-base tabular-nums">3d 21h 13m</span>
+                      <span className="text-zinc-700 text-[10px] ml-2">until start</span>
                     </div>
                   </div>
                 </div>

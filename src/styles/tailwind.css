@@ -15,18 +15,18 @@
   --color-paper: #f5f2eb;
   --color-muted: #8a8aaa;
   --color-dim: #151525;
-  
+
   --color-mg-acc: var(--mg-acc, #ff2a38);
 
   /* Background image patterns */
-  --background-image-mg-tone: radial-gradient(circle, rgba(255,255,255,.08) 1px, transparent 1px);
-  --background-image-mg-tone-fine: radial-gradient(circle, rgba(255,255,255,.06) 0.8px, transparent 0.8px);
-  --background-image-mg-tone-coarse: radial-gradient(circle, rgba(255,255,255,.12) 1.5px, transparent 1.5px);
-  --background-image-mg-tone-lines: repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255,255,255,.04) 4px, rgba(255,255,255,.04) 5px);
+  --background-image-mg-tone: radial-gradient(circle, rgba(255, 255, 255, .08) 1px, transparent 1px);
+  --background-image-mg-tone-fine: radial-gradient(circle, rgba(255, 255, 255, .06) 0.8px, transparent 0.8px);
+  --background-image-mg-tone-coarse: radial-gradient(circle, rgba(255, 255, 255, .12) 1.5px, transparent 1.5px);
+  --background-image-mg-tone-lines: repeating-linear-gradient(-45deg, transparent, transparent 4px, rgba(255, 255, 255, .04) 4px, rgba(255, 255, 255, .04) 5px);
   --background-image-mg-tone-acc: radial-gradient(circle, color-mix(in srgb, var(--mg-acc, #ff2a38) 25%, transparent) 1px, transparent 1px);
-  --background-image-mg-speed: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 4.2deg, rgba(255,255,255,.025) 4.2deg, rgba(255,255,255,.025) 4.8deg);
+  --background-image-mg-speed: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 4.2deg, rgba(255, 255, 255, .025) 4.2deg, rgba(255, 255, 255, .025) 4.8deg);
   --background-image-mg-speed-acc: repeating-conic-gradient(from 0deg at 50% 50%, transparent 0deg, transparent 4.2deg, color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent) 4.2deg, color-mix(in srgb, var(--mg-acc, #ff2a38) 12%, transparent) 4.8deg);
-  --background-image-mg-speed-h: repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255,255,255,.018) 18px, rgba(255,255,255,.018) 19px, transparent 19px, transparent 36px);
+  --background-image-mg-speed-h: repeating-linear-gradient(90deg, transparent, transparent 18px, rgba(255, 255, 255, .018) 18px, rgba(255, 255, 255, .018) 19px, transparent 19px, transparent 36px);
   --background-image-scanlines: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
 
   /* Animations & Keyframes */
@@ -36,20 +36,46 @@
   --animate-ticker: tickerScroll 55s linear infinite;
 
   @keyframes mgSpin {
-    to { transform: rotate(360deg); }
+    to {
+      transform: rotate(360deg);
+    }
   }
+
   @keyframes mgBurst {
-    0%   { opacity: .9; transform: scale(.6) rotate(0deg); }
-    60%  { opacity: .4; transform: scale(1.1) rotate(18deg); }
-    100% { opacity: 0;  transform: scale(1.3) rotate(28deg); }
+    0% {
+      opacity: .9;
+      transform: scale(.6) rotate(0deg);
+    }
+
+    60% {
+      opacity: .4;
+      transform: scale(1.1) rotate(18deg);
+    }
+
+    100% {
+      opacity: 0;
+      transform: scale(1.3) rotate(28deg);
+    }
   }
+
   @keyframes mgFlash {
-    0%   { box-shadow: inset 0 0 0 3px rgba(255,255,255,.9); }
-    100% { box-shadow: inset 0 0 0 3px rgba(255,255,255,0); }
+    0% {
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, .9);
+    }
+
+    100% {
+      box-shadow: inset 0 0 0 3px rgba(255, 255, 255, 0);
+    }
   }
+
   @keyframes tickerScroll {
-    0% { transform: translateX(0); }
-    100% { transform: translateX(-50%); }
+    0% {
+      transform: translateX(0);
+    }
+
+    100% {
+      transform: translateX(-50%);
+    }
   }
 }
 
@@ -58,7 +84,10 @@
   html {
     font-size: 20px;
   }
-  html, body, #app {
+
+  html,
+  body,
+  #app {
     background-color: #030308;
     color: #f5f2eb;
     margin: 0;

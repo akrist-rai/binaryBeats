@@ -10,7 +10,7 @@ export default function App() {
   // Set the default theme accent color (purple) on mount
   useEffect(() => {
     if (typeof document !== "undefined") {
-      document.documentElement.style.setProperty("--mg-acc", "#ef4444");
+      document.documentElement.style.setProperty("--mg-acc", "#ffffff");
     }
   }, []);
 

@@ -397,17 +397,42 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
       .replace(/</g, '&lt;')
       .replace(/>/g, '&gt;');
       
+    // 1. Extract comments first to prevent matching keywords/strings inside them
+    const comments: string[] = [];
+    const commentRegex = lang === 'python' ? /(#.*)/g : /(\/\/.*|\/\*[\s\S]*?\*\/)/g;
+    escaped = escaped.replace(commentRegex, (match) => {
+      comments.push(match);
+      return `__COMMENT_${comments.length - 1}__`;
+    });
+
+    // 2. Extract strings next to prevent matching keywords inside them
+    const strings: string[] = [];
+    escaped = escaped.replace(/(['"`])([\s\S]*?)\1/g, (match) => {
+      strings.push(match);
+      return `__STRING_${strings.length - 1}__`;
+    });
+
+    // 3. Highlight keywords and numbers safely
     const jsKeywords = /\b(function|const|let|var|return|if|else|for|while|do|class|import|export|from|new|try|catch|finally|throw|typeof|instanceof)\b/g;
     const pyKeywords = /\b(def|class|return|if|elif|else|for|in|while|try|except|finally|import|from|as|print|lambda|and|or|not|is|None|Self)\b/g;
     const cppKeywords = /\b(class|public|private|protected|virtual|override|int|float|double|bool|char|void|vector|unordered_map|map|set|stack|queue|return|if|else|for|while)\b/g;
     
     const keywords = lang === 'python' ? pyKeywords : lang === 'cpp' ? cppKeywords : jsKeywords;
     escaped = escaped.replace(keywords, '<span class="syntax-keyword">$1</span>');
-    
-    escaped = escaped.replace(/(['"`])(.*?)\1/g, '<span class="syntax-string">$1$2$1</span>');
     escaped = escaped.replace(/\b(\d+)\b/g, '<span class="syntax-number">$1</span>');
-    escaped = escaped.replace(/(\/\/.*|\/\*[\s\S]*?\*\/|#.*)/g, '<span class="syntax-comment">$1</span>');
-    
+
+    // 4. Restore strings wrapped in span tags
+    escaped = escaped.replace(/__STRING_(\d+)__/g, (_, idx) => {
+      const originalString = strings[parseInt(idx, 10)];
+      return `<span class="syntax-string">${originalString}</span>`;
+    });
+
+    // 5. Restore comments wrapped in span tags
+    escaped = escaped.replace(/__COMMENT_(\d+)__/g, (_, idx) => {
+      const originalComment = comments[parseInt(idx, 10)];
+      return `<span class="syntax-comment">${originalComment}</span>`;
+    });
+
     return escaped;
   };
 
@@ -418,364 +443,301 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 py-10 relative z-10 flex-1 flex flex-col gap-10">
         <AnimatePresence mode="wait">
           {!activeChallenge ? (
-            /* Dashboard Home Panel */
+            /* ═══ PROBLEMS PAGE ═══ */
             <motion.div
               key="dashboard"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-[1fr_380px] gap-12 items-start"
+              className="flex flex-col gap-6"
             >
-              {/* ═══ LEFT COLUMN (Full Width Utilization) ═══ */}
-              <div className="flex flex-col gap-6">
-                
-                {/* Spotlight Banner - Premium Stark Editorial design */}
-                <motion.div
-                  initial={{ opacity: 0, y: 12 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ duration: 0.4 }}
-                  className="rounded-xl p-8 flex flex-col md:flex-row md:items-center justify-between gap-8 overflow-hidden relative border border-white/[0.08] bg-[#111116]"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-3 mb-4 select-none">
-                      <span className="text-[10px] font-bold font-mono uppercase tracking-wider px-2 py-0.5 rounded border border-[#c3f73a]/20 bg-[#c3f73a]/5 text-[#c3f73a]">
-                        Daily Challenge
-                      </span>
-                      <span className="text-xs text-zinc-500 font-mono">
-                        {countdown} left
-                      </span>
-                    </div>
-                    <h3 className="text-2xl md:text-3xl font-bold tracking-tight font-heading text-white mb-2">
-                      Merge K Sorted Lists
-                    </h3>
-                    <p className="text-sm text-zinc-400 max-w-[520px] font-sans leading-relaxed">
-                      Merge multiple sorted linked lists into one. Complete for bonus <span className="text-[#c3f73a] font-mono font-bold">+50 XP</span>.
-                    </p>
+              {/* ── Page header ── */}
+              <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-white/[0.08] pb-6">
+                <div>
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[10px] font-mono tracking-[0.18em] uppercase text-zinc-600">Problems</span>
+                    <span className="text-zinc-800">/</span>
+                    <span className="text-[10px] font-mono text-zinc-600">All</span>
                   </div>
-                  
-                  <button
-                    onClick={() => {
-                      const spotlight = PROBLEMS.find(p => p.id === 'p3');
-                      if (spotlight) openChallenge(spotlight);
-                    }}
-                    onMouseEnter={() => playSound('hover')}
-                    className="shrink-0 px-6 py-3 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black text-xs font-bold uppercase tracking-wider cursor-pointer transition-all self-start md:self-center"
+                  <h2 className="text-xl font-bold font-heading text-white tracking-tight">Problem Set</h2>
+                </div>
+                <div className="flex items-center gap-4 text-xs font-mono">
+                  <div className="flex items-center gap-1.5">
+                    <span className="w-2 h-2 rounded-full bg-[#c3f73a]" />
+                    <span className="text-zinc-400">Daily resets in</span>
+                    <span className="text-white font-bold tabular-nums">{countdown}</span>
+                  </div>
+                  <div className="h-4 w-px bg-white/[0.08]" />
+                  <span className="text-zinc-500">{solvedCount}/{PROBLEMS.length} solved</span>
+                </div>
+              </div>
+
+              {/* ── Main two-col layout ── */}
+              <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start">
+
+                {/* ── LEFT: Problem list ── */}
+                <div className="flex flex-col gap-4">
+
+                  {/* Daily problem — compact inline banner */}
+                  <div
+                    onClick={() => { const s = PROBLEMS.find(p => p.id === 'p3'); if (s) openChallenge(s); }}
+                    className="flex items-center justify-between gap-4 rounded-lg border border-[#c3f73a]/20 bg-[#c3f73a]/[0.04] px-4 py-3 cursor-pointer hover:border-[#c3f73a]/40 transition-all group"
                   >
-                    Start Solving →
-                  </button>
-                </motion.div>
-
-                {/* Toolbar: Search + Difficulty Tabs */}
-                <motion.div 
-                  initial={{ opacity: 0 }} 
-                  animate={{ opacity: 1 }} 
-                  transition={{ delay: 0.15 }}
-                  className="flex gap-4 items-center"
-                >
-                  {/* Search Input */}
-                  <div className="relative flex-1">
-                    <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-zinc-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                      <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
-                    </svg>
-                    <input 
-                      value={search} 
-                      onChange={e => setSearch(e.target.value)}
-                      placeholder="Search problems..."
-                      className="w-full h-10 pl-9 pr-4 rounded-lg text-xs text-white bg-[#111116] placeholder-zinc-600 focus:outline-none transition-colors border border-white/[0.08] focus:border-[#c3f73a]/30"
-                    />
-                  </div>
-
-                  {/* Filter Reset Badge */}
-                  {selectedTag && (
-                    <div className="flex items-center gap-1.5 px-2.5 py-1 bg-[#c3f73a]/5 border border-[#c3f73a]/25 rounded text-[10px] font-mono text-zinc-300">
-                      <span>{selectedTag}</span>
-                      <button 
-                        onClick={() => {
-                          playSound('click');
-                          setSelectedTag(null);
-                        }}
-                        className="text-[#c3f73a] hover:text-white cursor-pointer font-bold text-xs"
-                      >
-                        ×
-                      </button>
+                    <div className="flex items-center gap-3 min-w-0">
+                      <span className="shrink-0 text-[9px] font-mono font-bold tracking-[0.15em] uppercase text-[#c3f73a] border border-[#c3f73a]/30 px-1.5 py-0.5 rounded">
+                        Daily
+                      </span>
+                      <span className="text-sm font-semibold text-white truncate">23. Merge K Sorted Lists</span>
+                      <span className="shrink-0 text-[10px] font-mono text-rose-400 border border-rose-500/20 bg-rose-500/5 px-1.5 py-0.5 rounded uppercase tracking-wider">Hard</span>
                     </div>
-                  )}
-
-                  {/* Difficulty Selector Tabs */}
-                  <div className="flex rounded-lg overflow-hidden border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-xs">
-                    {(['All', 'Easy', 'Medium', 'Hard'] as const).map(d => {
-                      const isActive = filter === d;
-                      return (
-                        <button 
-                          key={d} 
-                          onClick={() => {
-                            playSound('click');
-                            setFilter(d);
-                          }}
-                          onMouseEnter={() => playSound('hover')}
-                          className={`px-3.5 h-8 rounded-md font-medium cursor-pointer transition-colors relative ${isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'}`}
-                        >
-                          {isActive && (
-                            <motion.span
-                              layoutId="activeFilterBg"
-                              className="absolute inset-0 bg-white/[0.06] border border-white/[0.06] rounded-md"
-                              transition={{ type: 'spring', stiffness: 500, damping: 35 }}
-                            />
-                          )}
-                          <span className="relative z-10">{d}</span>
-                        </button>
-                      );
-                    })}
+                    <div className="flex items-center gap-4 shrink-0">
+                      <span className="text-[10px] font-mono text-zinc-500 hidden md:block">+50 XP bonus</span>
+                      <span className="text-[10px] font-mono text-zinc-600 group-hover:text-[#c3f73a] transition-colors">Solve →</span>
+                    </div>
                   </div>
-                </motion.div>
 
-                {/* Problem List (Stretched full screen width) */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 8 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.2 }}
-                  className="rounded-xl overflow-hidden border border-white/[0.08] bg-[#111116]"
-                >
-                  {/* Table Header */}
-                  <div className="grid grid-cols-[48px_1fr_110px_90px_90px] items-center h-10 px-6 font-mono text-[10px] tracking-wider uppercase text-zinc-500 border-b border-white/[0.08] select-none">
+                  {/* Filter / Search toolbar */}
+                  <div className="flex flex-col sm:flex-row gap-2.5">
+                    <div className="relative flex-1">
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                        <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                      </svg>
+                      <input
+                        value={search}
+                        onChange={e => setSearch(e.target.value)}
+                        placeholder="Search by title or tag..."
+                        className="w-full h-9 pl-9 pr-3 rounded-lg text-xs font-mono text-white bg-[#111116] placeholder-zinc-700 focus:outline-none border border-white/[0.08] focus:border-white/[0.2] transition-colors"
+                      />
+                    </div>
+                    <div className="flex items-center gap-2">
+                      {/* Status filter */}
+                      <div className="flex rounded-lg border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-[11px] gap-0.5">
+                        {(['All', 'Easy', 'Medium', 'Hard'] as const).map(d => (
+                          <button
+                            key={d}
+                            onClick={() => { playSound('click'); setFilter(d); }}
+                            className={`px-3 h-7 rounded-md font-bold cursor-pointer transition-colors whitespace-nowrap ${
+                              filter === d
+                                ? d === 'All' ? 'bg-white text-zinc-950'
+                                  : d === 'Easy' ? 'bg-emerald-400 text-zinc-950'
+                                  : d === 'Medium' ? 'bg-amber-400 text-zinc-950'
+                                  : 'bg-rose-400 text-zinc-950'
+                                : 'text-zinc-500 hover:text-zinc-300'
+                            }`}
+                          >
+                            {d}
+                          </button>
+                        ))}
+                      </div>
+                      {selectedTag && (
+                        <button
+                          onClick={() => { playSound('click'); setSelectedTag(null); }}
+                          className="flex items-center gap-1.5 h-9 px-3 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[11px] font-mono text-[#c3f73a] hover:bg-[#c3f73a]/10 transition-colors cursor-pointer"
+                        >
+                          #{selectedTag} ×
+                        </button>
+                      )}
+                    </div>
+                  </div>
+
+                  {/* Table header */}
+                  <div className="grid grid-cols-[32px_1fr_90px_72px_72px] gap-2 items-center px-4 text-[10px] font-mono tracking-wider uppercase text-zinc-600 select-none">
                     <span></span>
                     <span>Problem</span>
-                    <span className="text-center">Level</span>
-                    <span className="text-center">Rate</span>
+                    <span className="text-center">Difficulty</span>
+                    <span className="text-center">Acc %</span>
                     <span className="text-right">XP</span>
                   </div>
 
-                  {/* Table Rows */}
-                  <div className="flex flex-col divide-y divide-white/[0.04]">
+                  {/* Problem rows */}
+                  <div className="flex flex-col gap-1">
                     <AnimatePresence mode="popLayout">
                       {visible.length === 0 ? (
-                        <motion.div 
-                          key="empty" 
-                          initial={{ opacity: 0 }} 
-                          animate={{ opacity: 1 }} 
-                          exit={{ opacity: 0 }}
-                          className="py-12 text-center text-xs text-zinc-500 font-mono"
-                        >
-                          No problems found
+                        <motion.div key="empty" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                          className="py-16 text-center text-xs text-zinc-600 font-mono border border-dashed border-white/[0.05] rounded-xl">
+                          No problems match your filters
                         </motion.div>
-                      ) : (
-                        visible.map((p, i) => {
-                          const theme = DC[p.diff];
-                          const isSolved = solvedChallenges.includes(p.id);
-                          return (
-                            <motion.div 
-                              key={p.id} 
-                              layout
-                              initial={{ opacity: 0 }} 
-                              animate={{ opacity: 1 }} 
-                              exit={{ opacity: 0 }}
-                              transition={{ delay: i * 0.03 }}
-                              onClick={() => openChallenge(p)}
-                              onMouseEnter={() => playSound('hover')}
-                              className="grid grid-cols-[48px_1fr_110px_90px_90px] items-center px-6 py-4 cursor-pointer transition-all hover:bg-white/[0.01] hover:border-l-2 hover:border-l-[#c3f73a] border-l-2 border-l-transparent group"
-                            >
-                              {/* Status */}
-                              <div className="flex justify-center">
-                                {isSolved ? (
-                                  <div className="w-5 h-5 rounded-full flex items-center justify-center bg-[#c3f73a] text-black text-[9px] font-bold">
-                                    ✓
-                                  </div>
-                                ) : (
-                                  <div className="w-5 h-5 rounded-full border border-white/[0.12] group-hover:border-[#c3f73a]/40 transition-colors" />
-                                )}
+                      ) : visible.map((p, i) => {
+                        const theme = DC[p.diff];
+                        const isSolved = solvedChallenges.includes(p.id);
+                        return (
+                          <motion.div
+                            key={p.id} layout
+                            initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                            transition={{ delay: i * 0.04 }}
+                            onClick={() => openChallenge(p)}
+                            onMouseEnter={() => playSound('hover')}
+                            className={`grid grid-cols-[32px_1fr_90px_72px_72px] gap-2 items-center px-4 py-3.5 rounded-lg border cursor-pointer transition-all group ${
+                              isSolved
+                                ? 'border-white/[0.06] bg-white/[0.01] hover:border-white/[0.12]'
+                                : 'border-white/[0.08] bg-[#111116] hover:border-white/[0.2] hover:bg-white/[0.02]'
+                            }`}
+                          >
+                            {/* Status */}
+                            <div className="flex justify-center">
+                              {isSolved ? (
+                                <svg className="w-4 h-4 text-[#c3f73a]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                                  <path strokeLinecap="round" strokeLinejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                              ) : (
+                                <div className="w-4 h-4 rounded-full border border-white/[0.15] group-hover:border-white/[0.35] transition-colors" />
+                              )}
+                            </div>
+
+                            {/* Title + num + tags */}
+                            <div className="min-w-0">
+                              <div className="flex items-center gap-2 mb-1">
+                                <span className="text-[10px] font-mono text-zinc-600 tabular-nums">{p.num}.</span>
+                                <span className={`text-sm font-medium truncate transition-colors ${isSolved ? 'text-zinc-400' : 'text-zinc-200 group-hover:text-white'}`}>{p.title}</span>
                               </div>
-
-                              {/* Title & Tags */}
-                              <div className="min-w-0 pl-3">
-                                <span className="text-sm font-medium text-zinc-200 group-hover:text-white transition-colors">
-                                  {p.num}. {p.title}
-                                </span>
-                                <div className="flex gap-1.5 mt-1">
-                                  {p.tags.map(t => (
-                                    <span key={t} className="text-[9px] font-mono px-2 py-0.5 rounded border border-white/[0.04] bg-white/[0.01] text-zinc-500">
-                                      {t}
-                                    </span>
-                                  ))}
-                                </div>
-                              </div>
-
-                              {/* Difficulty */}
-                              <div className="text-center">
-                                <span className={`text-[10px] font-mono uppercase tracking-wider px-2 py-0.5 rounded border ${theme.text} ${theme.bg} ${theme.border}`}>
-                                  {p.diff}
-                                </span>
-                              </div>
-
-                              {/* Acceptance */}
-                              <div className="text-center text-xs font-mono text-zinc-500">{p.rate}</div>
-
-                              {/* Reward */}
-                              <div className="text-right text-xs font-bold font-mono text-zinc-500 group-hover:text-[#c3f73a] transition-colors">
-                                +{p.xp}
-                              </div>
-                            </motion.div>
-                          );
-                        })
-                      )}
-                    </AnimatePresence>
-                  </div>
-                </motion.div>
-              </div>
-
-              {/* ═══ RIGHT SIDEBAR ═══ */}
-              <div className="flex flex-col gap-7">
-
-                {/* Profile card */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 12 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.25 }}
-                  className="rounded-xl p-6 border border-white/[0.08] bg-[#111116] relative"
-                >
-                  <div className="flex items-center gap-5 mb-6">
-                    <div className="relative w-16 h-16 flex items-center justify-center">
-                      <svg className="w-full h-full transform -rotate-90" viewBox="0 0 56 56">
-                        <circle cx="28" cy="28" r="24" className="fill-none" stroke="rgba(255,255,255,0.04)" strokeWidth="3" />
-                        <circle 
-                          cx="28" cy="28" r="24" 
-                          className="fill-none" 
-                          stroke="#c3f73a"
-                          strokeWidth="3"
-                          strokeDasharray={150.79}
-                          strokeDashoffset={150.79 - (150.79 * pct) / 100}
-                          strokeLinecap="round"
-                          style={{ transition: 'stroke-dashoffset 0.8s ease-in-out', filter: 'drop-shadow(0 0 4px rgba(195,247,58,0.3))' }}
-                        />
-                      </svg>
-                      <span className="absolute text-sm font-mono font-bold text-white">{pct}%</span>
-                    </div>
-                    <div>
-                      <div className="text-base font-bold text-white font-heading">akrist</div>
-                      <div className="text-xs text-zinc-500 font-mono">Rank #142</div>
-                    </div>
-                  </div>
-
-                  {/* Progress bars */}
-                  <div className="flex flex-col gap-4">
-                    {([
-                      { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, color: '#34d399' },
-                      { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, color: '#fbbf24' },
-                      { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, color: '#f87171' },
-                    ]).map(s => (
-                      <div key={s.label}>
-                        <div className="flex justify-between mb-2 text-xs">
-                          <span style={{ color: s.color }} className="font-medium">{s.label}</span>
-                          <span className="text-zinc-500 font-mono">{s.solved}/{s.total}</span>
-                        </div>
-                        <div className="h-1.5 rounded-full overflow-hidden bg-white/[0.04]">
-                          <motion.div 
-                            className="h-full rounded-full"
-                            style={{ backgroundColor: s.color }}
-                            initial={{ width: 0 }}
-                            animate={{ width: `${s.total ? (s.solved / s.total) * 100 : 0}%` }}
-                            transition={{ duration: 0.8, delay: 0.5 }}
-                          />
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-
-                  {/* Stats Row */}
-                  <div className="grid grid-cols-3 gap-2.5 mt-6 pt-5 border-t border-white/[0.08] text-center select-none font-mono">
-                    {[
-                      { n: `${solvedCount}`, label: 'Solved' },
-                      { n: '230', label: 'Streak' },
-                      { n: 'Top 12%', label: 'Tier' }
-                    ].map(s => (
-                      <div key={s.label} className="py-2.5 rounded-lg bg-white/[0.01] border border-white/[0.04]">
-                        <div className="text-sm font-bold text-white">{s.n}</div>
-                        <div className="text-[10px] text-zinc-500 mt-0.5">{s.label}</div>
-                      </div>
-                    ))}
-                  </div>
-                </motion.div>
-
-                {/* Submissions Heatmap */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 12 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.35 }}
-                  className="rounded-xl p-6 border border-white/[0.08] bg-[#111116]"
-                >
-                  <div className="flex justify-between items-center mb-5 text-[10px] font-mono tracking-wider uppercase text-zinc-500 border-b border-white/[0.08] pb-2">
-                    <span>Activity Heatmap</span>
-                  </div>
-                  
-                  {/* Heatmap Grid */}
-                  <div className="flex gap-[3px] overflow-hidden justify-center">
-                    {Array.from({ length: 22 }, (_, week) => (
-                      <div key={week} className="flex flex-col gap-[3px]">
-                        {Array.from({ length: 7 }, (_, day) => {
-                          const idx = week * 7 + day;
-                          const log = heatmapData[idx] || { val: 0, date: '', count: 'No activity' };
-                          return (
-                            <div 
-                              key={day}
-                              className="w-[9px] h-[9px] rounded-[1.5px] cursor-pointer hover:ring-1 hover:ring-white transition-all relative group/cell"
-                              style={{ background: purpleHeatColors[log.val] }}
-                            >
-                              {/* Glowing Tooltip */}
-                              <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-32 hidden group-hover/cell:block bg-zinc-950 border border-zinc-800 text-[8px] text-zinc-300 p-1.5 rounded shadow-xl text-center pointer-events-none z-50">
-                                <span className="block font-bold text-white">{log.count}</span>
-                                <span className="text-[7px] text-zinc-500">{log.date}</span>
+                              <div className="flex items-center gap-1.5 flex-wrap">
+                                {p.tags.map(t => (
+                                  <button key={t}
+                                    onClick={e => { e.stopPropagation(); playSound('click'); setSelectedTag(selectedTag === t ? null : t); }}
+                                    className={`text-[9px] font-mono px-1.5 py-0.5 rounded transition-colors cursor-pointer ${
+                                      selectedTag === t
+                                        ? 'border border-[#c3f73a]/30 bg-[#c3f73a]/5 text-[#c3f73a]'
+                                        : 'border border-white/[0.05] bg-white/[0.02] text-zinc-600 hover:text-zinc-400 hover:border-white/[0.15]'
+                                    }`}>
+                                    {t}
+                                  </button>
+                                ))}
                               </div>
                             </div>
-                          );
-                        })}
+
+                            {/* Difficulty */}
+                            <div className="text-center">
+                              <span className={`text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border ${theme.text} ${theme.bg} ${theme.border}`}>
+                                {p.diff}
+                              </span>
+                            </div>
+
+                            {/* Acceptance */}
+                            <div className="text-center font-mono text-xs text-zinc-500 tabular-nums">{p.rate}</div>
+
+                            {/* XP */}
+                            <div className={`text-right font-mono text-xs font-bold tabular-nums transition-colors ${isSolved ? 'text-[#c3f73a]' : 'text-zinc-600 group-hover:text-zinc-300'}`}>
+                              +{p.xp}
+                            </div>
+                          </motion.div>
+                        );
+                      })}
+                    </AnimatePresence>
+                  </div>
+
+                  {/* Problem count footer */}
+                  <div className="flex items-center justify-between pt-2 text-[10px] font-mono text-zinc-600">
+                    <span>Showing {visible.length} of {PROBLEMS.length} problems</span>
+                    <span>{solvedCount} solved · {PROBLEMS.length - solvedCount} remaining</span>
+                  </div>
+                </div>
+
+                {/* ── RIGHT SIDEBAR ── */}
+                <div className="flex flex-col gap-4">
+
+                  {/* Solve progress */}
+                  <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                    <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-4">Progress</h4>
+                    <div className="flex flex-col gap-3.5">
+                      {([
+                        { label: 'Easy', solved: solvedChallenges.includes('p1') ? 1 : 0, total: 1, color: '#34d399', textColor: 'text-emerald-400' },
+                        { label: 'Medium', solved: solvedChallenges.includes('p2') ? 1 : 0, total: 1, color: '#fbbf24', textColor: 'text-amber-400' },
+                        { label: 'Hard', solved: solvedChallenges.includes('p3') ? 1 : 0, total: 1, color: '#f87171', textColor: 'text-rose-400' },
+                      ] as const).map(s => (
+                        <div key={s.label}>
+                          <div className="flex justify-between mb-1.5">
+                            <span className={`text-xs font-mono ${s.textColor}`}>{s.label}</span>
+                            <span className="text-xs font-mono text-zinc-500 tabular-nums">{s.solved}/{s.total}</span>
+                          </div>
+                          <div className="h-1 rounded-full bg-white/[0.05] overflow-hidden">
+                            <motion.div className="h-full rounded-full" style={{ backgroundColor: s.color }}
+                              initial={{ width: 0 }}
+                              animate={{ width: `${s.total ? (s.solved / s.total) * 100 : 0}%` }}
+                              transition={{ duration: 0.9, delay: 0.3, ease: 'easeOut' }}
+                            />
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                    <div className="mt-4 pt-3.5 border-t border-white/[0.08] grid grid-cols-3 gap-2 text-center">
+                      {[
+                        { val: String(solvedCount), label: 'Solved' },
+                        { val: '#142', label: 'Rank' },
+                        { val: 'Top 12%', label: 'Tier' },
+                      ].map(s => (
+                        <div key={s.label}>
+                          <div className="text-sm font-mono font-bold text-white">{s.val}</div>
+                          <div className="text-[9px] font-mono text-zinc-600 mt-0.5 uppercase tracking-wider">{s.label}</div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Algorithm topics breakdown */}
+                  <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                    <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-3">Topics</h4>
+                    <div className="flex flex-col gap-1">
+                      {[
+                        { name: 'Array', count: 1 },
+                        { name: 'Hash Table', count: 1 },
+                        { name: 'Stack', count: 1 },
+                        { name: 'Linked List', count: 1 },
+                        { name: 'Heap', count: 1 },
+                        { name: 'String', count: 1 },
+                      ].map(t => {
+                        const isActive = selectedTag === t.name;
+                        return (
+                          <button key={t.name}
+                            onClick={() => { playSound('click'); setSelectedTag(isActive ? null : t.name); }}
+                            className={`w-full flex items-center justify-between px-3 py-2 rounded-md text-left text-xs font-mono cursor-pointer transition-all ${
+                              isActive
+                                ? 'bg-[#c3f73a]/8 text-[#c3f73a] border border-[#c3f73a]/20'
+                                : 'text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.03] border border-transparent'
+                            }`}>
+                            <span>{t.name}</span>
+                            <span className={`text-[10px] tabular-nums ${isActive ? 'text-[#c3f73a]' : 'text-zinc-700'}`}>{t.count}</span>
+                          </button>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* Activity heatmap */}
+                  <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                    <div className="flex items-center justify-between mb-4">
+                      <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Activity</h4>
+                      <span className="text-[10px] font-mono text-zinc-600">Last 22 weeks</span>
+                    </div>
+                    <div className="flex gap-[3px] overflow-hidden justify-center">
+                      {Array.from({ length: 22 }, (_, week) => (
+                        <div key={week} className="flex flex-col gap-[3px]">
+                          {Array.from({ length: 7 }, (_, day) => {
+                            const idx = week * 7 + day;
+                            const log = heatmapData[idx] || { val: 0, date: '', count: 'No activity' };
+                            return (
+                              <div key={day}
+                                className="w-[9px] h-[9px] rounded-[1.5px] cursor-pointer hover:ring-1 hover:ring-white/30 transition-all relative group/cell"
+                                style={{ background: purpleHeatColors[log.val] }}>
+                                <div className="absolute bottom-4 left-1/2 -translate-x-1/2 w-28 hidden group-hover/cell:block bg-[#0a0a0f] border border-white/[0.08] text-[8px] text-zinc-300 p-1.5 rounded shadow-xl text-center pointer-events-none z-50">
+                                  <span className="block font-bold text-white">{log.count}</span>
+                                  <span className="text-[7px] text-zinc-500">{log.date}</span>
+                                </div>
+                              </div>
+                            );
+                          })}
+                        </div>
+                      ))}
+                    </div>
+                    <div className="flex items-center justify-between mt-3">
+                      <span className="text-[9px] font-mono text-zinc-700">Less</span>
+                      <div className="flex gap-1">
+                        {purpleHeatColors.map((c, i) => <div key={i} className="w-2 h-2 rounded-sm" style={{ background: c }} />)}
                       </div>
-                    ))}
+                      <span className="text-[9px] font-mono text-zinc-700">More</span>
+                    </div>
                   </div>
-
-                  {/* Legend */}
-                  <div className="flex items-center justify-end gap-1 mt-4 text-[9px] font-mono text-zinc-600 select-none">
-                    <span className="mr-1">Less</span>
-                    {purpleHeatColors.map((c, i) => (
-                      <div key={i} className="w-2 h-2 rounded-sm" style={{ background: c }} />
-                    ))}
-                    <span className="ml-1">More</span>
-                  </div>
-                </motion.div>
-
-                {/* Trending Topics - interactive category filters */}
-                <motion.div 
-                  initial={{ opacity: 0, y: 12 }} 
-                  animate={{ opacity: 1, y: 0 }} 
-                  transition={{ delay: 0.45 }}
-                  className="rounded-xl p-6 border border-white/[0.08] bg-[#111116]"
-                >
-                  <h4 className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
-                    Categories
-                  </h4>
-                  <div className="flex flex-wrap gap-1.5">
-                    {['Array', 'Hash Table', 'Stack', 'Heap', 'Linked List', 'String'].map(t => {
-                      const isSelected = selectedTag === t;
-                      return (
-                        <span 
-                          key={t} 
-                          onClick={() => {
-                            playSound('click');
-                            setSelectedTag(isSelected ? null : t);
-                          }}
-                          onMouseEnter={() => playSound('hover')}
-                          className={`text-xs px-3 py-1.5 rounded border transition-all cursor-pointer font-mono font-medium ${
-                            isSelected 
-                              ? 'bg-[#c3f73a]/10 text-white border-[#c3f73a]/30' 
-                              : 'border-white/[0.08] text-zinc-500 bg-white/[0.02] hover:text-white hover:border-white/[0.16]'
-                          }`}
-                        >
-                          {t}
-                        </span>
-                      );
-                    })}
-                  </div>
-                </motion.div>
+                </div>
               </div>
-
             </motion.div>
           ) : (
             /* Interactive Challenge High-Fidelity IDE Workspace (Stretched fully) */

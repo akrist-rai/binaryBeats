@@ -1,10 +1,17 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { useCfHandle } from '../hooks/useCfHandle';
+import { fetchRatingHistory, type CfRatingChange } from '../lib/codeforces';
+import { logSolve, getRecent, computeStreak, getWeekActivity, countBySource } from '../lib/activityLog';
+import { getHighlightedCode } from '../lib/cppHighlight';
+import { RatingBadge } from './blitz/RatingBadge';
 
 interface Props {
+  xp: number;
   onAddXp: (amount: number) => void;
   playSound: (type: 'click' | 'hover') => void;
   onShareSolution: (details: { problemTitle: string; code: string }) => void;
+  onNavigateTab: (tab: string) => void;
 }
 
 interface Problem {
@@ -110,17 +117,6 @@ const heatmapData = Array.from({ length: 52 * 7 }, (_, i) => {
   };
 });
 
-// C++ syntax highlighting token sets
-const CPP_TYPES = new Set(['int', 'float', 'double', 'bool', 'char', 'void', 'auto', 'long', 'short', 'unsigned', 'size_t', 'string', 'vector', 'unordered_map', 'map', 'set', 'stack', 'queue', 'pair', 'struct']);
-const CPP_KEYWORDS = new Set(['class', 'public', 'private', 'protected', 'virtual', 'override', 'return', 'if', 'else', 'for', 'while', 'do', 'switch', 'case', 'break', 'continue', 'new', 'delete', 'const', 'static', 'namespace', 'using', 'template', 'typename', 'nullptr', 'true', 'false']);
-
-// Hero terminal typewriter script
-const HERO_TERMINAL_LINES = [
-  'g++ -O2 -std=c++17 solution.cpp -o run',
-  './run < sample.txt',
-  '✓ Accepted · 4ms · 2.1 MB',
-];
-
 // Autocomplete words
 const AUTOCOMPLETE_WORDS = [
   'nums', 'target', 'unordered_map', 'size', 'push_back', 'pop_back', 'isValid',
@@ -128,19 +124,56 @@ const AUTOCOMPLETE_WORDS = [
   'auto', 'char', 'hashmap', 'twoSum', 'mergeKLists', 'nullptr'
 ];
 
-export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props) => {
+export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onNavigateTab }: Props) => {
   const [filter, setFilter] = useState<'All' | 'Easy' | 'Medium' | 'Hard'>('All');
   const [search, setSearch] = useState('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [countdown, setCountdown] = useState('');
-  const [typedLine, setTypedLine] = useState(0);
-  const [typedChars, setTypedChars] = useState(0);
   const [activeChallenge, setActiveChallenge] = useState<Problem | null>(null);
-  
+
   const [solvedChallenges, setSolvedChallenges] = useState<string[]>(() => {
     const saved = localStorage.getItem('bb_solved_challenges');
     return saved ? JSON.parse(saved) : ['p1']; // Default Two Sum solved
   });
+
+  // Hero — real Codeforces identity + real local activity log (no fabricated stats)
+  const { handle: cfHandle, user: cfUser } = useCfHandle();
+  const [ratingHistory, setRatingHistory] = useState<CfRatingChange[]>([]);
+  const [ratingHistoryLoading, setRatingHistoryLoading] = useState(false);
+  const [streak] = useState(() => computeStreak());
+  const [weekActivity] = useState(() => getWeekActivity());
+  const [recentActivity] = useState(() => getRecent(4));
+  const [cfSolvedCount] = useState(() => countBySource('codeforces'));
+
+  useEffect(() => {
+    if (!cfHandle) {
+      setRatingHistory([]);
+      return;
+    }
+    let cancelled = false;
+    setRatingHistoryLoading(true);
+    fetchRatingHistory(cfHandle)
+      .then((history) => { if (!cancelled) setRatingHistory(history); })
+      .catch(() => { if (!cancelled) setRatingHistory([]); })
+      .finally(() => { if (!cancelled) setRatingHistoryLoading(false); });
+    return () => { cancelled = true; };
+  }, [cfHandle]);
+
+  const sparkBars = useMemo(() => {
+    if (ratingHistory.length === 0) return [];
+    const recent = ratingHistory.slice(-12);
+    const ratings = recent.map((r) => r.newRating);
+    const min = Math.min(...ratings);
+    const max = Math.max(...ratings);
+    const range = max - min || 1;
+    return ratings.map((r) => 15 + ((r - min) / range) * 85);
+  }, [ratingHistory]);
+
+  const ratingDelta = useMemo(() => {
+    if (ratingHistory.length === 0) return null;
+    const last = ratingHistory[ratingHistory.length - 1];
+    return last.newRating - last.oldRating;
+  }, [ratingHistory]);
 
   // Editor state — C++ only
   const [editorCode, setEditorCode] = useState('');
@@ -177,21 +210,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     };
     tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
   }, []);
-
-  // Hero terminal — typewriter effect cycling through a compile/run trace
-  useEffect(() => {
-    const currentLine = HERO_TERMINAL_LINES[typedLine];
-    if (typedChars < currentLine.length) {
-      const t = setTimeout(() => setTypedChars(c => c + 1), 32);
-      return () => clearTimeout(t);
-    }
-    const isLastLine = typedLine === HERO_TERMINAL_LINES.length - 1;
-    const holdThenAdvance = setTimeout(() => {
-      setTypedLine((typedLine + 1) % HERO_TERMINAL_LINES.length);
-      setTypedChars(0);
-    }, isLastLine ? 2200 : 500);
-    return () => clearTimeout(holdThenAdvance);
-  }, [typedChars, typedLine]);
 
   const handleEditorScroll = () => {
     if (textareaRef.current) {
@@ -315,7 +333,13 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     const newSolved = [...solvedChallenges, activeChallenge.id];
     setSolvedChallenges(newSolved);
     localStorage.setItem('bb_solved_challenges', JSON.stringify(newSolved));
-    
+
+    logSolve({
+      source: 'leetcode',
+      title: activeChallenge.title,
+      meta: activeChallenge.diff,
+      solvedAtSeconds: Math.floor(Date.now() / 1000),
+    });
     onAddXp(activeChallenge.xp);
     setCompileStatus('claimed');
   };
@@ -392,57 +416,6 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
     }
   };
 
-  const getHighlightedCode = (code: string) => {
-    let escaped = code
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;');
-
-    // 1. Extract comments first to prevent matching keywords/strings inside them
-    const comments: string[] = [];
-    escaped = escaped.replace(/(\/\/.*|\/\*[\s\S]*?\*\/)/g, (match) => {
-      comments.push(match);
-      return `__COMMENT_${comments.length - 1}__`;
-    });
-
-    // 2. Extract strings next to prevent matching keywords inside them
-    const strings: string[] = [];
-    escaped = escaped.replace(/(['"])([\s\S]*?)\1/g, (match) => {
-      strings.push(match);
-      return `__STRING_${strings.length - 1}__`;
-    });
-
-    // 3. Types + keywords in a single pass (avoids one pass's <span> markup
-    // being re-matched by the next, e.g. the literal word "class" inside
-    // class="syntax-type" attributes)
-    escaped = escaped.replace(/\b([A-Za-z_]\w*)\b/g, (word) => {
-      if (CPP_TYPES.has(word)) return `<span class="syntax-type">${word}</span>`;
-      if (CPP_KEYWORDS.has(word)) return `<span class="syntax-keyword">${word}</span>`;
-      return word;
-    });
-
-    // 4. Numbers
-    escaped = escaped.replace(/\b(\d+)\b/g, '<span class="syntax-number">$1</span>');
-
-    // 5. Preprocessor directives (#include, #define, ...) — safe to wrap whole
-    // lines now since none of their tokens match the type/keyword sets above
-    escaped = escaped.replace(/^(\s*#\w+.*)$/gm, '<span class="syntax-preproc">$1</span>');
-
-    // 6. Restore strings wrapped in span tags
-    escaped = escaped.replace(/__STRING_(\d+)__/g, (_, idx) => {
-      const originalString = strings[parseInt(idx, 10)];
-      return `<span class="syntax-string">${originalString}</span>`;
-    });
-
-    // 7. Restore comments wrapped in span tags
-    escaped = escaped.replace(/__COMMENT_(\d+)__/g, (_, idx) => {
-      const originalComment = comments[parseInt(idx, 10)];
-      return `<span class="syntax-comment">${originalComment}</span>`;
-    });
-
-    return escaped;
-  };
-
   return (
     <div className="w-full min-h-[calc(100vh-64px)] text-zinc-100 relative flex flex-col">
 
@@ -485,29 +458,34 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                     <p className="text-sm text-zinc-500 mt-2 font-sans">Ready to ship some C++ today?</p>
                   </div>
 
-                  {/* Live compile terminal — decorative, reinforces the C++-only identity */}
+                  {/* Codeforces identity card — real data, replaces the old decorative terminal */}
                   <div className="w-full lg:w-[380px] rounded-xl border border-white/[0.08] bg-[#0a0a0f] overflow-hidden shrink-0">
-                    <div className="h-8 flex items-center gap-1.5 px-3.5 border-b border-white/[0.06] bg-white/[0.015]">
-                      <span className="w-2 h-2 rounded-full bg-rose-500/40" />
-                      <span className="w-2 h-2 rounded-full bg-amber-500/40" />
-                      <span className="w-2 h-2 rounded-full bg-emerald-500/40" />
-                      <span className="ml-2 text-[9px] font-mono text-zinc-600 uppercase tracking-wider">bash</span>
-                    </div>
-                    <div className="p-4 font-mono text-[11px] leading-relaxed min-h-[86px]">
-                      {HERO_TERMINAL_LINES.map((line, i) => {
-                        if (i > typedLine) return null;
-                        const isCurrent = i === typedLine;
-                        const isResult = line.startsWith('✓');
-                        const shown = isCurrent ? line.slice(0, typedChars) : line;
-                        return (
-                          <div key={i} className={isCurrent ? '' : 'opacity-40'}>
-                            {!isResult && <span className="text-[#35e8ff]">$ </span>}
-                            <span className={isResult ? 'text-[#c3f73a] font-bold' : 'text-zinc-300'}>{shown}</span>
-                            {isCurrent && <span className="inline-block w-[6px] h-[12px] bg-[#c3f73a] ml-0.5 -mb-[1px] animate-caret align-middle" />}
+                    {cfHandle ? (
+                      <div className="p-4 flex items-center justify-between gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <div className="w-9 h-9 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/10 border border-[#c3f73a]/20 flex items-center justify-center text-xs font-bold text-[#c3f73a] font-mono shrink-0">
+                            {cfHandle[0].toUpperCase()}
                           </div>
-                        );
-                      })}
-                    </div>
+                          <div className="min-w-0">
+                            <div className="text-sm font-bold text-white truncate">{cfHandle}</div>
+                            <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider truncate">{cfUser?.rank ?? 'Codeforces'}</div>
+                          </div>
+                        </div>
+                        <RatingBadge rating={cfUser?.rating ?? null} />
+                      </div>
+                    ) : (
+                      <button
+                        onClick={() => { playSound('click'); onNavigateTab('blitz'); }}
+                        onMouseEnter={() => playSound('hover')}
+                        className="w-full p-4 flex items-center justify-between text-left cursor-pointer group"
+                      >
+                        <div>
+                          <div className="text-sm font-bold text-white group-hover:text-[#c3f73a] transition-colors">Link Codeforces</div>
+                          <div className="text-[10px] font-mono text-zinc-600 mt-0.5">See your real rating here</div>
+                        </div>
+                        <span className="text-zinc-600 group-hover:text-[#c3f73a] transition-colors">→</span>
+                      </button>
+                    )}
                   </div>
                 </motion.div>
 
@@ -517,11 +495,8 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                   variants={{ hidden: { opacity: 0 }, visible: { opacity: 1, transition: { duration: 0.4 } } }}
                 >
                   <div className="flex items-center gap-1.5 text-[10px] font-mono">
-                    <span className="relative flex h-2 w-2">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#c3f73a] opacity-50" />
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#c3f73a]" />
-                    </span>
-                    <span className="text-zinc-500">1,248 coders online</span>
+                    <span className="text-zinc-600">Total XP</span>
+                    <span className="text-[#c3f73a] font-bold">{xp}</span>
                   </div>
                   <div className="flex items-center gap-1.5 text-[10px] font-mono text-zinc-500">
                     <span className="text-zinc-600">Daily reset in</span>
@@ -532,53 +507,80 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                 {/* 3-panel hero grid */}
                 <div className="grid grid-cols-1 md:grid-cols-[1fr_1px_220px_1px_220px] gap-0">
 
-                  {/* Panel 1: Rating + sparkline */}
+                  {/* Panel 1: real Codeforces rating + sparkline (or an honest link CTA) */}
                   <motion.div
                     className="pr-8"
                     variants={{ hidden: { opacity: 0, x: -28 }, visible: { opacity: 1, x: 0, transition: { duration: 0.55, ease: [0.16,1,0.3,1] } } }}
                   >
-                    <div className="flex items-center gap-2 mb-3">
-                      <motion.div
-                        className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/10 border border-[#c3f73a]/20 flex items-center justify-center text-sm font-bold text-[#c3f73a] font-mono"
-                        whileHover={{ scale: 1.1 }}
-                        transition={{ type: 'spring', stiffness: 400, damping: 15 }}
-                      >A</motion.div>
-                      <div>
-                        <div className="text-sm font-bold text-white font-heading">akrist</div>
-                        <div className="text-[10px] font-mono text-zinc-600">Global Rank #142</div>
+                    {cfHandle && cfUser ? (
+                      <>
+                        <div className="flex items-center gap-2 mb-3">
+                          <motion.div
+                            className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/10 border border-[#c3f73a]/20 flex items-center justify-center text-sm font-bold text-[#c3f73a] font-mono"
+                            whileHover={{ scale: 1.1 }}
+                            transition={{ type: 'spring', stiffness: 400, damping: 15 }}
+                          >{cfHandle[0].toUpperCase()}</motion.div>
+                          <div>
+                            <div className="text-sm font-bold text-white font-heading">{cfHandle}</div>
+                            <div className="text-[10px] font-mono text-zinc-600">{cfUser.rank ?? 'Unrated'}</div>
+                          </div>
+                        </div>
+                        <div className="mb-4">
+                          <div className="flex items-end gap-2 mb-1">
+                            <motion.span
+                              className="text-5xl font-mono font-black text-white leading-none text-glow"
+                              initial={{ opacity: 0, scale: 0.75 }}
+                              animate={{ opacity: 1, scale: 1 }}
+                              transition={{ delay: 0.2, duration: 0.5, type: 'spring', stiffness: 200, damping: 18 }}
+                            >{cfUser.rating ?? '—'}</motion.span>
+                            {ratingDelta !== null && (
+                              <motion.span
+                                className={`text-sm font-mono mb-1.5 font-bold ${ratingDelta >= 0 ? 'text-[#c3f73a]' : 'text-rose-400'}`}
+                                initial={{ opacity: 0, x: -10 }}
+                                animate={{ opacity: 1, x: 0 }}
+                                transition={{ delay: 0.45, duration: 0.35 }}
+                              >{ratingDelta >= 0 ? '▲' : '▼'} {Math.abs(ratingDelta)}</motion.span>
+                            )}
+                          </div>
+                          <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Codeforces Rating</div>
+                        </div>
+                        {sparkBars.length > 1 ? (
+                          <>
+                            <div className="flex items-end gap-[3px] h-8 mb-3">
+                              {sparkBars.map((h, i) => (
+                                <motion.div
+                                  key={i}
+                                  className="flex-1 rounded-sm cursor-pointer"
+                                  style={{ height: `${h}%`, background: i === sparkBars.length - 1 ? '#c3f73a' : `rgba(195,247,58,${0.15 + i * (0.5 / sparkBars.length)})`, originY: 1 }}
+                                  initial={{ scaleY: 0 }}
+                                  animate={{ scaleY: 1 }}
+                                  transition={{ delay: 0.3 + i*0.04, duration: 0.4, ease: 'easeOut' }}
+                                  whileHover={{ scaleY: 1.2, background: '#c3f73a' }}
+                                />
+                              ))}
+                            </div>
+                            <div className="text-[9px] font-mono text-zinc-700">Rating trend · last {sparkBars.length} contests</div>
+                          </>
+                        ) : (
+                          <div className="text-[9px] font-mono text-zinc-700 mt-2">
+                            {ratingHistoryLoading ? 'Loading rating trend…' : 'No rated contests yet'}
+                          </div>
+                        )}
+                      </>
+                    ) : (
+                      <div className="flex flex-col items-start justify-center h-full min-h-[160px]">
+                        <div className="text-sm text-zinc-500 mb-3 max-w-[220px] leading-relaxed">
+                          Link your Codeforces handle to see your real rating and trend here.
+                        </div>
+                        <button
+                          onClick={() => { playSound('click'); onNavigateTab('blitz'); }}
+                          onMouseEnter={() => playSound('hover')}
+                          className="px-3 py-1.5 rounded-lg border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[#c3f73a] text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer hover:bg-[#c3f73a]/10 transition-colors"
+                        >
+                          Link Codeforces →
+                        </button>
                       </div>
-                    </div>
-                    <div className="mb-4">
-                      <div className="flex items-end gap-2 mb-1">
-                        <motion.span
-                          className="text-5xl font-mono font-black text-white leading-none text-glow"
-                          initial={{ opacity: 0, scale: 0.75 }}
-                          animate={{ opacity: 1, scale: 1 }}
-                          transition={{ delay: 0.2, duration: 0.5, type: 'spring', stiffness: 200, damping: 18 }}
-                        >1,842</motion.span>
-                        <motion.span
-                          className="text-sm font-mono text-[#c3f73a] mb-1.5 font-bold"
-                          initial={{ opacity: 0, x: -10 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.45, duration: 0.35 }}
-                        >▲ +67</motion.span>
-                      </div>
-                      <div className="text-[10px] font-mono text-zinc-600 uppercase tracking-wider">Current Rating · Division II</div>
-                    </div>
-                    <div className="flex items-end gap-[3px] h-8 mb-3">
-                      {[40,55,35,70,50,80,60,90,75,100,85,95].map((h, i) => (
-                        <motion.div
-                          key={i}
-                          className="flex-1 rounded-sm cursor-pointer"
-                          style={{ height: `${h}%`, background: i===11 ? '#c3f73a' : `rgba(195,247,58,${0.1+i*0.055})`, originY: 1 }}
-                          initial={{ scaleY: 0 }}
-                          animate={{ scaleY: 1 }}
-                          transition={{ delay: 0.3 + i*0.04, duration: 0.4, ease: 'easeOut' }}
-                          whileHover={{ scaleY: 1.2, background: '#c3f73a' }}
-                        />
-                      ))}
-                    </div>
-                    <div className="text-[9px] font-mono text-zinc-700">Rating trend · last 12 contests</div>
+                    )}
                   </motion.div>
 
                   <div className="hidden md:block bg-white/[0.06]" />
@@ -612,11 +614,11 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                       <div className="flex items-center justify-between">
                         <motion.div initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.65, duration:0.4 }}>
                           <div className="text-2xl font-mono font-black text-white">{solvedCount}</div>
-                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">Total solved</div>
+                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">LeetCode solved</div>
                         </motion.div>
                         <motion.div className="text-right" initial={{ opacity:0, y:8 }} animate={{ opacity:1, y:0 }} transition={{ delay:0.75, duration:0.4 }}>
-                          <div className="text-2xl font-mono font-black text-white">Top {Math.max(1,100-pct)}%</div>
-                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">Global tier</div>
+                          <div className="text-2xl font-mono font-black text-[#35e8ff]">{cfSolvedCount}</div>
+                          <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider mt-0.5">Codeforces solved</div>
                         </motion.div>
                       </div>
                     </div>
@@ -624,7 +626,7 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
 
                   <div className="hidden md:block bg-white/[0.06]" />
 
-                  {/* Panel 3: Streak + recent */}
+                  {/* Panel 3: real streak + week activity + recent (from the shared activity log) */}
                   <motion.div
                     className="px-8 pt-6 md:pt-0"
                     variants={{ hidden: { opacity: 0, x: 28 }, visible: { opacity: 1, x: 0, transition: { duration: 0.55, ease: [0.16,1,0.3,1] } } }}
@@ -636,48 +638,53 @@ export const LeetCodeDashboard = ({ onAddXp, playSound, onShareSolution }: Props
                         initial={{ scale: 0.4, opacity: 0 }}
                         animate={{ scale: 1, opacity: 1 }}
                         transition={{ delay: 0.3, type: 'spring', stiffness: 280, damping: 16 }}
-                      >3</motion.div>
+                      >{streak}</motion.div>
                       <div>
                         <motion.div className="text-base"
                           initial={{ rotate: -25, opacity: 0 }}
                           animate={{ rotate: 0, opacity: 1 }}
                           transition={{ delay: 0.5, duration: 0.4, type: 'spring' }}
-                        >🔥</motion.div>
+                        >{streak > 0 ? '🔥' : '💤'}</motion.div>
                         <div className="text-[9px] font-mono text-zinc-600 uppercase tracking-wider">days</div>
                       </div>
                     </div>
                     <div className="flex gap-1 mb-5">
-                      {['M','T','W','T','F','S','S'].map((d, i) => (
+                      {weekActivity.map((d, i) => (
                         <motion.div key={i} className="flex-1 flex flex-col items-center gap-1"
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: 0.38 + i*0.06, duration: 0.3 }}
                         >
                           <motion.div
-                            className={`w-full aspect-square rounded-sm ${i<3 ? 'bg-[#c3f73a]' : 'bg-white/[0.06]'}`}
+                            className={`w-full aspect-square rounded-sm ${d.solved ? 'bg-[#c3f73a]' : 'bg-white/[0.06]'}`}
                             whileHover={{ scale: 1.25 }}
                             transition={{ type: 'spring', stiffness: 500, damping: 15 }}
                           />
-                          <span className="text-[8px] font-mono text-zinc-700">{d}</span>
+                          <span className="text-[8px] font-mono text-zinc-700">{d.label}</span>
                         </motion.div>
                       ))}
                     </div>
                     <div className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-2">Recent</div>
                     <div className="flex flex-col gap-1.5">
-                      {[
-                        { title: 'Two Sum', status: 'Accepted', color: '#34d399' },
-                        { title: 'Valid Parens', status: 'Wrong Ans', color: '#f87171' },
-                      ].map((r, i) => (
-                        <motion.div key={i}
-                          className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0"
-                          initial={{ opacity: 0, x: 14 }}
-                          animate={{ opacity: 1, x: 0 }}
-                          transition={{ delay: 0.6 + i*0.1, duration: 0.35 }}
-                        >
-                          <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[100px]">{r.title}</span>
-                          <span className="text-[9px] font-mono font-bold" style={{ color: r.color }}>{r.status}</span>
-                        </motion.div>
-                      ))}
+                      {recentActivity.length === 0 ? (
+                        <div className="text-[10px] font-mono text-zinc-700 py-2 leading-relaxed">
+                          No solves logged yet — solve a problem or run a Blitz session.
+                        </div>
+                      ) : (
+                        recentActivity.map((r, i) => (
+                          <motion.div key={i}
+                            className="flex items-center justify-between py-1.5 border-b border-white/[0.04] last:border-0"
+                            initial={{ opacity: 0, x: 14 }}
+                            animate={{ opacity: 1, x: 0 }}
+                            transition={{ delay: 0.6 + i*0.1, duration: 0.35 }}
+                          >
+                            <span className="text-[11px] font-mono text-zinc-400 truncate max-w-[100px]">{r.title}</span>
+                            <span className={`text-[9px] font-mono font-bold ${r.source === 'codeforces' ? 'text-[#35e8ff]' : 'text-[#c3f73a]'}`}>
+                              {r.source === 'codeforces' ? 'CF' : 'LC'} · {r.meta}
+                            </span>
+                          </motion.div>
+                        ))
+                      )}
                     </div>
                   </motion.div>
                 </div>

@@ -5,6 +5,7 @@ export interface OptimizedProblem {
   index: string;
   name: string;
   rating: number;
+  tags: string[];
 }
 
 const TTL_MS = 24 * 60 * 60 * 1000;
@@ -14,9 +15,10 @@ let inFlight: Promise<OptimizedProblem[]> | null = null;
 
 /**
  * Fetches Codeforces' full ~9000-problem catalog, trims it to just what the
- * Blitz & Duel algorithm needs (drops tags/points/type/etc.), and caches the
- * result in memory for every client this server serves — one shared fetch
- * instead of one per browser tab.
+ * Blitz & Duel algorithm needs (drops points/type/etc., keeps tags since those
+ * are shown as chips on each problem row), and caches the result in memory for
+ * every client this server serves — one shared fetch instead of one per
+ * browser tab.
  */
 export async function getProblemset(): Promise<OptimizedProblem[]> {
   if (cache && Date.now() - cache.fetchedAt < TTL_MS) return cache.problems;
@@ -27,7 +29,7 @@ export async function getProblemset(): Promise<OptimizedProblem[]> {
       const raw = await fetchProblemset();
       const trimmed: OptimizedProblem[] = raw
         .filter((p): p is typeof p & { rating: number } => p.type === "PROGRAMMING" && typeof p.rating === "number")
-        .map((p) => ({ contestId: p.contestId, index: p.index, name: p.name, rating: p.rating }));
+        .map((p) => ({ contestId: p.contestId, index: p.index, name: p.name, rating: p.rating, tags: p.tags }));
 
       cache = { fetchedAt: Date.now(), problems: trimmed };
       return trimmed;

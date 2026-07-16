@@ -1,11 +1,19 @@
-// Rating-band math shared with the backend (server/src/blitzAlgorithm.ts) —
-// kept here too so SessionSetup can preview the target draw before the user
-// commits. Actual problem *selection* now happens server-side, at session
-// creation, using its own copy of this same math against the live catalog.
+import { problemKey } from "./codeforces.js";
+import type { OptimizedProblem } from "./problemCache.js";
 
 export const RATING_MIN = 800;
 export const RATING_MAX = 3500;
 export const RATING_STEP = 100;
+
+export class NoProblemsError extends Error {
+  target: number;
+
+  constructor(target: number) {
+    super(`No unsolved problems found near rating ${target}.`);
+    this.name = "NoProblemsError";
+    this.target = target;
+  }
+}
 
 function clamp(n: number, min: number, max: number): number {
   return Math.min(max, Math.max(min, n));
@@ -52,9 +60,53 @@ export function buildDuelTargets(ratingA: number, ratingB: number): number[] {
   return dedupeBump(offsets.map((o) => snapRating(anchor + o)));
 }
 
-/** XP payout, continuous with LeetCodeDashboard's Easy/Medium/Hard = 80/150/300 scale. */
-export function xpForRating(rating: number): number {
-  return clamp(Math.round(rating / 10), 80, 350);
+export interface SessionProblem {
+  contestId: number;
+  index: string;
+  name: string;
+  rating: number;
+  tags: string[];
 }
 
-export const DUEL_VICTORY_BONUS_XP = 100;
+const WIDEN_STEPS = [0, 100, 200, 300, 400];
+
+/**
+ * Picks one unsolved problem per target rating from the catalog, widening the
+ * search window around a target if nothing matches exactly.
+ */
+export function selectProblems(
+  catalog: OptimizedProblem[],
+  targets: number[],
+  solvedKeys: Set<string>
+): SessionProblem[] {
+  const picked: SessionProblem[] = [];
+  const pickedKeys = new Set<string>();
+
+  for (const target of targets) {
+    let candidates: OptimizedProblem[] = [];
+
+    for (const widen of WIDEN_STEPS) {
+      candidates = catalog.filter((p) => {
+        const key = problemKey(p);
+        return Math.abs(p.rating - target) <= widen && !solvedKeys.has(key) && !pickedKeys.has(key);
+      });
+      if (candidates.length > 0) break;
+    }
+
+    if (candidates.length === 0) {
+      throw new NoProblemsError(target);
+    }
+
+    const chosen = candidates[Math.floor(Math.random() * candidates.length)];
+    picked.push({
+      contestId: chosen.contestId,
+      index: chosen.index,
+      name: chosen.name,
+      rating: chosen.rating,
+      tags: chosen.tags,
+    });
+    pickedKeys.add(problemKey(chosen));
+  }
+
+  return picked;
+}

@@ -10,18 +10,19 @@ export interface CfUser {
   rank: string | null;
 }
 
-export interface CfProblem {
-  contestId: number;
-  index: string;
-  name: string;
-  rating: number;
-}
-
 export interface CfSubmission {
   id: number;
   creationTimeSeconds: number;
   verdict: string | null;
   problem: { contestId: number; index: string };
+}
+
+export interface CfRatingChange {
+  contestId: number;
+  contestName: string;
+  newRating: number;
+  oldRating: number;
+  ratingUpdateTimeSeconds: number;
 }
 
 export type CfErrorKind = "NOT_FOUND" | "RATE_LIMITED" | "API_FAILED" | "NETWORK";
@@ -76,15 +77,17 @@ export async function fetchUserInfo(handles: string[]): Promise<CfUser[]> {
   return users;
 }
 
-export async function fetchProblemset(): Promise<CfProblem[]> {
-  const { problems } = await apiGet<{ problems: CfProblem[] }>("/problemset");
-  return problems;
-}
-
 export async function fetchUserStatus(handle: string, count?: number): Promise<CfSubmission[]> {
   const qs = count ? `?count=${count}` : "";
   const { submissions } = await apiGet<{ submissions: CfSubmission[] }>(`/status/${encodeURIComponent(handle)}${qs}`);
   return submissions;
+}
+
+export async function fetchRatingHistory(handle: string): Promise<CfRatingChange[]> {
+  const { history } = await apiGet<{ history: CfRatingChange[] }>(
+    `/user/${encodeURIComponent(handle)}/rating-history`
+  );
+  return history;
 }
 
 export function problemKey(p: { contestId: number; index: string }): string {

@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { CfApiError, fetchUserInfo, isValidHandleFormat, type CfUser } from "../lib/codeforces";
-import { clearSession } from "../lib/blitzSession";
+import { SESSION_ID_KEY } from "../lib/blitzApi";
 
 const HANDLE_KEY = "bb_cf_handle";
 const USER_CACHE_KEY = "bb_cf_user";
@@ -110,7 +110,7 @@ export function useCfHandle(): UseCfHandleResult {
   const unlinkHandle = useCallback(() => {
     localStorage.removeItem(HANDLE_KEY);
     localStorage.removeItem(USER_CACHE_KEY);
-    clearSession();
+    localStorage.removeItem(SESSION_ID_KEY);
     setHandle(null);
     setUser(null);
     setStatus("idle");

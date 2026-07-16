@@ -1,7 +1,21 @@
 import Router from "@koa/router";
 import type { Context } from "koa";
-import { CfApiError, fetchUserInfo, fetchUserStatus } from "../codeforces.js";
-import { getProblemset } from "../problemCache.js";
+import { CfApiError, fetchUserInfo, fetchUserRating, fetchUserStatus } from "../codeforces.js";
+
+const RATING_HISTORY_LIMIT = 20;
+const RATING_HISTORY_TTL_MS = 5 * 60 * 1000;
+
+interface RatingHistoryEntry {
+  contestId: number;
+  contestName: string;
+  newRating: number;
+  oldRating: number;
+  ratingUpdateTimeSeconds: number;
+}
+
+// Small per-handle cache — avoids re-fetching a handle's whole rating history
+// (which can be hundreds of entries for prolific users) on every dashboard visit.
+const ratingHistoryCache = new Map<string, { fetchedAt: number; history: RatingHistoryEntry[] }>();
 
 const router = new Router({ prefix: "/api/cf" });
 
@@ -39,15 +53,6 @@ router.get("/user/:handles", async (ctx) => {
   }
 });
 
-// GET /api/cf/problemset — the full rated-problem catalog, cached & trimmed server-side
-router.get("/problemset", async (ctx) => {
-  try {
-    ctx.body = { problems: await getProblemset() };
-  } catch (e) {
-    handleCfError(ctx, e);
-  }
-});
-
 // GET /api/cf/status/:handle?count=N — a handle's submission history, trimmed to what
 // the Blitz & Duel verdict-detection logic actually needs.
 router.get("/status/:handle", async (ctx) => {
@@ -65,6 +70,32 @@ router.get("/status/:handle", async (ctx) => {
         problem: { contestId: s.problem.contestId, index: s.problem.index },
       })),
     };
+  } catch (e) {
+    handleCfError(ctx, e);
+  }
+});
+
+// GET /api/cf/user/:handle/rating-history — a handle's real contest-by-contest
+// rating changes, newest last, trimmed to the most recent entries.
+router.get("/user/:handle/rating-history", async (ctx) => {
+  const key = ctx.params.handle.toLowerCase();
+  const cached = ratingHistoryCache.get(key);
+  if (cached && Date.now() - cached.fetchedAt < RATING_HISTORY_TTL_MS) {
+    ctx.body = { history: cached.history };
+    return;
+  }
+
+  try {
+    const changes = await fetchUserRating(ctx.params.handle);
+    const recent: RatingHistoryEntry[] = changes.slice(-RATING_HISTORY_LIMIT).map((c) => ({
+      contestId: c.contestId,
+      contestName: c.contestName,
+      newRating: c.newRating,
+      oldRating: c.oldRating,
+      ratingUpdateTimeSeconds: c.ratingUpdateTimeSeconds,
+    }));
+    ratingHistoryCache.set(key, { fetchedAt: Date.now(), history: recent });
+    ctx.body = { history: recent };
   } catch (e) {
     handleCfError(ctx, e);
   }

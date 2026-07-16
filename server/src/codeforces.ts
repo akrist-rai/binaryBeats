@@ -15,6 +15,7 @@ export interface CfProblem {
   name: string;
   rating?: number;
   type: string;
+  tags: string[];
 }
 
 export interface CfSubmission {
@@ -22,6 +23,15 @@ export interface CfSubmission {
   creationTimeSeconds: number;
   problem: { contestId: number; index: string };
   verdict?: string;
+}
+
+export interface CfRatingChange {
+  contestId: number;
+  contestName: string;
+  rank: number;
+  ratingUpdateTimeSeconds: number;
+  oldRating: number;
+  newRating: number;
 }
 
 export type CfErrorKind = "NOT_FOUND" | "RATE_LIMITED" | "API_FAILED" | "NETWORK";
@@ -101,4 +111,12 @@ export function fetchUserStatus(handle: string, count?: number): Promise<CfSubmi
   const params: Record<string, string> = { handle, from: "1" };
   if (count) params.count = String(count);
   return cfGet<CfSubmission[]>("user.status", params);
+}
+
+export function fetchUserRating(handle: string): Promise<CfRatingChange[]> {
+  return cfGet<CfRatingChange[]>("user.rating", { handle });
+}
+
+export function problemKey(p: { contestId: number; index: string }): string {
+  return `${p.contestId}-${p.index}`;
 }

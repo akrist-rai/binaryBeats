@@ -1,35 +1,16 @@
 import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCfHandle } from "../../hooks/useCfHandle";
-import { useVerdictPolling } from "../../hooks/useVerdictPolling";
-import { CfApiError, fetchProblemset, fetchUserStatus, problemKey, problemUrl } from "../../lib/codeforces";
-import {
-  DUEL_VICTORY_BONUS_XP,
-  NoProblemsError,
-  buildDuelTargets,
-  buildSoloTargets,
-  effectiveRating,
-  selectProblems,
-  xpForRating,
-} from "../../lib/blitzAlgorithm";
-import {
-  claimedBy,
-  clearSession,
-  createSession,
-  finishSession,
-  hasXpAwarded,
-  isComplete,
-  loadSession,
-  markXpAwarded,
-  recordSolve,
-  saveSession,
-  scores,
-  type BlitzMode,
-  type BlitzSession,
-} from "../../lib/blitzSession";
+import { useSessionPolling } from "../../hooks/useSessionPolling";
+import { BlitzApiError, SESSION_ID_KEY, createSession, endSession } from "../../lib/blitzApi";
+import { problemKey } from "../../lib/codeforces";
+import { DUEL_VICTORY_BONUS_XP, xpForRating } from "../../lib/blitzAlgorithm";
+import { claimedBy, scores, type BlitzMode, type BlitzSession } from "../../lib/blitzSession";
+import { logSolve } from "../../lib/activityLog";
 import { HandleLinkCard } from "./HandleLinkCard";
 import { SessionSetup, type RivalInfo } from "./SessionSetup";
-import { ProblemRow } from "./ProblemRow";
+import { ProblemCard } from "./ProblemCard";
+import { ProblemWorkspace } from "./ProblemWorkspace";
 import { Scoreboard } from "./Scoreboard";
 import { SessionTimer } from "./SessionTimer";
 import { RatingBadge } from "./RatingBadge";
@@ -39,79 +20,102 @@ interface BlitzDuelViewProps {
   onAddXp: (amount: number) => void;
 }
 
+function awardedKey(sessionId: string): string {
+  return `bb_xp_awarded_${sessionId}`;
+}
+
+function readAwarded(sessionId: string): Set<string> {
+  try {
+    const raw = localStorage.getItem(awardedKey(sessionId));
+    return raw ? new Set(JSON.parse(raw)) : new Set();
+  } catch {
+    return new Set();
+  }
+}
+
+function writeAwarded(sessionId: string, keys: Set<string>) {
+  try {
+    localStorage.setItem(awardedKey(sessionId), JSON.stringify([...keys]));
+  } catch {
+    // ignore quota errors
+  }
+}
+
 export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp }) => {
   const { handle, user, status, error, linkHandle, unlinkHandle } = useCfHandle();
 
-  const [session, setSession] = useState<BlitzSession | null>(() => {
-    const loaded = loadSession();
-    if (loaded && handle && loaded.handles[0] !== handle.toLowerCase()) return null;
-    return loaded;
-  });
+  const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem(SESSION_ID_KEY));
   const [starting, setStarting] = useState(false);
   const [startError, setStartError] = useState<string | null>(null);
   const [confirmingEnd, setConfirmingEnd] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [openProblemIndex, setOpenProblemIndex] = useState<number | null>(null);
 
-  const handleSolve = useCallback((h: string, key: string, acTimeSeconds: number) => {
-    setSession((prev) => {
-      if (!prev) return prev;
-      const updated = recordSolve(prev, h, key, acTimeSeconds);
-      if (updated !== prev) saveSession(updated);
-      return updated;
-    });
-  }, []);
+  const { session, pollState, notFound } = useSessionPolling(sessionId);
 
-  const { pollState } = useVerdictPolling(session, handleSolve);
-
-  // Award XP the moment a problem is won, and transition to "finished" once complete.
+  // A fresh session (or leaving one) always starts back at the problem list.
   useEffect(() => {
-    if (!session || session.status !== "active") return;
+    setOpenProblemIndex(null);
+  }, [sessionId]);
+
+  // Server-side session vanished (expired/swept) — forget it locally and go back to setup.
+  useEffect(() => {
+    if (notFound) {
+      localStorage.removeItem(SESSION_ID_KEY);
+      setSessionId(null);
+    }
+  }, [notFound]);
+
+  // Award XP the moment a problem is won. Idempotent across polls/reloads via a
+  // small locally-persisted "already awarded" set, keyed by session id.
+  useEffect(() => {
+    if (!session) return;
     const me = session.handles[0];
-    let updated = session;
+    const awarded = readAwarded(session.id);
     let changed = false;
 
     for (const p of session.problems) {
       const key = problemKey(p);
       const winner =
         session.mode === "duel" ? claimedBy(session, key) : session.results[me]?.[key] !== undefined ? me : null;
-      if (winner === me && !hasXpAwarded(session, key)) {
+      if (winner === me && !awarded.has(key)) {
         onAddXp(xpForRating(p.rating));
-        updated = markXpAwarded(updated, key);
+        logSolve({
+          source: "codeforces",
+          title: p.name,
+          meta: String(p.rating),
+          solvedAtSeconds: session.results[me]?.[key] ?? Math.floor(Date.now() / 1000),
+        });
+        awarded.add(key);
         changed = true;
       }
     }
 
-    if (isComplete(session)) {
-      if (session.mode === "duel") {
-        const sc = scores(session);
-        const rival = session.handles[1];
-        if ((sc[me] ?? 0) > (sc[rival] ?? 0) && !hasXpAwarded(updated, "duel_bonus")) {
-          onAddXp(DUEL_VICTORY_BONUS_XP);
-          updated = markXpAwarded(updated, "duel_bonus");
-          changed = true;
-        }
-      }
-      if (updated.status !== "finished") {
-        updated = finishSession(updated);
+    if (session.status === "finished" && session.mode === "duel") {
+      const sc = scores(session);
+      const rival = session.handles[1];
+      if ((sc[me] ?? 0) > (sc[rival] ?? 0) && !awarded.has("duel_bonus")) {
+        onAddXp(DUEL_VICTORY_BONUS_XP);
+        awarded.add("duel_bonus");
         changed = true;
       }
     }
 
     if (changed) {
       playSound("click");
-      setSession(updated);
-      saveSession(updated);
+      writeAwarded(session.id, awarded);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [session]);
 
   const xpEarned = useMemo(() => {
     if (!session) return 0;
+    const awarded = readAwarded(session.id);
     let total = 0;
     for (const p of session.problems) {
-      if (session.xpAwarded[problemKey(p)]) total += xpForRating(p.rating);
+      if (awarded.has(problemKey(p))) total += xpForRating(p.rating);
     }
-    if (session.xpAwarded["duel_bonus"]) total += DUEL_VICTORY_BONUS_XP;
+    if (awarded.has("duel_bonus")) total += DUEL_VICTORY_BONUS_XP;
     return total;
   }, [session]);
 
@@ -122,45 +126,14 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
       setStartError(null);
 
       try {
-        const catalog = await fetchProblemset();
-
-        const meSubs = await fetchUserStatus(handle);
-        const meBaseline = meSubs[0]?.id ?? 0;
-        const solvedKeys = new Set(meSubs.filter((s) => s.verdict === "OK").map((s) => problemKey(s.problem)));
-
-        const handles = [handle];
-        const ratings: Record<string, number | null> = { [handle.toLowerCase()]: user?.rating ?? null };
-        const baselineSubmissionId: Record<string, number> = { [handle.toLowerCase()]: meBaseline };
-
-        let targets: number[];
-
-        if (mode === "duel" && rival) {
-          const rivalSubs = await fetchUserStatus(rival.handle);
-          const rivalBaseline = rivalSubs[0]?.id ?? 0;
-          for (const s of rivalSubs) {
-            if (s.verdict === "OK") solvedKeys.add(problemKey(s.problem));
-          }
-          handles.push(rival.handle);
-          ratings[rival.handle.toLowerCase()] = rival.rating ?? null;
-          baselineSubmissionId[rival.handle.toLowerCase()] = rivalBaseline;
-          targets = buildDuelTargets(effectiveRating({ rating: user?.rating }), effectiveRating({ rating: rival.rating }));
-        } else {
-          targets = buildSoloTargets(effectiveRating({ rating: user?.rating }));
-        }
-
-        const problems = selectProblems(catalog, targets, solvedKeys);
-        const newSession = createSession(mode, handles, ratings, baselineSubmissionId, problems);
-        setSession(newSession);
-        saveSession(newSession);
+        const newSession = await createSession(mode, handle, rival?.handle);
+        localStorage.setItem(SESSION_ID_KEY, newSession.id);
+        setSessionId(newSession.id);
       } catch (e) {
-        if (e instanceof NoProblemsError) {
-          setStartError(
-            `Couldn't find enough unsolved problems near rating ${e.target} — try again or pick a different mode.`
-          );
-        } else if (e instanceof CfApiError && e.kind === "RATE_LIMITED") {
+        if (e instanceof BlitzApiError && (e.kind === "NO_PROBLEMS" || e.kind === "NOT_FOUND")) {
+          setStartError(e.message);
+        } else if (e instanceof BlitzApiError && e.kind === "RATE_LIMITED") {
           setStartError("Codeforces is rate-limiting requests — wait a few seconds and retry.");
-        } else if (e instanceof CfApiError) {
-          setStartError("Codeforces request failed — retry in a moment.");
         } else {
           setStartError("Something went wrong preparing the session — retry.");
         }
@@ -168,24 +141,38 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
         setStarting(false);
       }
     },
-    [handle, user]
+    [handle]
   );
 
   const handleNewSession = () => {
-    clearSession();
-    setSession(null);
+    localStorage.removeItem(SESSION_ID_KEY);
+    setSessionId(null);
     setStartError(null);
   };
 
   const handleUnlink = () => {
     unlinkHandle();
-    clearSession();
-    setSession(null);
+    setSessionId(null);
+  };
+
+  const handleEndSession = async () => {
+    if (sessionId) {
+      try {
+        await endSession(sessionId);
+      } catch {
+        // best-effort — the server sweeps stale sessions on its own regardless
+      }
+    }
+    localStorage.removeItem(SESSION_ID_KEY);
+    setSessionId(null);
+    setConfirmingEnd(false);
   };
 
   const handleCopyLinks = async () => {
     if (!session) return;
-    const text = session.problems.map((p) => problemUrl(p)).join("\n");
+    const text = session.problems
+      .map((p) => `https://codeforces.com/problemset/problem/${p.contestId}/${p.index}`)
+      .join("\n");
     try {
       await navigator.clipboard.writeText(text);
       setCopied(true);
@@ -233,7 +220,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                 playSound={playSound}
               />
             </motion.div>
-          ) : !session ? (
+          ) : !sessionId || !session ? (
             <motion.div key="setup" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}>
               <SessionSetup
                 meHandle={handle}
@@ -245,63 +232,88 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
               />
             </motion.div>
           ) : session.status === "active" ? (
-            <motion.div
-              key="active"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-            >
-              <div className="lg:col-span-2 rounded-xl border border-white/[0.08] bg-[#111116] overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
-                  <h3 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500">
-                    Problem Set
-                  </h3>
-                  <div className="flex items-center gap-1.5">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        pollState === "live" ? "bg-[#c3f73a] animate-pulse" : "bg-zinc-600"
-                      }`}
-                    />
-                    <span className="text-[10px] font-mono text-zinc-500">
-                      {pollState === "live"
-                        ? "watching submissions"
-                        : pollState === "paused"
-                          ? "paused — tab hidden"
-                          : "retrying — rate limited"}
-                    </span>
-                  </div>
-                </div>
-                <div className="flex flex-col divide-y divide-white/[0.04]">
-                  {session.problems.map((p, i) => (
-                    <ProblemRow key={problemKey(p)} session={session} problem={p} orderIndex={i} />
-                  ))}
-                </div>
-              </div>
-
-              <div className="flex flex-col gap-6">
-                <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
-                  <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
-                </div>
-
-                <Scoreboard session={session} xpEarned={xpEarned} />
-
-                {session.mode === "duel" && (
-                  <button
-                    onClick={handleCopyLinks}
-                    className="h-10 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors cursor-pointer"
+            <motion.div key="active" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col">
+              <AnimatePresence mode="wait">
+                {openProblemIndex === null ? (
+                  <motion.div
+                    key="list"
+                    initial={{ opacity: 0 }}
+                    animate={{ opacity: 1 }}
+                    exit={{ opacity: 0 }}
+                    className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                   >
-                    {copied ? "Copied ✓" : "Copy problem links"}
-                  </button>
-                )}
+                    <div className="lg:col-span-2 rounded-xl border border-white/[0.08] bg-[#111116] overflow-hidden">
+                      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
+                        <h3 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500">
+                          Problem Set
+                        </h3>
+                        <div className="flex items-center gap-1.5">
+                          <span
+                            className={`w-1.5 h-1.5 rounded-full ${
+                              pollState === "live" ? "bg-[#c3f73a] animate-pulse" : "bg-zinc-600"
+                            }`}
+                          />
+                          <span className="text-[10px] font-mono text-zinc-500">
+                            {pollState === "live"
+                              ? "server watching submissions"
+                              : pollState === "paused"
+                                ? "paused — tab hidden"
+                                : "retrying — rate limited"}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="flex flex-col divide-y divide-white/[0.04]">
+                        {session.problems.map((p, i) => (
+                          <ProblemCard
+                            key={problemKey(p)}
+                            session={session}
+                            problem={p}
+                            orderIndex={i}
+                            playSound={playSound}
+                            onOpen={() => setOpenProblemIndex(i)}
+                          />
+                        ))}
+                      </div>
+                    </div>
 
-                <button
-                  onClick={() => setConfirmingEnd(true)}
-                  className="h-10 rounded-lg border border-white/[0.08] text-zinc-500 hover:text-rose-400 hover:border-rose-500/30 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  End Session
-                </button>
-              </div>
+                    <div className="flex flex-col gap-6">
+                      <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                        <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
+                      </div>
+
+                      <Scoreboard session={session} xpEarned={xpEarned} />
+
+                      {session.mode === "duel" && (
+                        <button
+                          onClick={handleCopyLinks}
+                          className="h-10 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                        >
+                          {copied ? "Copied ✓" : "Copy problem links"}
+                        </button>
+                      )}
+
+                      <button
+                        onClick={() => setConfirmingEnd(true)}
+                        className="h-10 rounded-lg border border-white/[0.08] text-zinc-500 hover:text-rose-400 hover:border-rose-500/30 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                      >
+                        End Session
+                      </button>
+                    </div>
+                  </motion.div>
+                ) : (
+                  <motion.div key="workspace" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col">
+                    <ProblemWorkspace
+                      session={session}
+                      problem={session.problems[openProblemIndex]}
+                      orderIndex={openProblemIndex}
+                      pollState={pollState}
+                      playSound={playSound}
+                      onBack={() => setOpenProblemIndex(null)}
+                      onSelectProblem={setOpenProblemIndex}
+                    />
+                  </motion.div>
+                )}
+              </AnimatePresence>
             </motion.div>
           ) : (
             <motion.div
@@ -322,6 +334,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                 </>
               )}
               <p className="text-sm font-mono text-[#c3f73a] mt-2">+{xpEarned} XP</p>
+              <FinishedRecap session={session} />
               <motion.button
                 whileHover={{ scale: 1.03 }}
                 whileTap={{ scale: 0.97 }}
@@ -364,11 +377,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                   Cancel
                 </button>
                 <button
-                  onClick={() => {
-                    clearSession();
-                    setSession(null);
-                    setConfirmingEnd(false);
-                  }}
+                  onClick={handleEndSession}
                   className="flex-1 h-9 rounded-lg border border-rose-500/30 text-xs font-mono uppercase tracking-wider text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
                 >
                   End Session
@@ -404,5 +413,34 @@ const FinishedDuelBanner: React.FC<{ session: BlitzSession }> = ({ session }) =>
         {meScore} — {rivalScore}
       </p>
     </>
+  );
+};
+
+const FinishedRecap: React.FC<{ session: BlitzSession }> = ({ session }) => {
+  const me = session.handles[0];
+  const isDuel = session.mode === "duel";
+
+  return (
+    <div className="mt-6 pt-6 border-t border-white/[0.08] flex flex-col gap-2.5 text-left">
+      {session.problems.map((p) => {
+        const key = problemKey(p);
+        const winner = isDuel ? claimedBy(session, key) : session.results[me]?.[key] !== undefined ? me : null;
+        return (
+          <div key={key} className="flex items-center justify-between gap-3 text-xs font-mono">
+            <div className="flex items-center gap-2 min-w-0">
+              <RatingBadge rating={p.rating} />
+              <span className="text-zinc-300 truncate">{p.name}</span>
+            </div>
+            <span
+              className={`shrink-0 ${
+                winner === me ? "text-[#c3f73a] font-bold" : winner ? "text-zinc-400" : "text-zinc-600"
+              }`}
+            >
+              {winner ? (isDuel ? (session.displayHandles[winner] ?? winner) : "Solved ✓") : "—"}
+            </span>
+          </div>
+        );
+      })}
+    </div>
   );
 };

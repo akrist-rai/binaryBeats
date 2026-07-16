@@ -84,51 +84,64 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-      <div className="lg:col-span-2 flex flex-col gap-6">
-        <motion.div
-          initial={{ opacity: 0, y: 15 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
-        >
-          <h3 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
-            Choose a mode
-          </h3>
+    <div className="flex flex-col gap-6">
+      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
+        <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">
+          {meHandle} is linked
+        </span>
+        <h3 className="text-2xl font-heading font-extrabold gradient-text-cool mt-1 tracking-tight">
+          Ready to compete?
+        </h3>
+        <p className="text-sm text-zinc-500 mt-1">Pick a mode and we'll draw a rating-matched problem set.</p>
+      </motion.div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {(["blitz", "duel"] as BlitzMode[]).map((m) => {
-              const selected = mode === m;
-              return (
-                <button
-                  key={m}
-                  onClick={() => {
-                    playSound("click");
-                    setMode(m);
-                  }}
-                  onMouseEnter={() => playSound("hover")}
-                  className={`relative text-left rounded-lg border p-4 transition-colors cursor-pointer ${
-                    selected ? "border-white/40 bg-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.16]"
-                  }`}
-                >
-                  {selected && (
-                    <motion.div
-                      layoutId="modeIndicator"
-                      className="absolute inset-0 rounded-lg border border-white/40 pointer-events-none"
-                      transition={{ type: "spring", stiffness: 500, damping: 35 }}
-                    />
-                  )}
-                  <span className="text-sm font-bold font-heading text-white block mb-1">
-                    {m === "blitz" ? "Solo Blitz" : "Duel"}
-                  </span>
-                  <span className="text-xs font-mono text-zinc-500 leading-relaxed block">
-                    {m === "blitz"
-                      ? "4 problems · ladder around your rating"
-                      : "5 problems · first AC claims each"}
-                  </span>
-                </button>
-              );
-            })}
-          </div>
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 flex flex-col gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.05 }}
+            className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
+          >
+            <h4 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
+              Choose a mode
+            </h4>
+
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+              {(["blitz", "duel"] as BlitzMode[]).map((m) => {
+                const selected = mode === m;
+                return (
+                  <button
+                    key={m}
+                    onClick={() => {
+                      playSound("click");
+                      setMode(m);
+                    }}
+                    onMouseEnter={() => playSound("hover")}
+                    className={`relative text-left rounded-lg border p-5 transition-colors cursor-pointer ${
+                      selected ? "border-white/40 bg-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.16]"
+                    }`}
+                  >
+                    {selected && (
+                      <motion.div
+                        layoutId="modeIndicator"
+                        className="absolute inset-0 rounded-lg border border-white/40 pointer-events-none"
+                        transition={{ type: "spring", stiffness: 500, damping: 35 }}
+                      />
+                    )}
+                    <span className="text-2xl block mb-2">{m === "blitz" ? "⚡" : "⚔️"}</span>
+                    <span className="text-base font-bold font-heading text-white block mb-1">
+                      {m === "blitz" ? "Solo Blitz" : "Duel"}
+                    </span>
+                    <span className="text-xs font-mono text-zinc-500 leading-relaxed block">
+                      {m === "blitz"
+                        ? "4 problems · ladder around your rating"
+                        : "5 problems · first AC claims each"}
+                    </span>
+                  </button>
+                );
+              })}
+            </div>
 
           <AnimatePresence>
             {mode === "duel" && (
@@ -241,6 +254,7 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
             ))}
           </ul>
         </motion.div>
+      </div>
       </div>
     </div>
   );

@@ -83,7 +83,13 @@ export default function App() {
         <AnimatePresence mode="wait">
           {activeTab === "home" && (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
-              <LeetCodeDashboard onAddXp={handleAddXp} playSound={playSound} onShareSolution={handleShareSolution} />
+              <LeetCodeDashboard
+                xp={xp}
+                onAddXp={handleAddXp}
+                playSound={playSound}
+                onShareSolution={handleShareSolution}
+                onNavigateTab={handleTabChange}
+              />
             </motion.div>
           )}
           {activeTab === "blitz" && (

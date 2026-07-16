@@ -194,6 +194,28 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
 
   return (
     <div className="w-full min-h-[calc(100vh-56px)] text-bb-ink relative pb-12">
+      {session && session.status === "active" && openProblemIndex !== null ? (
+        /* ── WORKSPACE VIEW — full-bleed, no page max-width, desktop IDE layout ── */
+        <div
+          className="w-full px-2.5 lg:px-4 pt-2.5 lg:pt-3 flex flex-col relative z-10"
+          style={{ minHeight: "calc(100vh - 56px)" }}
+        >
+          <SolveWorkspace
+            mode="session"
+            problem={sessionProblemToSolvable(session.problems[openProblemIndex])}
+            orderIndex={openProblemIndex}
+            sidebarItems={deriveSidebarItems(session)}
+            progress={deriveProgress(session)}
+            claim={deriveClaim(session, problemKey(session.problems[openProblemIndex]))}
+            pollState={pollState}
+            sessionId={session.id}
+            onBack={() => setOpenProblemIndex(null)}
+            onSelectProblem={setOpenProblemIndex}
+            onAccepted={() => void refetch()}
+            playSound={playSound}
+          />
+        </div>
+      ) : (
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div className="relative">
@@ -246,101 +268,78 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
               />
             </motion.div>
           ) : session.status === "active" ? (
-            <motion.div key="active" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col">
-              <AnimatePresence mode="wait">
-                {openProblemIndex === null ? (
-                  <motion.div
-                    key="list"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    exit={{ opacity: 0 }}
-                    className="grid grid-cols-1 lg:grid-cols-3 gap-8"
-                  >
-                    <div className="lg:col-span-2 spec-card corner-marks overflow-hidden">
-                      <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line gap-3">
-                        <div className="flex items-center gap-3 min-w-0">
-                          <h3 className="label-caps shrink-0">
-                            Problem Set
-                          </h3>
-                          <span className="hidden sm:flex items-center gap-2 min-w-0 text-bb-ink-faint/50">
-                            <SessionBarcode value={session.id} className="shrink-0" />
-                            <span className="text-[9px] font-mono tracking-wider truncate">
-                              #{session.id.slice(0, 8).toUpperCase()}
-                            </span>
-                          </span>
-                        </div>
-                        <div className="flex items-center gap-1.5 shrink-0">
-                          <span
-                            className={`w-1.5 h-1.5 rounded-full ${
-                              pollState === "live" ? "bg-bb-lime animate-pulse" : "bg-bb-ink-faint"
-                            }`}
-                          />
-                          <span className="text-[10px] font-mono text-bb-ink-faint">
-                            {pollState === "live"
-                              ? "server watching submissions"
-                              : pollState === "paused"
-                                ? "paused — tab hidden"
-                                : "retrying — rate limited"}
-                          </span>
-                        </div>
-                      </div>
-                      <div className="flex flex-col divide-y divide-bb-line">
-                        {session.problems.map((p, i) => (
-                          <ProblemCard
-                            key={problemKey(p)}
-                            session={session}
-                            problem={p}
-                            orderIndex={i}
-                            playSound={playSound}
-                            onOpen={() => setOpenProblemIndex(i)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-
-                    <div className="flex flex-col gap-6">
-                      <div className="spec-card p-5">
-                        <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
-                      </div>
-
-                      <Scoreboard session={session} />
-
-                      {session.mode === "duel" && (
-                        <button
-                          onClick={handleCopyLinks}
-                          className="btn-outline h-10 text-[10px] font-mono uppercase tracking-wider cursor-pointer"
-                        >
-                          {copied ? "Copied ✓" : "Copy problem links"}
-                        </button>
-                      )}
-
-                      <button
-                        onClick={() => setConfirmingEnd(true)}
-                        className="h-10 rounded-full border border-bb-line text-bb-ink-faint hover:text-bb-red hover:border-bb-red/40 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
-                      >
-                        End Session
-                      </button>
-                    </div>
-                  </motion.div>
-                ) : (
-                  <motion.div key="workspace" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col">
-                    <SolveWorkspace
-                      mode="session"
-                      problem={sessionProblemToSolvable(session.problems[openProblemIndex])}
-                      orderIndex={openProblemIndex}
-                      sidebarItems={deriveSidebarItems(session)}
-                      progress={deriveProgress(session)}
-                      claim={deriveClaim(session, problemKey(session.problems[openProblemIndex]))}
-                      pollState={pollState}
-                      sessionId={session.id}
-                      onBack={() => setOpenProblemIndex(null)}
-                      onSelectProblem={setOpenProblemIndex}
-                      onAccepted={() => void refetch()}
-                      playSound={playSound}
+            <motion.div
+              key="active-list"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="grid grid-cols-1 lg:grid-cols-3 gap-8"
+            >
+              <div className="lg:col-span-2 spec-card corner-marks overflow-hidden">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line gap-3">
+                  <div className="flex items-center gap-3 min-w-0">
+                    <h3 className="label-caps shrink-0">
+                      Problem Set
+                    </h3>
+                    <span className="hidden sm:flex items-center gap-2 min-w-0 text-bb-ink-faint/50">
+                      <SessionBarcode value={session.id} className="shrink-0" />
+                      <span className="text-[9px] font-mono tracking-wider truncate">
+                        #{session.id.slice(0, 8).toUpperCase()}
+                      </span>
+                    </span>
+                  </div>
+                  <div className="flex items-center gap-1.5 shrink-0">
+                    <span
+                      className={`w-1.5 h-1.5 rounded-full ${
+                        pollState === "live" ? "bg-bb-lime animate-pulse" : "bg-bb-ink-faint"
+                      }`}
                     />
-                  </motion.div>
+                    <span className="text-[10px] font-mono text-bb-ink-faint">
+                      {pollState === "live"
+                        ? "server watching submissions"
+                        : pollState === "paused"
+                          ? "paused — tab hidden"
+                          : "retrying — rate limited"}
+                    </span>
+                  </div>
+                </div>
+                <div className="flex flex-col divide-y divide-bb-line">
+                  {session.problems.map((p, i) => (
+                    <ProblemCard
+                      key={problemKey(p)}
+                      session={session}
+                      problem={p}
+                      orderIndex={i}
+                      playSound={playSound}
+                      onOpen={() => setOpenProblemIndex(i)}
+                    />
+                  ))}
+                </div>
+              </div>
+
+              <div className="flex flex-col gap-6">
+                <div className="spec-card p-5">
+                  <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
+                </div>
+
+                <Scoreboard session={session} />
+
+                {session.mode === "duel" && (
+                  <button
+                    onClick={handleCopyLinks}
+                    className="btn-outline h-10 text-[10px] font-mono uppercase tracking-wider cursor-pointer"
+                  >
+                    {copied ? "Copied ✓" : "Copy problem links"}
+                  </button>
                 )}
-              </AnimatePresence>
+
+                <button
+                  onClick={() => setConfirmingEnd(true)}
+                  className="h-10 rounded-full border border-bb-line text-bb-ink-faint hover:text-bb-red hover:border-bb-red/40 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                >
+                  End Session
+                </button>
+              </div>
             </motion.div>
           ) : (
             <motion.div
@@ -376,6 +375,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
           )}
         </AnimatePresence>
       </div>
+      )}
 
       <AnimatePresence>
         {confirmingEnd && (

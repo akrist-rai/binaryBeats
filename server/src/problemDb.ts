@@ -25,6 +25,9 @@ export interface ProblemStatement {
   examples: { input: string; output: string }[];
   interactive: boolean;
   judgeable: boolean;
+  /** Count of official hidden tests Submit judges against — 0 when not judgeable.
+   *  Never the test content itself, that stays server-side. */
+  testCount: number;
 }
 
 export interface JudgeInfo {
@@ -62,6 +65,7 @@ function toStatement(row: typeof problems.$inferSelect): ProblemStatement {
     examples: (row.examples as { input: string; output: string }[]) ?? [],
     interactive: row.interactive,
     judgeable: rowIsJudgeable(row),
+    testCount: rowIsJudgeable(row) ? row.testCount : 0,
   };
 }
 

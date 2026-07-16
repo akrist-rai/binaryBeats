@@ -96,6 +96,14 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
               {statement.memoryLimitMb}MB
             </span>
           )}
+          {statement.judgeable && statement.testCount > 0 && (
+            <span
+              title="Submit compiles and runs your code against every one of these, right here"
+              className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-acc/25 bg-bb-term-acc/[0.06] text-bb-term-acc"
+            >
+              {statement.testCount} hidden tests
+            </span>
+          )}
         </div>
       </div>
 

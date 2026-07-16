@@ -21,6 +21,8 @@ export interface ProblemStatementData {
   examples: { input: string; output: string }[];
   interactive: boolean;
   judgeable: boolean;
+  /** Count of official hidden tests Submit judges against — 0 when not judgeable. */
+  testCount: number;
 }
 
 export class ProblemsApiError extends Error {

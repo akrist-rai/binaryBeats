@@ -122,34 +122,38 @@ export const LeetCodeDashboard = ({ playSound, onShareSolution, onNavigateTab }:
 
   return (
     <div className="w-full min-h-[calc(100vh-64px)] text-bb-ink flex flex-col">
-      <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 py-10 flex-1 flex flex-col gap-10">
-        <AnimatePresence mode="wait">
+      <AnimatePresence mode="wait">
 
-          {/* ── WORKSPACE VIEW ── */}
-          {activeKey && activeProblem ? (
-            <motion.div key="workspace" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex-1 flex flex-col">
-              <SolveWorkspace
-                mode="practice"
-                problem={practiceProblemToSolvable(activeProblem)}
-                solved={solvedKeys.includes(activeKey)}
-                onBack={back}
-                onAccepted={() => {
-                  playSound('click');
-                  setSolveTick(t => t + 1);
-                  logSolve({
-                    source: 'leetcode',
-                    key: activeKey,
-                    title: activeProblem.title ?? activeKey,
-                    meta: activeProblem.rating ? String(activeProblem.rating) : 'Unrated',
-                    solvedAtSeconds: Math.floor(Date.now() / 1000),
-                  });
-                }}
-                playSound={playSound}
-              />
-            </motion.div>
+        {/* ── WORKSPACE VIEW — full-bleed, no page max-width, desktop IDE layout ── */}
+        {activeKey && activeProblem ? (
+          <motion.div
+            key="workspace"
+            initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}}
+            className="flex-1 flex flex-col w-full px-2.5 lg:px-4 py-2.5 lg:py-3 min-h-0"
+          >
+            <SolveWorkspace
+              mode="practice"
+              problem={practiceProblemToSolvable(activeProblem)}
+              solved={solvedKeys.includes(activeKey)}
+              onBack={back}
+              onAccepted={() => {
+                playSound('click');
+                setSolveTick(t => t + 1);
+                logSolve({
+                  source: 'leetcode',
+                  key: activeKey,
+                  title: activeProblem.title ?? activeKey,
+                  meta: activeProblem.rating ? String(activeProblem.rating) : 'Unrated',
+                  solvedAtSeconds: Math.floor(Date.now() / 1000),
+                });
+              }}
+              playSound={playSound}
+            />
+          </motion.div>
 
-          ) : (
-            /* ── PROBLEMS LIST ── */
+        ) : (
+          /* ── PROBLEMS LIST ── */
+          <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 py-10 flex-1 flex flex-col">
             <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex flex-col gap-0">
               <HeroSection total={total} playSound={playSound} onNavigateTab={onNavigateTab} />
 
@@ -426,10 +430,10 @@ export const LeetCodeDashboard = ({ playSound, onShareSolution, onNavigateTab }:
               </div>
               )}
             </motion.div>
-          )}
+          </div>
+        )}
 
-        </AnimatePresence>
-      </div>
+      </AnimatePresence>
     </div>
   );
 };

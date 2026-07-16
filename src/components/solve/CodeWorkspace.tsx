@@ -1,4 +1,4 @@
-import React, { useMemo, useRef, useState } from "react";
+import React, { useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { motion } from "motion/react";
 import { useCodeDraft } from "../../hooks/useCodeDraft";
@@ -25,6 +25,8 @@ interface CodeWorkspaceProps {
   sessionId?: string;
   /** Complete official test suite exists server-side — Submit is available. */
   judgeable?: boolean;
+  /** Count of hidden tests Submit judges against — purely for messaging. */
+  testCount?: number;
   /** Public examples (from the statement) — enables Run Samples. */
   examples?: { input: string; output: string }[];
   playSound?: (type: "click" | "hover") => void;
@@ -76,6 +78,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   problemKey,
   sessionId,
   judgeable = false,
+  testCount = 0,
   examples = [],
   playSound,
   onAccepted,
@@ -591,7 +594,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             <>
               <span className="text-bb-term-text/40">
                 {judgeable
-                  ? "Run executes against your custom input; Submit judges against the full official test suite, right here."
+                  ? `Run executes against your custom input; Submit compiles and runs your code against all ${testCount} official hidden tests, right here.`
                   : "Run executes against your custom input. This problem has no local test suite — submit on Codeforces for the verdict."}
               </span>
               <span className="caret-inline text-bb-term-acc" />

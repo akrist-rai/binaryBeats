@@ -3,8 +3,8 @@
 server
 
 # Design references / prototypes not part of the built app.
+# (login.html is NOT excluded — it's a real Vite build entry, see vite.config.ts)
 design
 DESIGN.md
 extra
-login.html
 access.html

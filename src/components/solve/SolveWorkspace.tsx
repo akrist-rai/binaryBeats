@@ -134,6 +134,7 @@ export const SolveWorkspace: React.FC<SolveWorkspaceProps> = (props) => {
               problemKey={problem.key}
               sessionId={props.mode === "session" ? props.sessionId : undefined}
               judgeable={judgeableNow}
+              testCount={statement?.testCount ?? 0}
               examples={statement?.examples ?? []}
               playSound={playSound}
               onAccepted={onAccepted}

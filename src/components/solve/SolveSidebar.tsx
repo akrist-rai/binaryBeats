@@ -19,7 +19,7 @@ function tierDot(rating: number | null): string {
 
 export const SolveSidebar: React.FC<SolveSidebarProps> = ({ items, orderIndex, progress, claim, onSelectProblem, playSound }) => {
   return (
-    <div className="w-56 shrink-0 flex flex-col border-r border-bb-term-line bg-bb-term-surface min-h-0">
+    <div className="w-64 shrink-0 flex flex-col border-r border-bb-term-line bg-bb-term-surface min-h-0">
       <div className="px-3 pt-3 pb-2.5 border-b border-bb-term-line/70 shrink-0">
         <div className="flex items-center justify-between mb-2">
           <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-bb-term-text/35">Problems</span>

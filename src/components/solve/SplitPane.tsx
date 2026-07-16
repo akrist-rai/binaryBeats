@@ -37,9 +37,9 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
   leftLabel,
   rightLabel,
   storageKey,
-  defaultRatio = 0.42,
-  min = 0.28,
-  max = 0.62,
+  defaultRatio = 0.4,
+  min = 0.2,
+  max = 0.72,
 }) => {
   const isDesktop = useIsDesktop();
   const [tab, setTab] = useState<"left" | "right">("left");
@@ -120,13 +120,28 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
           e.preventDefault();
           setDragging(true);
         }}
+        onDoubleClick={() => {
+          setRatio(defaultRatio);
+          ratioRef.current = defaultRatio;
+          try {
+            localStorage.setItem(storageKey, String(defaultRatio));
+          } catch {
+            // ignore quota errors
+          }
+        }}
         role="separator"
         aria-orientation="vertical"
+        title="Drag to resize · double-click to reset"
         className={`w-[2px] shrink-0 cursor-col-resize relative group/divider transition-colors ${
-          dragging ? "bg-bb-orange" : "bg-bb-term-line hover:bg-bb-term-text/25"
+          dragging ? "bg-bb-orange" : "bg-bb-term-line hover:bg-bb-term-text/30"
         }`}
       >
-        <div className="absolute inset-y-0 -left-1 -right-1" />
+        <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
+        <div
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3px] h-9 rounded-full transition-opacity pointer-events-none ${
+            dragging ? "bg-bb-orange opacity-100" : "bg-bb-term-text/40 opacity-0 group-hover/divider:opacity-100"
+          }`}
+        />
       </div>
       <div className="flex flex-col min-h-0 overflow-hidden flex-1">{right}</div>
     </div>

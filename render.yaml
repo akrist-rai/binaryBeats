@@ -15,7 +15,9 @@ services:
       - key: NODE_ENV
         value: production
       - key: DATABASE_URL
-        sync: false # set manually: Neon connection string
+        sync: false # set manually: Neon connection string (problem/test dataset)
+      - key: AUTH_DATABASE_URL
+        sync: false # set manually: separate Neon project's connection string (users table only)
       - key: SESSION_SECRET
         generateValue: true # Render generates a random 32+ char value
       - key: GOOGLE_CLIENT_ID

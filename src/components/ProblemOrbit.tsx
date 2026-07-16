@@ -23,6 +23,22 @@ interface OrbitNode {
   r: number;
 }
 
+interface CameraAnim {
+  active: boolean;
+  fromX: number;
+  fromY: number;
+  fromZoom: number;
+  toX: number;
+  toY: number;
+  toZoom: number;
+  start: number;
+  duration: number;
+}
+
+type Pulse =
+  | { kind: "point"; x: number; y: number; start: number }
+  | { kind: "ring"; radius: number; start: number };
+
 const RING_INNER = 70;
 const RING_WIDTH = 78;
 const NODE_R = 4.2;
@@ -32,12 +48,17 @@ const REPEL_RADIUS = 46;
 const REPEL_STRENGTH = 1600;
 const ZOOM_MIN = 0.45;
 const ZOOM_MAX = 2.6;
+const DEFAULT_ZOOM = 0.62;
 const DRAG_THRESHOLD = 5;
 
 function hashStr(s: string): number {
   let h = 0;
   for (let i = 0; i < s.length; i++) h = (Math.imul(h, 31) + s.charCodeAt(i)) | 0;
   return Math.abs(h);
+}
+
+function diffLabel(r: number | null): "Unrated" | "Easy" | "Medium" | "Hard" {
+  return !r ? "Unrated" : r <= 1300 ? "Easy" : r <= 1900 ? "Medium" : "Hard";
 }
 
 function tierColor(rating: number | null, palette: Palette): string {
@@ -79,21 +100,47 @@ function ringRadius(index: number): number {
   return RING_INNER + index * RING_WIDTH;
 }
 
+function ringIndexForRating(rating: number | null): number {
+  for (let i = 0; i < ORBIT_RINGS.length; i++) {
+    if ((rating ?? 0) <= ORBIT_RINGS[i].max) return i;
+  }
+  return ORBIT_RINGS.length - 1;
+}
+
+function clampZoom(z: number): number {
+  return Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, z));
+}
+
+function easeOutCubic(t: number): number {
+  return 1 - Math.pow(1 - t, 3);
+}
+
 export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, playSound }) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const tooltipRef = useRef<HTMLDivElement>(null);
   const nodesRef = useRef<OrbitNode[]>([]);
-  const cameraRef = useRef({ x: 0, y: 0, zoom: 0.62 });
+  const cameraRef = useRef({ x: 0, y: 0, zoom: DEFAULT_ZOOM });
+  const cameraAnimRef = useRef<CameraAnim>({
+    active: false, fromX: 0, fromY: 0, fromZoom: DEFAULT_ZOOM,
+    toX: 0, toY: 0, toZoom: DEFAULT_ZOOM, start: 0, duration: 650,
+  });
+  const pulseRef = useRef<Pulse | null>(null);
   const mouseScreenRef = useRef({ x: -9999, y: -9999 });
   const mouseWorldRef = useRef({ x: -9999, y: -9999 });
   const dragRef = useRef({ down: false, dragging: false, startX: 0, startY: 0, camX: 0, camY: 0 });
   const solvedSetRef = useRef(new Set(solvedKeys));
   const hoveredRef = useRef<OrbitNode | null>(null);
   const sizeRef = useRef({ w: 0, h: 0 });
+  const matchedKeysRef = useRef<Set<string>>(new Set());
+  const anyFilterActiveRef = useRef(false);
+  const ringStatsRef = useRef<{ solved: number; total: number }[]>([]);
 
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [hovered, setHovered] = useState<Problem | null>(null);
+  const [search, setSearch] = useState("");
+  const [selectedTag, setSelectedTag] = useState<string | null>(null);
+  const [diffFilter, setDiffFilter] = useState<"" | "easy" | "medium" | "hard">("");
 
   useEffect(() => {
     solvedSetRef.current = new Set(solvedKeys);
@@ -114,6 +161,66 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
     return problems.find((p) => !solvedKeys.includes(p.key))?.key ?? null;
   }, [problems, solvedKeys]);
 
+  const nextUpProblem = useMemo(
+    () => problems?.find((p) => p.key === nextUpKey) ?? null,
+    [problems, nextUpKey]
+  );
+
+  // Top tags in the loaded sample — a data-driven filter shortcut instead of
+  // a hardcoded list, so it stays honest about what's actually navigable here.
+  const topTags = useMemo(() => {
+    if (!problems) return [];
+    const counts = new Map<string, number>();
+    for (const p of problems) for (const t of p.tags) counts.set(t, (counts.get(t) ?? 0) + 1);
+    return [...counts.entries()].sort((a, b) => b[1] - a[1]).slice(0, 10).map(([t]) => t);
+  }, [problems]);
+
+  const filteredProblems = useMemo(() => {
+    if (!problems) return [];
+    const s = search.trim().toLowerCase();
+    return problems.filter((p) => {
+      if (diffFilter && diffLabel(p.rating).toLowerCase() !== diffFilter) return false;
+      if (selectedTag && !p.tags.includes(selectedTag)) return false;
+      if (s) {
+        const hay = `${p.title ?? ""} ${p.key} ${p.tags.join(" ")} ${p.contestId}${p.index}`.toLowerCase();
+        if (!hay.includes(s)) return false;
+      }
+      return true;
+    });
+  }, [problems, search, selectedTag, diffFilter]);
+
+  const anyFilterActive = Boolean(search.trim() || selectedTag || diffFilter);
+
+  const matchedKeys = useMemo(
+    () => new Set(filteredProblems.map((p) => p.key)),
+    [filteredProblems]
+  );
+
+  useEffect(() => {
+    matchedKeysRef.current = matchedKeys;
+    anyFilterActiveRef.current = anyFilterActive;
+  }, [matchedKeys, anyFilterActive]);
+
+  // Per-ring solved/mapped counts — feeds both the on-canvas ring labels and
+  // the side panel's ring list, computed once instead of per animation frame.
+  const ringStats = useMemo(() => {
+    const stats = ORBIT_RINGS.map(() => ({ solved: 0, total: 0 }));
+    if (!problems) return stats;
+    const solved = new Set(solvedKeys);
+    for (const p of problems) {
+      const idx = ringIndexForRating(p.rating);
+      stats[idx].total++;
+      if (solved.has(p.key)) stats[idx].solved++;
+    }
+    return stats;
+  }, [problems, solvedKeys]);
+
+  useEffect(() => {
+    ringStatsRef.current = ringStats;
+  }, [ringStats]);
+
+  const totalSolved = useMemo(() => ringStats.reduce((a, r) => a + r.solved, 0), [ringStats]);
+
   // Build the static orbital layout once problems arrive: radius encodes
   // rating (your progression outward from center), angle clusters by topic
   // (a stable hash of the primary tag), with jitter so a topic reads as a
@@ -121,10 +228,7 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   useEffect(() => {
     if (!problems) return;
     nodesRef.current = problems.map((p) => {
-      let ringIdx = ORBIT_RINGS.length - 1;
-      for (let i = 0; i < ORBIT_RINGS.length; i++) {
-        if ((p.rating ?? 0) <= ORBIT_RINGS[i].max) { ringIdx = i; break; }
-      }
+      const ringIdx = ringIndexForRating(p.rating);
       const ring = ORBIT_RINGS[ringIdx];
       const t = Math.max(0, Math.min(1, ((p.rating ?? ring.min) - ring.min) / (ring.max - ring.min || 1)));
       const radius = ringRadius(ringIdx) + t * RING_WIDTH * 0.82 + RING_WIDTH * 0.09;
@@ -179,7 +283,9 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
 
   // The animation loop — idle floating + mouse-repel spring physics, then a
   // full redraw every frame. Positions live in refs, never React state, so
-  // this runs at display refresh rate without triggering re-renders.
+  // this runs at display refresh rate without triggering re-renders. Filter
+  // state also lives in refs (matchedKeysRef / anyFilterActiveRef) so typing
+  // in the search box never has to tear down and rebuild this loop.
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -199,7 +305,29 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
       const mouseWorld = mouseWorldRef.current;
       const nodes = nodesRef.current;
 
+      const anim = cameraAnimRef.current;
+      if (anim.active) {
+        const at = Math.min(1, (now - anim.start) / anim.duration);
+        const e = easeOutCubic(at);
+        cam.x = anim.fromX + (anim.toX - anim.fromX) * e;
+        cam.y = anim.fromY + (anim.toY - anim.fromY) * e;
+        cam.zoom = anim.fromZoom + (anim.toZoom - anim.fromZoom) * e;
+        if (at >= 1) anim.active = false;
+      }
+
       for (const n of nodes) {
+        // The star the user is currently hovering (as of last frame) freezes
+        // in place entirely — no float, no spring, no repel — so it holds
+        // still under the cursor long enough to actually click. Without this
+        // lock, continuous idle floating means a static cursor loses the
+        // node again within a couple hundred ms, which reads as "the graph
+        // dodges every click." Everything else keeps drifting normally.
+        if (hoveredRef.current === n) {
+          n.vx = 0;
+          n.vy = 0;
+          continue;
+        }
+
         const floatX = Math.cos(t * n.floatSpeed + n.phase) * n.floatAmp;
         const floatY = Math.sin(t * n.floatSpeed * 1.3 + n.phase) * n.floatAmp;
         const targetX = n.baseX + floatX;
@@ -208,15 +336,10 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         let ax = (targetX - n.x) * SPRING_K;
         let ay = (targetY - n.y) * SPRING_K;
 
-        // A hovered node parts from nearby neighbors but settles into a calm
-        // "eye" right under the cursor instead of fleeing it forever — without
-        // this deadzone, hovering a star pushes it just far enough to dodge
-        // the very click meant to open it.
         const dx = n.x - mouseWorld.x;
         const dy = n.y - mouseWorld.y;
         const dist = Math.hypot(dx, dy);
-        const REPEL_DEADZONE = n.r * 2.5;
-        if (dist < REPEL_RADIUS && dist > REPEL_DEADZONE) {
+        if (dist < REPEL_RADIUS && dist > 0.001) {
           const force = (1 - dist / REPEL_RADIUS) * REPEL_STRENGTH;
           ax += (dx / dist) * force;
           ay += (dy / dist) * force;
@@ -236,7 +359,7 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
 
       const pal = readPalette();
 
-      // Rings + labels
+      // Rings + labels (label carries live solved/mapped counts per band)
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (let i = 0; i < ORBIT_RINGS.length; i++) {
@@ -249,10 +372,11 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         ctx.stroke();
         ctx.setLineDash([]);
 
+        const rs = ringStatsRef.current[i];
         ctx.font = `700 ${11 / cam.zoom}px 'JetBrains Mono', monospace`;
         ctx.fillStyle = pal.inkFaint;
         ctx.fillText(
-          `${ORBIT_RINGS[i].label.toUpperCase()} · ${ORBIT_RINGS[i].min}–${ORBIT_RINGS[i].max}`,
+          `${ORBIT_RINGS[i].label.toUpperCase()} · ${ORBIT_RINGS[i].min}–${ORBIT_RINGS[i].max}${rs ? ` · ${rs.solved}/${rs.total}` : ""}`,
           0,
           -r + 12 / cam.zoom
         );
@@ -273,6 +397,8 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
       let hoveredNode: OrbitNode | null = null;
       const hitThreshold = 10 / cam.zoom;
       let closestDist = Infinity;
+      const filterActive = anyFilterActiveRef.current;
+      const matched = matchedKeysRef.current;
 
       for (const n of nodes) {
         const solved = solvedSetRef.current.has(n.problem.key);
@@ -284,6 +410,24 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         if (isHover && d < closestDist) {
           closestDist = d;
           hoveredNode = n;
+        }
+
+        // A filter dims everything it doesn't match, so a search or tag
+        // click reads as "these light up" rather than a silent no-op list.
+        // Hover always wins over dimming — mousing over a faded star still
+        // reveals it, so filtering never hides information, only emphasis.
+        if (filterActive && !matched.has(n.problem.key) && !isHover) {
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, n.r * 0.7, 0, Math.PI * 2);
+          ctx.fillStyle = pal.paper;
+          ctx.globalAlpha = 0.16;
+          ctx.fill();
+          ctx.lineWidth = 1 / cam.zoom;
+          ctx.strokeStyle = pal.line;
+          ctx.globalAlpha = 0.22;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+          continue;
         }
 
         const color = solved ? pal.lime : isNext ? pal.orange : tierColor(n.problem.rating, pal);
@@ -306,6 +450,30 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         ctx.stroke();
 
         if (solved || isNext || isHover) ctx.restore();
+      }
+
+      // Pulse — a brief expanding ring that marks where a search/focus jump
+      // landed, so a camera fly-to reads as "here" instead of a silent pan.
+      const pulse = pulseRef.current;
+      if (pulse) {
+        const dur = pulse.kind === "ring" ? 900 : 1100;
+        const elapsed = now - pulse.start;
+        if (elapsed > dur) {
+          pulseRef.current = null;
+        } else {
+          const pt = elapsed / dur;
+          ctx.beginPath();
+          ctx.lineWidth = (pulse.kind === "ring" ? 2.5 : 2) / cam.zoom;
+          ctx.strokeStyle = pal.orange;
+          ctx.globalAlpha = (1 - pt) * 0.9;
+          if (pulse.kind === "ring") {
+            ctx.arc(0, 0, pulse.radius, 0, Math.PI * 2);
+          } else {
+            ctx.arc(pulse.x, pulse.y, 14 + pt * 46, 0, Math.PI * 2);
+          }
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
       }
 
       ctx.restore();
@@ -332,6 +500,95 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
     return { x: (sx - w / 2 - cam.x) / cam.zoom, y: (sy - h / 2 - cam.y) / cam.zoom };
   };
 
+  // ── Camera choreography — search/tag/ring/"next up" all funnel through
+  // these so a filter or click reads as "the galaxy responds," not just a
+  // list narrowing somewhere off-screen. ──
+  const startCameraAnim = (toX: number, toY: number, toZoom: number, duration = 650) => {
+    const cam = cameraRef.current;
+    cameraAnimRef.current = {
+      active: true,
+      fromX: cam.x, fromY: cam.y, fromZoom: cam.zoom,
+      toX, toY, toZoom, start: performance.now(), duration,
+    };
+  };
+
+  const focusWorldPoint = (wx: number, wy: number, zoom: number) => {
+    const z = clampZoom(zoom);
+    startCameraAnim(-wx * z, -wy * z, z);
+  };
+
+  const focusBBox = (nodes: OrbitNode[], zoomCap = 1.8) => {
+    if (nodes.length === 0) return;
+    if (nodes.length === 1) {
+      focusWorldPoint(nodes[0].baseX, nodes[0].baseY, Math.min(zoomCap, 1.5));
+      pulseRef.current = { kind: "point", x: nodes[0].baseX, y: nodes[0].baseY, start: performance.now() };
+      return;
+    }
+    let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity;
+    for (const n of nodes) {
+      minX = Math.min(minX, n.baseX); maxX = Math.max(maxX, n.baseX);
+      minY = Math.min(minY, n.baseY); maxY = Math.max(maxY, n.baseY);
+    }
+    const pad = 50;
+    const cx = (minX + maxX) / 2, cy = (minY + maxY) / 2;
+    const halfW = Math.max((maxX - minX) / 2 + pad, 40);
+    const halfH = Math.max((maxY - minY) / 2 + pad, 40);
+    const { w, h } = sizeRef.current;
+    const margin = 70;
+    const zoomX = (Math.max(w, 200) / 2 - margin) / halfW;
+    const zoomY = (Math.max(h, 200) / 2 - margin) / halfH;
+    focusWorldPoint(cx, cy, Math.min(zoomX, zoomY, zoomCap));
+  };
+
+  const focusRing = (i: number) => {
+    playSound("click");
+    const radius = ringRadius(i) + RING_WIDTH;
+    const { w, h } = sizeRef.current;
+    const margin = 60;
+    const zoomX = (Math.max(w, 200) / 2 - margin) / radius;
+    const zoomY = (Math.max(h, 200) / 2 - margin) / radius;
+    focusWorldPoint(0, 0, Math.min(zoomX, zoomY));
+    pulseRef.current = { kind: "ring", radius, start: performance.now() };
+  };
+
+  const focusNextUp = () => {
+    playSound("hover");
+    const node = nodesRef.current.find((n) => n.problem.key === nextUpKey);
+    if (!node) return;
+    focusWorldPoint(node.x, node.y, 1.5);
+    pulseRef.current = { kind: "point", x: node.x, y: node.y, start: performance.now() };
+  };
+
+  const resetView = () => {
+    playSound("click");
+    startCameraAnim(0, 0, DEFAULT_ZOOM);
+    pulseRef.current = null;
+  };
+
+  const clearFilters = () => {
+    playSound("click");
+    setSearch("");
+    setSelectedTag(null);
+    setDiffFilter("");
+  };
+
+  // Camera auto-fits to whatever currently matches the search/tag/difficulty
+  // filters. Typing gets a short debounce so the view doesn't lurch on every
+  // keystroke; a chip click (tag/difficulty) reacts immediately. Clearing
+  // filters intentionally leaves the camera put — nothing is more jarring
+  // than the view yanking away right as you finish reading it.
+  useEffect(() => {
+    if (!problems || !anyFilterActive) return;
+    const delay = search.trim() ? 400 : 0;
+    const id = setTimeout(() => {
+      const keys = new Set(filteredProblems.map((p) => p.key));
+      const matchNodes = nodesRef.current.filter((n) => keys.has(n.problem.key));
+      focusBBox(matchNodes);
+    }, delay);
+    return () => clearTimeout(id);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [search, selectedTag, diffFilter, problems]);
+
   const handlePointerMove = (e: React.PointerEvent) => {
     const rect = containerRef.current!.getBoundingClientRect();
     const sx = e.clientX - rect.left;
@@ -353,8 +610,8 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   };
 
   const handlePointerDown = (e: React.PointerEvent) => {
-    console.log('[orbit debug] pointerdown', e.target, hoveredRef.current?.problem.key);
     (e.target as Element).setPointerCapture?.(e.pointerId);
+    cameraAnimRef.current.active = false;
     dragRef.current = {
       down: true,
       dragging: false,
@@ -366,7 +623,6 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   };
 
   const handlePointerUp = () => {
-    console.log('[orbit debug] pointerup', dragRef.current.dragging, hoveredRef.current?.problem.key);
     const wasDragging = dragRef.current.dragging;
     dragRef.current.down = false;
     dragRef.current.dragging = false;
@@ -376,19 +632,32 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
     }
   };
 
-  const handleWheel = (e: React.WheelEvent) => {
-    e.preventDefault();
-    const rect = containerRef.current!.getBoundingClientRect();
-    const sx = e.clientX - rect.left;
-    const sy = e.clientY - rect.top;
-    const before = toWorld(sx, sy);
-    const cam = cameraRef.current;
-    const factor = Math.exp(-e.deltaY * 0.0012);
-    cam.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, cam.zoom * factor));
-    const { w, h } = sizeRef.current;
-    cam.x = sx - w / 2 - before.x * cam.zoom;
-    cam.y = sy - h / 2 - before.y * cam.zoom;
-  };
+  // React attaches wheel listeners as passive by default, so a synthetic
+  // onWheel handler can't actually block page scroll — preventDefault()
+  // there just logs a warning and does nothing. A native listener with
+  // { passive: false } is the only way to zoom without also scrolling
+  // the page underneath the canvas.
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      cameraAnimRef.current.active = false;
+      const rect = el.getBoundingClientRect();
+      const sx = e.clientX - rect.left;
+      const sy = e.clientY - rect.top;
+      const before = toWorld(sx, sy);
+      const cam = cameraRef.current;
+      const factor = Math.exp(-e.deltaY * 0.0012);
+      cam.zoom = Math.max(ZOOM_MIN, Math.min(ZOOM_MAX, cam.zoom * factor));
+      const { w, h } = sizeRef.current;
+      cam.x = sx - w / 2 - before.x * cam.zoom;
+      cam.y = sy - h / 2 - before.y * cam.zoom;
+    };
+    el.addEventListener("wheel", onWheel, { passive: false });
+    return () => el.removeEventListener("wheel", onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const handleMouseLeave = () => {
     mouseWorldRef.current = { x: -99999, y: -99999 };
@@ -401,8 +670,6 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [hovered]);
 
-  const diffLabel = (r: number | null) => (!r ? "Unrated" : r <= 1300 ? "Easy" : r <= 1900 ? "Medium" : "Hard");
-
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
@@ -414,67 +681,203 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         )}
       </div>
 
-      <div
-        ref={containerRef}
-        className="relative w-full h-[640px] spec-card corner-marks overflow-hidden select-none"
-        style={{ cursor: hovered ? "pointer" : "grab" }}
-        onPointerMove={handlePointerMove}
-        onPointerDown={handlePointerDown}
-        onPointerUp={handlePointerUp}
-        onPointerLeave={handleMouseLeave}
-        onWheel={handleWheel}
-      >
-        <div className="absolute inset-0 grid-paper pointer-events-none" />
-        <canvas ref={canvasRef} className="absolute inset-0" />
-
-        {!problems && (
-          <div className="absolute inset-0 flex items-center justify-center">
-            <motion.span
-              className="label-caps"
-              animate={{ opacity: [0.4, 1, 0.4] }}
-              transition={{ duration: 1.4, repeat: Infinity }}
-            >
-              Charting the galaxy…
-            </motion.span>
+      {/* Command bar — search + filters drive the same camera that drag/scroll do */}
+      {problems && (
+        <div className="flex flex-wrap items-center gap-2">
+          <div className="relative flex-1 min-w-[160px] max-w-[280px]">
+            <svg className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-bb-ink-faint pointer-events-none" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+            </svg>
+            <input
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search & fly to a problem…"
+              aria-label="Search problems"
+              className="w-full h-8 pl-8 pr-3 rounded-lg text-xs font-mono text-bb-ink placeholder-bb-ink-faint focus:outline-none bg-bb-paper-raised border border-bb-line focus:border-bb-line-strong transition-colors"
+            />
           </div>
-        )}
 
-        {/* Legend */}
-        <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
-          <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-bb-lime" /> Solved
-          </span>
-          <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full bg-bb-orange" /> Next up
-          </span>
-          <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-            <span className="w-2 h-2 rounded-full border border-bb-line-strong bg-bb-paper" /> Unsolved
-          </span>
+          <div className="flex rounded-full border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[10px] gap-0.5">
+            {(["", "easy", "medium", "hard"] as const).map((d) => (
+              <button
+                key={d}
+                onClick={() => { playSound("click"); setDiffFilter(d); }}
+                className={`px-2.5 h-7 rounded-full font-bold cursor-pointer transition-colors ${diffFilter === d ? "bg-bb-ink text-bb-paper" : "text-bb-ink-faint hover:text-bb-ink-soft"}`}
+              >
+                {d === "" ? "All" : d[0].toUpperCase() + d.slice(1)}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[380px]">
+            {topTags.map((t) => (
+              <button
+                key={t}
+                onClick={() => { playSound("click"); setSelectedTag(selectedTag === t ? null : t); }}
+                className={`pill shrink-0 text-[9px] font-mono px-2 py-1 border cursor-pointer transition-colors ${selectedTag === t ? "border-bb-line-strong bg-bb-ink/10 text-bb-ink" : "border-bb-line text-bb-ink-faint hover:text-bb-ink-soft"}`}
+              >
+                #{t}
+              </button>
+            ))}
+          </div>
+
+          <div className="flex items-center gap-2 ml-auto shrink-0">
+            {anyFilterActive && (
+              <>
+                <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
+                  {filteredProblems.length} match{filteredProblems.length === 1 ? "" : "es"}
+                </span>
+                <button onClick={clearFilters} className="btn-outline h-7 px-2.5 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
+                  Clear
+                </button>
+              </>
+            )}
+            <button onClick={resetView} className="btn-outline h-7 px-2.5 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
+              ⊙ Recenter
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="grid grid-cols-1 lg:grid-cols-[1fr_248px] gap-3 items-start">
+        <div
+          ref={containerRef}
+          className="relative w-full h-[640px] spec-card corner-marks overflow-hidden select-none"
+          style={{ cursor: hovered ? "pointer" : "grab" }}
+          onPointerMove={handlePointerMove}
+          onPointerDown={handlePointerDown}
+          onPointerUp={handlePointerUp}
+          onPointerLeave={handleMouseLeave}
+        >
+          <div className="absolute inset-0 grid-paper pointer-events-none" />
+          <canvas ref={canvasRef} className="absolute inset-0" />
+
+          {!problems && (
+            <div className="absolute inset-0 flex items-center justify-center">
+              <motion.span
+                className="label-caps"
+                animate={{ opacity: [0.4, 1, 0.4] }}
+                transition={{ duration: 1.4, repeat: Infinity }}
+              >
+                Charting the galaxy…
+              </motion.span>
+            </div>
+          )}
+
+          {/* Legend */}
+          <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
+            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-bb-lime" /> Solved
+            </span>
+            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full bg-bb-orange" /> Next up
+            </span>
+            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+              <span className="w-2 h-2 rounded-full border border-bb-line-strong bg-bb-paper" /> Unsolved
+            </span>
+          </div>
+
+          {/* Cursor-following tooltip — positioned imperatively via ref for 60fps tracking */}
+          <div
+            ref={tooltipRef}
+            className="absolute top-0 left-0 pointer-events-none z-20 transition-opacity duration-100"
+            style={{ opacity: hovered ? 1 : 0, willChange: "transform" }}
+          >
+            {hovered && (
+              <div className="spec-card px-3 py-2.5 max-w-[220px] shadow-xl">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">
+                    {hovered.contestId}{hovered.index}
+                  </span>
+                  <span className="pill text-[8px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
+                    {diffLabel(hovered.rating)}
+                  </span>
+                </div>
+                <div className="text-xs font-bold text-bb-ink leading-snug mb-1">{hovered.title ?? hovered.key}</div>
+                <div className="flex items-center justify-between text-[10px] font-mono text-bb-ink-faint">
+                  <span>{hovered.tags.slice(0, 2).join(" · ") || "misc"}</span>
+                  <span className="tabular-nums">{hovered.rating ?? "—"}</span>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
 
-        {/* Cursor-following tooltip — positioned imperatively via ref for 60fps tracking */}
-        <div
-          ref={tooltipRef}
-          className="absolute top-0 left-0 pointer-events-none z-20 transition-opacity duration-100"
-          style={{ opacity: hovered ? 1 : 0, willChange: "transform" }}
-        >
-          {hovered && (
-            <div className="spec-card px-3 py-2.5 max-w-[220px] shadow-xl">
-              <div className="flex items-center gap-2 mb-1">
-                <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">
-                  {hovered.contestId}{hovered.index}
-                </span>
-                <span className="pill text-[8px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
-                  {diffLabel(hovered.rating)}
+        {/* ── Control panel — the "useful" half: progress, a one-click path
+            back to where you left off, and ring shortcuts that fly the
+            camera instead of leaving navigation to blind drag/scroll. ── */}
+        <div className="flex flex-col gap-3">
+          <div className="spec-card corner-marks p-4">
+            <div className="eyebrow mb-2">Progress</div>
+            <div className="flex items-baseline gap-1.5 mb-2">
+              <span className="stat-num text-2xl text-bb-ink">{totalSolved}</span>
+              <span className="text-xs font-mono text-bb-ink-faint">/ {problems?.length ?? 0} mapped</span>
+            </div>
+            <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
+              <div
+                className="h-full bg-bb-lime rounded-full transition-all duration-500"
+                style={{ width: `${problems?.length ? (totalSolved / problems.length) * 100 : 0}%` }}
+              />
+            </div>
+          </div>
+
+          {nextUpProblem && (
+            <div className="spec-card p-4">
+              <div className="flex items-center justify-between mb-2">
+                <span className="eyebrow">Next Up</span>
+                <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
+                  {nextUpProblem.contestId}{nextUpProblem.index}
                 </span>
               </div>
-              <div className="text-xs font-bold text-bb-ink leading-snug mb-1">{hovered.title ?? hovered.key}</div>
-              <div className="flex items-center justify-between text-[10px] font-mono text-bb-ink-faint">
-                <span>{hovered.tags.slice(0, 2).join(" · ") || "misc"}</span>
-                <span className="tabular-nums">{hovered.rating ?? "—"}</span>
+              <div className="text-sm font-heading font-bold text-bb-ink mb-2 leading-snug">
+                {nextUpProblem.title ?? nextUpProblem.key}
+              </div>
+              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint tabular-nums">
+                  {nextUpProblem.rating ?? "—"}
+                </span>
+                {nextUpProblem.tags[0] && (
+                  <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
+                    {nextUpProblem.tags[0]}
+                  </span>
+                )}
+              </div>
+              <div className="flex gap-2">
+                <button onClick={focusNextUp} className="btn-outline flex-1 h-8 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
+                  Locate ◎
+                </button>
+                <button
+                  onClick={() => { playSound("click"); onOpen(nextUpProblem.key); }}
+                  className="btn-primary flex-1 h-8 text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer"
+                >
+                  Solve →
+                </button>
               </div>
             </div>
           )}
+
+          <div className="spec-card p-4">
+            <h4 className="label-caps mb-3">Rings</h4>
+            <div className="flex flex-col gap-2.5">
+              {ORBIT_RINGS.map((ring, i) => {
+                const rs = ringStats[i] ?? { solved: 0, total: 0 };
+                const pct = rs.total ? (rs.solved / rs.total) * 100 : 0;
+                return (
+                  <button key={ring.label} onClick={() => focusRing(i)} className="w-full text-left cursor-pointer group">
+                    <div className="flex items-center justify-between mb-1">
+                      <span className="text-[10px] font-mono font-bold text-bb-ink-soft group-hover:text-bb-orange transition-colors uppercase tracking-wide">
+                        {ring.label}
+                      </span>
+                      <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">{rs.solved}/{rs.total}</span>
+                    </div>
+                    <div className="h-1 rounded-full bg-bb-ink/[0.08] overflow-hidden">
+                      <div className="h-full bg-bb-orange rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
         </div>
       </div>
     </div>

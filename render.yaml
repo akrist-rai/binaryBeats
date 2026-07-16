@@ -9,7 +9,7 @@ services:
     env: docker
     dockerfilePath: ./server/Dockerfile
     dockerContext: ./server
-    plan: starter
+    plan: free
     healthCheckPath: /api/health
     envVars:
       - key: NODE_ENV

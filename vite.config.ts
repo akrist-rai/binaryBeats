@@ -14,8 +14,6 @@ export default defineConfig({
       input: {
         main: fileURLToPath(new URL('./index.html', import.meta.url)),
         login: fileURLToPath(new URL('./login.html', import.meta.url)),
-        harness: fileURLToPath(new URL('./harness.html', import.meta.url)),
-        blitzHarness: fileURLToPath(new URL('./blitz-harness.html', import.meta.url)),
       },
     },
   },

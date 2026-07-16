@@ -50,7 +50,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   onClearSharedCode,
 }) => {
   const [activeSubTab, setActiveSubTab] = useState<'forum' | 'feed' | 'clans'>('forum');
-  
+
   // Clans State
   const [userClan, setUserClan] = useState<string | null>(() => {
     return localStorage.getItem('bb_user_clan') || null;
@@ -137,7 +137,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   const [commentInput, setCommentInput] = useState('');
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedTag, setSelectedTag] = useState<'All' | 'Solutions' | 'Contest' | 'General' | 'Bugs'>('All');
-  
+
   // Post Creator Modal
   const [isCreatorOpen, setIsCreatorOpen] = useState(false);
   const [newTitle, setNewTitle] = useState('');
@@ -161,10 +161,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     const problems = ['Two Sum', 'Valid Parentheses', 'Merge K Sorted Lists', 'LRU Cache', 'Reverse Linked List', 'Binary Tree Inorder'];
     const badges = ['Speed Demon', 'First Blood', 'Bug Hunter', 'Weekend Warrior', 'Compiler King'];
     const clanNames = ['Bit Shifters', 'Kernel Panic', 'Null Pointers', 'Stack Overflowers'];
-    
+
     const interval = setInterval(() => {
       if (activeSubTab !== 'feed') return;
-      
+
       const randType = Math.floor(Math.random() * 4);
       const user = users[Math.floor(Math.random() * users.length)];
       let message = '';
@@ -254,7 +254,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   const handleAddComment = () => {
     if (!commentInput.trim() || !selectedThread) return;
     playSound('click');
-    
+
     const newComment = {
       id: 'c_' + Date.now(),
       author: 'akrist',
@@ -267,8 +267,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
     setThreads(prev => prev.map(t => {
       if (t.id === selectedThread.id) {
-        return { 
-          ...t, 
+        return {
+          ...t,
           commentsCount: t.commentsCount + 1,
           comments: updatedComments
         };
@@ -323,23 +323,23 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   }, [threads, selectedTag, searchQuery]);
 
   return (
-    <div className="w-full min-h-[calc(100vh-64px)] text-white relative pb-12">
+    <div className="w-full min-h-[calc(100vh-64px)] text-bb-ink relative pb-12">
       <div className="w-full px-12 py-8 relative z-10 max-w-7xl mx-auto">
 
         {/* Hub Header & Navigation sub-tabs */}
-        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-white/[0.08] pb-6 mb-6">
+        <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-bb-line pb-6 mb-6">
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Engineering Guilds</span>
-            <h2 className="text-2xl md:text-3xl font-bold font-heading tracking-tight gradient-text-cool mb-2 mt-1">
+            <span className="eyebrow mb-2">/04 <span className="text-bb-ink-faint normal-case">·</span> Community</span>
+            <h2 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-bb-ink mb-2 mt-2">
               Community Hub
             </h2>
-            <p className="text-[10px] text-zinc-500 font-mono tracking-wider uppercase">
+            <p className="label-caps">
               Share C++ solutions, review code, and coordinate within engineering guilds
             </p>
           </div>
 
           {/* Sub tabs */}
-          <div className="flex rounded-lg overflow-hidden border border-white/[0.08] bg-[#111116] p-0.5 font-mono text-[10px]">
+          <div className="flex rounded-full overflow-hidden border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[10px]">
             {[
               { id: 'forum', label: 'Discussions' },
               { id: 'feed', label: 'Live Activities' },
@@ -352,13 +352,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   setActiveSubTab(tab.id as any);
                   setSelectedThread(null);
                 }}
-                className={`px-4 h-8 rounded-md font-bold tracking-wider cursor-pointer uppercase transition-colors relative`}
-                style={{ color: activeSubTab === tab.id ? '#000000' : '#71717a' }}
+                className={`px-4 h-8 rounded-full font-bold tracking-wider cursor-pointer uppercase transition-colors relative ${
+                  activeSubTab === tab.id ? 'text-bb-paper' : 'text-bb-ink-faint hover:text-bb-ink-soft'
+                }`}
               >
                 {activeSubTab === tab.id && (
                   <motion.span
                     layoutId="activeSubTabBg"
-                    className="absolute inset-0 bg-[#c3f73a] rounded-md shadow-sm"
+                    className="absolute inset-0 bg-bb-ink rounded-full"
                     transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                   />
                 )}
@@ -371,15 +372,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ TAB CONTENT: DISCUSSIONS FORUM ═══ */}
         {activeSubTab === 'forum' && (
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
-            
+
             {/* Left side: Forum View */}
             <div className="flex flex-col gap-5">
               {selectedThread ? (
                 /* Thread Detail Page */
-                <motion.div 
+                <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="rounded-xl p-6 border border-white/[0.08] bg-[#111116]"
+                  className="spec-card p-6"
                 >
                   {/* Thread Header */}
                   <div className="flex items-center justify-between mb-4">
@@ -388,26 +389,26 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         playSound('click');
                         setSelectedThread(null);
                       }}
-                      className="px-3 py-1.5 rounded-md border border-white/[0.08] hover:border-white/[0.16] text-zinc-400 hover:text-white cursor-pointer font-mono text-[10px] uppercase tracking-wider bg-white/[0.02]"
+                      className="btn-outline px-3 py-1.5 cursor-pointer font-mono text-[10px] uppercase tracking-wider"
                     >
                       ← Back to Feed
                     </button>
-                    
-                    <span className="text-[10px] font-mono font-bold uppercase tracking-wider px-2 py-0.5 rounded border border-[#c3f73a]/25 bg-[#c3f73a]/5 text-[#c3f73a]">
+
+                    <span className="pill text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 border border-bb-orange/30 bg-bb-orange/[0.06] text-bb-orange">
                       {selectedThread.tag}
                     </span>
                   </div>
 
                   {/* Title & Author Info */}
                   <div className="flex gap-4 items-start mb-6">
-                    <div className="w-10 h-10 rounded-full bg-white/[0.04] border border-white/[0.08] flex items-center justify-center text-xs font-bold text-white shadow-sm font-mono">
+                    <div className="w-10 h-10 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-xs font-bold font-mono">
                       {selectedThread.avatar}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold font-mono text-white leading-tight">
+                      <h3 className="text-xl font-bold font-heading text-bb-ink leading-tight">
                         {selectedThread.title}
                       </h3>
-                      <div className="flex gap-3 text-[10px] text-zinc-500 font-mono mt-1">
+                      <div className="flex gap-3 text-[10px] text-bb-ink-faint font-mono mt-1">
                         <span>POSTED BY: @{selectedThread.author}</span>
                         <span>⏱ {selectedThread.date}</span>
                       </div>
@@ -415,46 +416,46 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   </div>
 
                   {/* Body Content */}
-                  <div className="bg-white/[0.02] border border-white/[0.08] p-5 rounded-lg text-zinc-300 text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
+                  <div className="bg-bb-paper border border-bb-line p-5 rounded-lg text-bb-ink-soft text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
                     {selectedThread.content}
                   </div>
 
                   {/* Upvote Bar */}
-                  <div className="flex items-center gap-4 border-b border-white/[0.08] pb-5 mb-5">
+                  <div className="flex items-center gap-4 border-b border-bb-line pb-5 mb-5">
                     <button
                       onClick={(e) => handleUpvote(selectedThread.id, e)}
-                      className="flex items-center gap-2 px-3 py-1.5 rounded-md border border-[#c3f73a]/20 bg-[#c3f73a]/5 hover:border-[#c3f73a]/40 text-[#c3f73a] cursor-pointer text-xs font-mono font-bold uppercase tracking-wider transition-colors"
+                      className="pill flex items-center gap-2 px-3 py-1.5 border border-bb-lime/30 bg-bb-lime/[0.08] hover:border-bb-lime/50 text-bb-lime cursor-pointer text-xs font-mono font-bold uppercase tracking-wider transition-colors"
                     >
                       <span>👍 Upvote</span>
-                      <span className="font-bold text-white">{selectedThread.upvotes}</span>
+                      <span className="font-bold text-bb-ink">{selectedThread.upvotes}</span>
                     </button>
-                    <span className="text-zinc-500 font-mono text-[10px]">
+                    <span className="text-bb-ink-faint font-mono text-[10px]">
                       {selectedThread.commentsCount} Comments
                     </span>
                   </div>
 
                   {/* Comments list */}
                   <div className="flex flex-col gap-4 mb-6">
-                    <h4 className="font-mono text-[10px] font-bold text-zinc-400 uppercase tracking-wider mb-2">
+                    <h4 className="label-caps mb-2">
                       Review Thread Comments
                     </h4>
 
                     {selectedThread.comments.length === 0 ? (
-                      <div className="py-4 text-center text-xs text-zinc-500 font-mono bg-white/[0.02] rounded-lg border border-dashed border-white/[0.08]">
+                      <div className="py-4 text-center text-xs text-bb-ink-faint font-mono bg-bb-paper rounded-lg border border-dashed border-bb-line">
                         No responses yet. Start the review thread!
                       </div>
                     ) : (
                       selectedThread.comments.map(c => (
-                        <div key={c.id} className="flex gap-3 items-start p-4 rounded-lg border border-white/[0.08] bg-white/[0.01]">
-                          <div className="w-8 h-8 rounded-full bg-white/[0.05] flex items-center justify-center text-[10px] font-bold text-zinc-300 font-mono">
+                        <div key={c.id} className="flex gap-3 items-start p-4 rounded-lg border border-bb-line bg-bb-paper">
+                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono">
                             {c.avatar}
                           </div>
                           <div className="flex-1">
                             <div className="flex items-baseline justify-between">
-                              <span className="text-xs font-bold text-zinc-200 font-mono">@{c.author}</span>
-                              <span className="text-[9px] text-zinc-500 font-mono">{c.date}</span>
+                              <span className="text-xs font-bold text-bb-ink font-mono">@{c.author}</span>
+                              <span className="text-[9px] text-bb-ink-faint font-mono">{c.date}</span>
                             </div>
-                            <p className="text-xs text-zinc-400 mt-1 font-sans leading-relaxed">
+                            <p className="text-xs text-bb-ink-soft mt-1 font-sans leading-relaxed">
                               {c.content}
                             </p>
                           </div>
@@ -469,12 +470,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={commentInput}
                       onChange={e => setCommentInput(e.target.value)}
                       placeholder="Compile response or review comments..."
-                      className="w-full h-20 p-3 bg-[#111116] border border-white/[0.08] rounded-lg text-xs text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30 resize-none font-mono"
+                      className="w-full h-20 p-3 bg-bb-paper border border-bb-line rounded-lg text-xs text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono"
                     />
                     <div className="flex justify-end">
                       <button
                         onClick={handleAddComment}
-                        className="px-5 h-8 rounded-md bg-white hover:bg-zinc-100 text-black font-bold text-xs uppercase tracking-wider transition-colors cursor-pointer"
+                        className="btn-primary px-5 h-8 font-bold text-xs uppercase tracking-wider cursor-pointer"
                       >
                         Post Response
                       </button>
@@ -488,14 +489,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   <div className="flex flex-col sm:flex-row gap-4 items-stretch sm:items-center font-mono">
                     {/* Search forum */}
                     <div className="relative flex-1">
-                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-zinc-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                      <svg className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-bb-ink-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
                         <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
                       </svg>
-                      <input 
-                        value={searchQuery} 
+                      <input
+                        value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search posts or code..."
-                        className="w-full h-9 pl-9 pr-3 rounded text-xs text-white bg-[#111116] placeholder-zinc-700 focus:outline-none transition-colors border border-white/[0.08] focus:border-[#c3f73a]/30 shadow-inner"
+                        className="w-full h-9 pl-9 pr-3 rounded-lg text-xs text-bb-ink bg-bb-paper-raised placeholder-bb-ink-faint focus:outline-none transition-colors border border-bb-line focus:border-bb-line-strong"
                       />
                     </div>
 
@@ -505,7 +506,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         playSound('click');
                         setIsCreatorOpen(true);
                       }}
-                      className="px-4 h-9 rounded bg-[#c3f73a] text-black font-bold text-xs uppercase tracking-wider shadow-[0_0_12px_#c3f73a] hover:brightness-110 cursor-pointer flex items-center justify-center gap-1.5"
+                      className="btn-primary px-4 h-9 font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
                     >
                       <span>+ Create Post</span>
                     </button>
@@ -514,53 +515,53 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   {/* Thread Cards list */}
                   <div className="flex flex-col gap-3">
                     {filteredThreads.length === 0 ? (
-                      <div className="py-16 text-center text-xs text-zinc-500 font-mono rounded border border-dashed border-white/[0.08] bg-[#111116]/10">
+                      <div className="py-16 text-center text-xs text-bb-ink-faint font-mono rounded-lg border border-dashed border-bb-line">
                         No discussion threads match this criteria
                       </div>
                     ) : (
                       filteredThreads.map(t => (
-                        <motion.div 
-                          key={t.id} 
+                        <motion.div
+                          key={t.id}
                           layout
                           onClick={() => {
                             playSound('click');
                             setSelectedThread(t);
                           }}
-                          className="rounded p-5 border border-white/[0.08] bg-[#111116]/30 hover:bg-[#111116]/60 transition-colors cursor-pointer flex gap-4 items-start group"
+                          className="spec-card p-5 cursor-pointer flex gap-4 items-start group"
                         >
                           {/* Left avatar column */}
-                          <div className="w-8 h-8 rounded-full bg-white/[0.04] flex items-center justify-center text-[10px] font-bold text-zinc-400 border border-white/[0.08] font-mono shadow-sm group-hover:border-[#c3f73a]/30 transition-colors">
+                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
                             {t.avatar}
                           </div>
 
                           {/* Right main column */}
                           <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                              <span className="text-[9px] uppercase tracking-wider px-1.5 py-0.5 rounded border border-white/[0.08] bg-[#0a0a0f] text-zinc-500">
+                              <span className="pill text-[9px] uppercase tracking-wider px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
                                 {t.tag}
                               </span>
-                              <span className="text-[9.5px] text-zinc-600">
+                              <span className="text-[9.5px] text-bb-ink-faint">
                                 Posted by @{t.author} • {t.date}
                               </span>
                             </div>
 
-                            <h3 className="text-[13px] font-bold text-zinc-300 group-hover:text-white transition-colors leading-tight">
+                            <h3 className="text-[13px] font-bold text-bb-ink group-hover:text-bb-orange transition-colors leading-tight">
                               {t.title}
                             </h3>
-                            
-                            <p className="text-[10px] text-zinc-500 font-sans mt-1.5 line-clamp-1 font-light">
+
+                            <p className="text-[10px] text-bb-ink-faint font-sans mt-1.5 line-clamp-1 font-light">
                               {t.content}
                             </p>
 
-                            <div className="flex items-center gap-4 mt-3 text-[10px] text-zinc-500 font-mono">
+                            <div className="flex items-center gap-4 mt-3 text-[10px] text-bb-ink-faint font-mono">
                               <button
                                 onClick={(e) => handleUpvote(t.id, e)}
-                                className="flex items-center gap-1.5 hover:text-white transition-colors group/up"
+                                className="flex items-center gap-1.5 hover:text-bb-lime transition-colors group/up"
                               >
                                 <span className="group-hover/up:scale-110 transition-transform">👍</span>
                                 <span className="font-bold">{t.upvotes}</span>
                               </button>
-                              
+
                               <div className="flex items-center gap-1.5">
                                 <span>💬</span>
                                 <span className="font-bold">{t.commentsCount} Comments</span>
@@ -576,10 +577,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             </div>
 
             {/* Right side: Categories filtering panel */}
-            {/* Right side: Categories filtering panel */}
             <div className="flex flex-col gap-6 font-mono">
-              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116]">
-                <h4 className="text-[10px] font-bold text-zinc-500 mb-3.5 uppercase tracking-wider border-b border-white/[0.08] pb-2">
+              <div className="spec-card p-5">
+                <h4 className="label-caps mb-3.5 border-b border-bb-line pb-2">
                   Topic Filter
                 </h4>
                 <div className="flex flex-col gap-2">
@@ -594,17 +594,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           setSelectedThread(null);
                         }}
                         className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-left text-xs transition-colors cursor-pointer ${
-                          isSelected 
-                            ? 'bg-white/[0.03] text-[#c3f73a] border-[#c3f73a]/30 font-bold' 
-                            : 'border-transparent text-zinc-500 hover:text-zinc-300 hover:bg-white/[0.02]'
+                          isSelected
+                            ? 'bg-bb-orange/[0.06] text-bb-orange border-bb-orange/30 font-bold'
+                            : 'border-transparent text-bb-ink-faint hover:text-bb-ink-soft hover:bg-bb-ink/[0.03]'
                         }`}
                       >
                         <span>{tag === 'All' ? 'All Channels' : `# ${tag}`}</span>
                         {tag !== 'All' && (
-                          <span className={`text-[9px] border px-1.5 py-0.5 rounded ${
-                            isSelected 
-                              ? 'text-[#c3f73a] bg-[#c3f73a]/5 border-[#c3f73a]/20'
-                              : 'text-zinc-600 bg-[#111116] border-white/[0.08]'
+                          <span className={`pill text-[9px] border px-1.5 py-0.5 ${
+                            isSelected
+                              ? 'text-bb-orange bg-bb-orange/[0.06] border-bb-orange/30'
+                              : 'text-bb-ink-faint bg-bb-paper border-bb-line'
                           }`}>
                             {threads.filter(t => t.tag === tag).length}
                           </span>
@@ -616,21 +616,21 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
               </div>
 
               {/* Guidelines panel */}
-              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116] text-[10px] text-zinc-500">
-                <h4 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-3 border-b border-white/[0.08] pb-2">
+              <div className="spec-card p-5 text-[10px] text-bb-ink-faint">
+                <h4 className="label-caps mb-3 border-b border-bb-line pb-2">
                   Code Sharing Protocol
                 </h4>
                 <ul className="flex flex-col gap-2.5 list-none pl-0 leading-relaxed">
                   <li className="flex gap-2">
-                    <span className="text-[#c3f73a]">◼</span>
+                    <span className="text-bb-orange">◼</span>
                     <span>Sanitize secrets, keys, and tokens prior to uploading scripts.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-[#c3f73a]">◼</span>
+                    <span className="text-bb-orange">◼</span>
                     <span>Explain O(N) constraints to simplify complexity reviews.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-[#c3f73a]">◼</span>
+                    <span className="text-bb-orange">◼</span>
                     <span>Upvote optimized compilers to encourage clean architecture.</span>
                   </li>
                 </ul>
@@ -643,13 +643,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ TAB CONTENT: LIVE ACTIVITIES ═══ */}
         {activeSubTab === 'feed' && (
           <div className="w-full font-mono">
-            <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-6">
-              <div className="flex items-center justify-between border-b border-white/[0.08] pb-4 mb-6 select-none">
-                <span className="text-[10px] font-bold text-zinc-500 uppercase tracking-widest">
+            <div className="spec-card p-6">
+              <div className="flex items-center justify-between border-b border-bb-line pb-4 mb-6 select-none">
+                <span className="label-caps">
                   Live Activity Signal Feed
                 </span>
-                <span className="flex items-center gap-1.5 text-[9px] text-[#c3f73a] uppercase tracking-widest font-black animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a]" />
+                <span className="flex items-center gap-1.5 text-[9px] text-bb-lime uppercase tracking-widest font-black animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-bb-lime" />
                   Live Syncing
                 </span>
               </div>
@@ -663,16 +663,16 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, height: 0, overflow: 'hidden', margin: 0, padding: 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="flex items-start gap-4 p-4 rounded-lg border border-white/[0.08] bg-white/[0.02] hover:border-white/[0.16] transition-colors"
+                      className="flex items-start gap-4 p-4 rounded-lg border border-bb-line bg-bb-paper-raised hover:border-bb-line-strong transition-colors"
                     >
-                      <div className="w-8 h-8 rounded bg-white/[0.05] border border-white/[0.08] flex items-center justify-center text-xs shadow-inner">
+                      <div className="w-8 h-8 rounded-lg bg-bb-paper border border-bb-line flex items-center justify-center text-xs shrink-0">
                         {a.icon}
                       </div>
                       <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-zinc-200 leading-relaxed">
+                        <p className="text-[11px] font-semibold text-bb-ink leading-relaxed">
                           {a.message}
                         </p>
-                        <span className="text-[8px] text-zinc-600 block mt-1 uppercase font-bold">
+                        <span className="text-[8px] text-bb-ink-faint block mt-1 uppercase font-bold">
                           ⏱ {a.time}
                         </span>
                       </div>
@@ -689,7 +689,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             {/* Clans list */}
             <div className="flex flex-col gap-4 font-mono">
-              <h3 className="text-xs font-bold text-zinc-400 uppercase tracking-widest mb-1 border-b border-white/[0.08] pb-2">
+              <h3 className="label-caps mb-1 border-b border-bb-line pb-2">
                 Clans Standing Leaderboard
               </h3>
 
@@ -697,28 +697,28 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 {clans.map((clan, idx) => {
                   const isMember = userClan === clan.name;
                   return (
-                    <div 
+                    <div
                       key={clan.id}
                       className={`rounded-lg p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                        isMember 
-                          ? 'border-[#c3f73a] bg-[#c3f73a]/5 shadow-[0_0_15px_rgba(195,247,58,0.04)]' 
-                          : 'border-white/[0.08] bg-[#111116] hover:bg-white/[0.02]'
+                        isMember
+                          ? 'border-bb-lime/50 bg-bb-lime/[0.06]'
+                          : 'border-bb-line bg-bb-paper-raised hover:border-bb-line-strong'
                       }`}
                     >
                       <div className="flex gap-4 items-start">
-                        <div className={`w-10 h-10 rounded flex items-center justify-center font-bold text-xs border ${
-                          isMember 
-                            ? 'bg-[#c3f73a] text-black border-[#c3f73a]' 
-                            : 'bg-white/[0.02] text-zinc-400 border-white/[0.08]'
+                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs border ${
+                          isMember
+                            ? 'bg-bb-lime text-bb-ink border-bb-lime'
+                            : 'bg-bb-ink text-bb-paper border-bb-ink'
                         }`}>
                           {clan.tag}
                         </div>
                         <div className="flex flex-col max-w-sm">
                           <div className="flex items-baseline gap-2 flex-wrap">
-                            <span className="text-sm font-bold text-white">{clan.name}</span>
-                            <span className="text-[9px] text-zinc-500">#{idx + 1} GUILD</span>
+                            <span className="text-sm font-bold text-bb-ink">{clan.name}</span>
+                            <span className="text-[9px] text-bb-ink-faint">#{idx + 1} GUILD</span>
                           </div>
-                          <p className="text-[10px] text-zinc-500 font-sans font-light mt-1.5 leading-relaxed">
+                          <p className="text-[10px] text-bb-ink-faint font-sans font-light mt-1.5 leading-relaxed">
                             {clan.desc}
                           </p>
                         </div>
@@ -726,20 +726,20 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                       <div className="flex items-center gap-6 self-end sm:self-center">
                         <div className="text-right">
-                          <span className="text-[9px] text-zinc-500 block">WEEKLY XP</span>
-                          <span className="text-xs font-bold text-zinc-300">{clan.weeklyXp.toLocaleString()} XP</span>
+                          <span className="text-[9px] text-bb-ink-faint block">WEEKLY XP</span>
+                          <span className="text-xs font-bold text-bb-ink-soft">{clan.weeklyXp.toLocaleString()} XP</span>
                         </div>
                         <div className="text-right">
-                          <span className="text-[9px] text-zinc-500 block">CODERS</span>
-                          <span className="text-xs font-bold text-zinc-300">{clan.members}</span>
+                          <span className="text-[9px] text-bb-ink-faint block">CODERS</span>
+                          <span className="text-xs font-bold text-bb-ink-soft">{clan.members}</span>
                         </div>
 
                         <button
                           onClick={() => handleJoinClan(clan.id)}
-                          className={`px-4 py-1.5 rounded-md text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-all ${
-                            isMember 
-                              ? 'bg-white/[0.05] hover:bg-red-500/20 text-white hover:text-red-400 border border-white/[0.08] hover:border-red-500/30' 
-                              : 'bg-white hover:bg-zinc-100 text-black hover:scale-103'
+                          className={`px-4 py-1.5 rounded-full text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-all ${
+                            isMember
+                              ? 'bg-transparent hover:bg-bb-red/10 text-bb-ink-soft hover:text-bb-red border border-bb-line-strong hover:border-bb-red/40'
+                              : 'btn-primary'
                           }`}
                         >
                           {isMember ? 'Leave' : 'Join'}
@@ -753,33 +753,33 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             {/* User Guild Profile status */}
             <div className="flex flex-col gap-6 font-mono">
-              <div className="rounded-xl p-5 border border-white/[0.08] bg-[#111116] relative">
-                <h4 className="text-[10px] font-bold text-zinc-400 mb-3.5 uppercase tracking-wider border-b border-white/[0.08] pb-2">
+              <div className="spec-card p-5 relative">
+                <h4 className="label-caps mb-3.5 border-b border-bb-line pb-2">
                   Your Guild Affiliation
                 </h4>
 
                 {userClan ? (
                   <div className="flex flex-col gap-4">
                     <div>
-                      <span className="text-[9px] text-zinc-500 uppercase block mb-1">Active Clan</span>
-                      <div className="text-base font-bold text-white uppercase tracking-wider flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-[#c3f73a]" />
+                      <span className="text-[9px] text-bb-ink-faint uppercase block mb-1">Active Clan</span>
+                      <div className="text-base font-bold text-bb-ink uppercase tracking-wider flex items-center gap-2">
+                        <span className="w-2 h-2 rounded-full bg-bb-lime" />
                         {userClan}
                       </div>
                     </div>
                     <div>
-                      <span className="text-[9px] text-zinc-500 uppercase block mb-1">Weekly contribution</span>
-                      <span className="text-xs font-bold text-[#c3f73a]">+230 XP contributed</span>
+                      <span className="text-[9px] text-bb-ink-faint uppercase block mb-1">Weekly contribution</span>
+                      <span className="text-xs font-bold text-bb-lime">+230 XP contributed</span>
                     </div>
-                    <div className="p-3 bg-white/[0.02] border border-white/[0.08] rounded text-[9px] text-zinc-500 leading-relaxed font-sans font-light">
+                    <div className="p-3 bg-bb-paper border border-bb-line rounded-lg text-[9px] text-bb-ink-faint leading-relaxed font-sans font-light">
                       Your scores add to the clan leaderboard weekly. Secure double-XP matches to rank up your guild!
                     </div>
                   </div>
                 ) : (
                   <div className="text-center py-6">
                     <span className="text-[30px] block mb-2 opacity-50">🛡️</span>
-                    <span className="text-[10px] text-zinc-500 block uppercase font-semibold">No Active Clan</span>
-                    <p className="text-[9px] text-zinc-600 mt-2 font-sans font-light px-2">
+                    <span className="text-[10px] text-bb-ink-faint block uppercase font-semibold">No Active Clan</span>
+                    <p className="text-[9px] text-bb-ink-faint mt-2 font-sans font-light px-2">
                       Join a programming guild above to participate in clan tournaments and secure contribution points.
                     </p>
                   </div>
@@ -792,15 +792,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ CREATE THREAD DIALOG MODAL ═══ */}
         <AnimatePresence>
           {isCreatorOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-[#0a0a0f]/85 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-bb-ink/50 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-[600px] border border-white/[0.08] bg-[#111116] p-6 rounded shadow-2xl font-mono"
+                className="w-full max-w-[600px] spec-card p-6 font-mono"
               >
-                <div className="flex items-center justify-between border-b border-white/[0.08] pb-3.5 mb-5">
-                  <h3 className="text-sm font-bold text-white uppercase tracking-wider">
+                <div className="flex items-center justify-between border-b border-bb-line pb-3.5 mb-5">
+                  <h3 className="text-sm font-bold text-bb-ink uppercase tracking-wider">
                     Compile New Forum Thread
                   </h3>
                   <button
@@ -808,7 +808,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       playSound('click');
                       setIsCreatorOpen(false);
                     }}
-                    className="text-zinc-500 hover:text-white cursor-pointer text-sm font-bold font-sans"
+                    className="text-bb-ink-faint hover:text-bb-ink cursor-pointer text-sm font-bold font-sans"
                   >
                     ×
                   </button>
@@ -817,23 +817,23 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 <div className="flex flex-col gap-4 text-xs">
                   {/* Title */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-zinc-500 uppercase font-semibold">Thread Title</label>
+                    <label className="text-bb-ink-faint uppercase font-semibold">Thread Title</label>
                     <input
                       type="text"
                       value={newTitle}
                       onChange={e => setNewTitle(e.target.value)}
                       placeholder="E.g., std::vector capacity reservation tricks"
-                      className="h-10 px-3.5 bg-white/[0.04] border border-white/[0.08] rounded text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30"
+                      className="h-10 px-3.5 bg-bb-paper border border-bb-line rounded-lg text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong"
                     />
                   </div>
 
                   {/* Channel Tag */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-zinc-500 uppercase font-semibold">Tag Channel</label>
+                    <label className="text-bb-ink-faint uppercase font-semibold">Tag Channel</label>
                     <select
                       value={newTag}
                       onChange={e => setNewTag(e.target.value as any)}
-                      className="h-10 px-3 bg-white/[0.04] border border-white/[0.08] rounded text-white focus:outline-none focus:border-[#c3f73a]/30"
+                      className="h-10 px-3 bg-bb-paper border border-bb-line rounded-lg text-bb-ink focus:outline-none focus:border-bb-line-strong"
                     >
                       <option value="Solutions"># Solutions</option>
                       <option value="Contest"># Contest</option>
@@ -844,29 +844,29 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                   {/* Code / Content */}
                   <div className="flex flex-col gap-1.5">
-                    <label className="text-zinc-500 uppercase font-semibold">Body Content (Markdown Supported)</label>
+                    <label className="text-bb-ink-faint uppercase font-semibold">Body Content (Markdown Supported)</label>
                     <textarea
                       value={newContent}
                       onChange={e => setNewContent(e.target.value)}
                       placeholder="Write your explanation or paste your codebase snippets..."
-                      className="h-44 p-4 bg-white/[0.04] border border-white/[0.08] rounded text-white placeholder-zinc-700 focus:outline-none focus:border-[#c3f73a]/30 resize-none font-mono text-[11px] leading-relaxed"
+                      className="h-44 p-4 bg-bb-paper border border-bb-line rounded-lg text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono text-[11px] leading-relaxed"
                     />
                   </div>
 
                   {/* Save/Cancel */}
-                  <div className="flex justify-end gap-3 pt-3 border-t border-white/[0.08] mt-2">
+                  <div className="flex justify-end gap-3 pt-3 border-t border-bb-line mt-2">
                     <button
                       onClick={() => {
                         playSound('click');
                         setIsCreatorOpen(false);
                       }}
-                      className="px-4 h-9 rounded-md border border-white/[0.08] hover:border-white/[0.16] text-zinc-400 hover:text-white cursor-pointer uppercase text-xs transition-colors"
+                      className="btn-outline px-4 h-9 cursor-pointer uppercase text-xs"
                     >
                       Cancel
                     </button>
                     <button
                       onClick={handleCreateThread}
-                      className="px-5 h-9 rounded-md bg-[#c3f73a] text-black font-bold uppercase tracking-wider hover:brightness-110 cursor-pointer text-xs transition-colors"
+                      className="btn-primary px-5 h-9 font-bold uppercase tracking-wider cursor-pointer text-xs"
                     >
                       Deploy Thread (+15 XP)
                     </button>

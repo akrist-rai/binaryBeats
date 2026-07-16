@@ -32,6 +32,31 @@
   --color-bb-term-acc2: var(--bb-term-acc2, #35E8FF);
 }
 
+/* ─── Theme: dark mode overrides the paper register only — the code-editor
+   "terminal" register (--bb-term-*) is intentionally constant in both themes. ─── */
+:root {
+  --bb-grid-line: rgba(23, 20, 15, 0.055);
+  color-scheme: light;
+}
+:root[data-theme='dark'] {
+  --bb-paper: #14110C;
+  --bb-paper-raised: #1D1811;
+  --bb-ink: #F3EEE2;
+  --bb-ink-soft: #C9C0AC;
+  --bb-ink-faint: #8C8371;
+  --bb-line: rgba(244, 239, 228, 0.12);
+  --bb-line-strong: rgba(244, 239, 228, 0.26);
+
+  --bb-orange: #FF7A45;
+  --bb-orange-soft: #FFB088;
+  --bb-lime: #C3F73A;
+  --bb-blue: #7C93FF;
+  --bb-red: #FF6B57;
+
+  --bb-grid-line: rgba(244, 239, 228, 0.05);
+  color-scheme: dark;
+}
+
 @layer base {
   html {
     font-size: 16px;
@@ -49,6 +74,7 @@
     font-family: 'Inter', system-ui, sans-serif;
     overflow-x: hidden;
     letter-spacing: -0.01em;
+    transition: background-color 0.35s ease, color 0.35s ease;
   }
 
   ::selection {
@@ -76,12 +102,16 @@
   mix-blend-mode: overlay;
   opacity: 0.05;
 }
+:root[data-theme='dark'] .noise-bg::before {
+  mix-blend-mode: overlay;
+  opacity: 0.05;
+}
 
 /* ─── Blueprint grid-paper texture ─── */
 .grid-paper {
   background-image:
-    linear-gradient(rgba(23, 20, 15, 0.055) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(23, 20, 15, 0.055) 1px, transparent 1px);
+    linear-gradient(var(--bb-grid-line, rgba(23, 20, 15, 0.055)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bb-grid-line, rgba(23, 20, 15, 0.055)) 1px, transparent 1px);
   background-size: 40px 40px;
   -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 35%, transparent 88%);
   mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 35%, transparent 88%);
@@ -253,8 +283,8 @@
 /* ─── Scrollbar ─── */
 .custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
 .custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(23,20,15,0.12); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(23,20,15,0.22); }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bb-line-strong, rgba(23,20,15,0.28)); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--bb-ink-faint, rgba(23,20,15,0.4)); }
 .custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(244,239,228,0.1); }
 .custom-scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(244,239,228,0.18); }
 .no-scrollbar::-webkit-scrollbar { display: none; }

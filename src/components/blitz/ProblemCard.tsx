@@ -32,17 +32,17 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
       }}
       onMouseEnter={() => playSound("hover")}
       className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors border-l-2 group ${
-        solved ? "border-l-[#c3f73a] bg-white/[0.01]" : "border-l-transparent hover:bg-white/[0.01] hover:border-l-white/20"
+        solved ? "border-l-bb-lime bg-bb-ink/[0.02]" : "border-l-transparent hover:bg-bb-ink/[0.02] hover:border-l-bb-line-strong"
       }`}
     >
-      <span className="text-sm font-mono font-bold text-zinc-500 w-5 shrink-0">{LETTERS[orderIndex] ?? orderIndex + 1}</span>
+      <span className="text-sm font-mono font-bold text-bb-ink-faint w-5 shrink-0">{LETTERS[orderIndex] ?? orderIndex + 1}</span>
 
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2 min-w-0 mb-1">
-          <span className="text-sm text-zinc-200 font-medium group-hover:text-white transition-colors truncate">
+          <span className="text-sm text-bb-ink font-medium group-hover:text-bb-orange transition-colors truncate">
             {problem.name}
           </span>
-          <span className="text-[10px] font-mono text-zinc-600 shrink-0">
+          <span className="text-[10px] font-mono text-bb-ink-faint shrink-0">
             {problem.contestId}
             {problem.index}
           </span>
@@ -52,13 +52,13 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
             {problem.tags.slice(0, 4).map((tag) => (
               <span
                 key={tag}
-                className="text-[9px] font-mono px-1.5 py-0.5 rounded border border-white/[0.05] bg-white/[0.02] text-zinc-600"
+                className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line bg-bb-paper text-bb-ink-faint"
               >
                 {tag}
               </span>
             ))}
             {problem.tags.length > 4 && (
-              <span className="text-[9px] font-mono text-zinc-700">+{problem.tags.length - 4}</span>
+              <span className="text-[9px] font-mono text-bb-ink-faint">+{problem.tags.length - 4}</span>
             )}
           </div>
         )}
@@ -71,7 +71,7 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
         target="_blank"
         rel="noopener noreferrer"
         onClick={(e) => e.stopPropagation()}
-        className="shrink-0 inline-flex items-center gap-1 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors"
+        className="btn-outline shrink-0 inline-flex items-center gap-1 px-3 py-1.5 text-[10px] font-mono uppercase tracking-wider"
       >
         Solve ↗
       </a>
@@ -81,19 +81,19 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
           initial={{ scale: 0 }}
           animate={{ scale: 1 }}
           transition={{ type: "spring", stiffness: 500, damping: 25 }}
-          className={`shrink-0 inline-flex items-center rounded px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider whitespace-nowrap ${
+          className={`pill shrink-0 inline-flex items-center px-1.5 py-0.5 text-[9px] font-mono font-bold uppercase tracking-wider whitespace-nowrap border ${
             winner === me
-              ? "border border-white/50 bg-white/[0.08] text-white"
-              : "border border-white/25 bg-white/[0.05] text-zinc-200"
+              ? "border-bb-lime/50 bg-bb-lime/10 text-bb-lime"
+              : "border-bb-line-strong bg-bb-ink/[0.04] text-bb-ink-soft"
           }`}
         >
           {isDuel ? (session.displayHandles[winner as string] ?? winner) : "Solved"}
         </motion.span>
       ) : (
-        <span className="shrink-0 w-2 h-2 rounded-full border border-white/25" />
+        <span className="shrink-0 w-2 h-2 rounded-full border border-bb-line-strong" />
       )}
 
-      <span className="shrink-0 text-zinc-600 group-hover:text-white transition-colors text-xs">→</span>
+      <span className="shrink-0 text-bb-ink-faint group-hover:text-bb-orange transition-colors text-xs">→</span>
     </motion.div>
   );
 };

@@ -186,24 +186,24 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
   const linked = !!handle;
 
   return (
-    <div className="w-full min-h-[calc(100vh-56px)] text-zinc-100 relative pb-12">
+    <div className="w-full min-h-[calc(100vh-56px)] text-bb-ink relative pb-12">
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
           <div>
-            <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Codeforces Arena</span>
-            <h2 className="text-2xl md:text-3xl font-bold font-heading gradient-text-cool mt-1 tracking-tight">
+            <span className="eyebrow">Codeforces Arena</span>
+            <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-bb-ink mt-2 tracking-tight">
               Blitz &amp; Duel
             </h2>
-            <p className="text-xs font-mono text-zinc-500 mt-1">Real problems. Real verdicts. Rating-matched.</p>
+            <p className="text-xs font-mono text-bb-ink-faint mt-1.5">Real problems. Real verdicts. Rating-matched.</p>
           </div>
 
           {linked && (
-            <div className="flex items-center gap-2 rounded-lg border border-white/[0.08] bg-white/[0.02] px-3 py-1.5">
-              <span className="font-mono text-xs text-white">{handle}</span>
+            <div className="flex items-center gap-2 rounded-lg border border-bb-line bg-bb-paper-raised px-3 py-1.5">
+              <span className="font-mono text-xs text-bb-ink">{handle}</span>
               <RatingBadge rating={user?.rating ?? null} />
               <button
                 onClick={handleUnlink}
-                className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer"
               >
                 change
               </button>
@@ -243,18 +243,18 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                     exit={{ opacity: 0 }}
                     className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                   >
-                    <div className="lg:col-span-2 rounded-xl border border-white/[0.08] bg-[#111116] overflow-hidden">
-                      <div className="flex items-center justify-between px-6 py-4 border-b border-white/[0.08]">
-                        <h3 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500">
+                    <div className="lg:col-span-2 spec-card corner-marks overflow-hidden">
+                      <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line">
+                        <h3 className="label-caps">
                           Problem Set
                         </h3>
                         <div className="flex items-center gap-1.5">
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
-                              pollState === "live" ? "bg-[#c3f73a] animate-pulse" : "bg-zinc-600"
+                              pollState === "live" ? "bg-bb-lime animate-pulse" : "bg-bb-ink-faint"
                             }`}
                           />
-                          <span className="text-[10px] font-mono text-zinc-500">
+                          <span className="text-[10px] font-mono text-bb-ink-faint">
                             {pollState === "live"
                               ? "server watching submissions"
                               : pollState === "paused"
@@ -263,7 +263,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                           </span>
                         </div>
                       </div>
-                      <div className="flex flex-col divide-y divide-white/[0.04]">
+                      <div className="flex flex-col divide-y divide-bb-line">
                         {session.problems.map((p, i) => (
                           <ProblemCard
                             key={problemKey(p)}
@@ -278,7 +278,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                     </div>
 
                     <div className="flex flex-col gap-6">
-                      <div className="rounded-xl border border-white/[0.08] bg-[#111116] p-5">
+                      <div className="spec-card p-5">
                         <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
                       </div>
 
@@ -287,7 +287,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                       {session.mode === "duel" && (
                         <button
                           onClick={handleCopyLinks}
-                          className="h-10 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                          className="btn-outline h-10 text-[10px] font-mono uppercase tracking-wider cursor-pointer"
                         >
                           {copied ? "Copied ✓" : "Copy problem links"}
                         </button>
@@ -295,7 +295,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
 
                       <button
                         onClick={() => setConfirmingEnd(true)}
-                        className="h-10 rounded-lg border border-white/[0.08] text-zinc-500 hover:text-rose-400 hover:border-rose-500/30 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                        className="h-10 rounded-full border border-bb-line text-bb-ink-faint hover:text-bb-red hover:border-bb-red/40 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
                       >
                         End Session
                       </button>
@@ -323,19 +323,19 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="max-w-xl mx-auto w-full rounded-xl border border-white/[0.08] bg-[#111116] p-8 text-center"
+              className="max-w-xl mx-auto w-full spec-card corner-marks p-8 text-center"
             >
               {session.mode === "duel" ? (
                 <FinishedDuelBanner session={session} />
               ) : (
                 <>
-                  <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Session Complete</span>
-                  <h3 className="text-2xl font-heading font-bold text-white mt-2 mb-1">
+                  <span className="eyebrow">Session Complete</span>
+                  <h3 className="text-2xl font-heading font-extrabold text-bb-ink mt-3 mb-1">
                     {session.problems.length} / {session.problems.length} solved
                   </h3>
                 </>
               )}
-              <p className="text-sm font-mono text-[#c3f73a] mt-2">+{xpEarned} XP</p>
+              <p className="text-sm font-mono font-bold text-bb-lime mt-2">+{xpEarned} XP</p>
               <FinishedRecap session={session} />
               <motion.button
                 whileHover={{ scale: 1.03 }}
@@ -344,7 +344,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                   playSound("click");
                   handleNewSession();
                 }}
-                className="mt-6 px-5 h-10 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all cursor-pointer"
+                className="btn-primary mt-6 px-5 h-10 font-bold font-mono text-xs uppercase tracking-wider cursor-pointer"
               >
                 New Session
               </motion.button>
@@ -359,28 +359,28 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-[#0a0a0f]/85 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-bb-ink/60 backdrop-blur-sm px-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full max-w-sm rounded border border-white/[0.08] bg-[#111116] p-6"
+              className="w-full max-w-sm spec-card p-6"
             >
-              <h4 className="text-sm font-bold font-heading text-white mb-2">End this session?</h4>
-              <p className="text-xs font-mono text-zinc-500 mb-5 leading-relaxed">
+              <h4 className="text-sm font-bold font-heading text-bb-ink mb-2">End this session?</h4>
+              <p className="text-xs font-mono text-bb-ink-faint mb-5 leading-relaxed">
                 Progress on unsolved problems will be discarded. XP already earned stays.
               </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setConfirmingEnd(false)}
-                  className="flex-1 h-9 rounded-lg border border-white/[0.08] hover:border-white/[0.16] text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors cursor-pointer"
+                  className="btn-outline flex-1 h-9 text-xs font-mono uppercase tracking-wider cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEndSession}
-                  className="flex-1 h-9 rounded-lg border border-rose-500/30 text-xs font-mono uppercase tracking-wider text-rose-400 hover:bg-rose-500/10 transition-colors cursor-pointer"
+                  className="flex-1 h-9 rounded-full border border-bb-red/40 text-xs font-mono uppercase tracking-wider text-bb-red hover:bg-bb-red/10 transition-colors cursor-pointer"
                 >
                   End Session
                 </button>
@@ -403,15 +403,15 @@ const FinishedDuelBanner: React.FC<{ session: BlitzSession }> = ({ session }) =>
 
   return (
     <>
-      <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">Duel Complete</span>
+      <span className="eyebrow">Duel Complete</span>
       <h3
-        className={`text-3xl font-heading font-black mt-2 mb-1 ${
-          verdict === "VICTORY" ? "text-white" : verdict === "DEFEAT" ? "text-zinc-500" : "text-zinc-300"
+        className={`editorial text-4xl mt-3 mb-1 ${
+          verdict === "VICTORY" ? "text-bb-lime" : verdict === "DEFEAT" ? "text-bb-ink-faint" : "text-bb-ink-soft"
         }`}
       >
         {verdict}
       </h3>
-      <p className="text-sm font-mono text-zinc-400">
+      <p className="text-sm font-mono text-bb-ink-soft">
         {meScore} — {rivalScore}
       </p>
     </>
@@ -423,7 +423,7 @@ const FinishedRecap: React.FC<{ session: BlitzSession }> = ({ session }) => {
   const isDuel = session.mode === "duel";
 
   return (
-    <div className="mt-6 pt-6 border-t border-white/[0.08] flex flex-col gap-2.5 text-left">
+    <div className="mt-6 pt-6 border-t border-bb-line flex flex-col gap-2.5 text-left">
       {session.problems.map((p) => {
         const key = problemKey(p);
         const winner = isDuel ? claimedBy(session, key) : session.results[me]?.[key] !== undefined ? me : null;
@@ -431,11 +431,11 @@ const FinishedRecap: React.FC<{ session: BlitzSession }> = ({ session }) => {
           <div key={key} className="flex items-center justify-between gap-3 text-xs font-mono">
             <div className="flex items-center gap-2 min-w-0">
               <RatingBadge rating={p.rating} />
-              <span className="text-zinc-300 truncate">{p.name}</span>
+              <span className="text-bb-ink-soft truncate">{p.name}</span>
             </div>
             <span
               className={`shrink-0 ${
-                winner === me ? "text-[#c3f73a] font-bold" : winner ? "text-zinc-400" : "text-zinc-600"
+                winner === me ? "text-bb-lime font-bold" : winner ? "text-bb-ink-soft" : "text-bb-ink-faint"
               }`}
             >
               {winner ? (isDuel ? (session.displayHandles[winner] ?? winner) : "Solved ✓") : "—"}

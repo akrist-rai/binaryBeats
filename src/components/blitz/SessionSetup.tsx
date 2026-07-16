@@ -86,13 +86,11 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
   return (
     <div className="flex flex-col gap-6">
       <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500">
-          {meHandle} is linked
-        </span>
-        <h3 className="text-2xl font-heading font-extrabold gradient-text-cool mt-1 tracking-tight">
+        <span className="eyebrow">{meHandle} is linked</span>
+        <h3 className="editorial text-3xl text-bb-ink mt-3">
           Ready to compete?
         </h3>
-        <p className="text-sm text-zinc-500 mt-1">Pick a mode and we'll draw a rating-matched problem set.</p>
+        <p className="text-sm text-bb-ink-soft mt-1.5">Pick a mode and we'll draw a rating-matched problem set.</p>
       </motion.div>
 
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -101,9 +99,9 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
             initial={{ opacity: 0, y: 15 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.05 }}
-            className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
+            className="spec-card corner-marks p-6"
           >
-            <h4 className="text-[10px] font-mono tracking-wider uppercase font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
+            <h4 className="label-caps mb-4 border-b border-bb-line pb-2">
               Choose a mode
             </h4>
 
@@ -119,21 +117,21 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                     }}
                     onMouseEnter={() => playSound("hover")}
                     className={`relative text-left rounded-lg border p-5 transition-colors cursor-pointer ${
-                      selected ? "border-white/40 bg-white/[0.04]" : "border-white/[0.08] hover:border-white/[0.16]"
+                      selected ? "border-bb-orange bg-bb-orange/[0.05]" : "border-bb-line hover:border-bb-line-strong"
                     }`}
                   >
                     {selected && (
                       <motion.div
                         layoutId="modeIndicator"
-                        className="absolute inset-0 rounded-lg border border-white/40 pointer-events-none"
+                        className="absolute inset-0 rounded-lg border border-bb-orange pointer-events-none"
                         transition={{ type: "spring", stiffness: 500, damping: 35 }}
                       />
                     )}
                     <span className="text-2xl block mb-2">{m === "blitz" ? "⚡" : "⚔️"}</span>
-                    <span className="text-base font-bold font-heading text-white block mb-1">
+                    <span className="text-base font-bold font-heading text-bb-ink block mb-1">
                       {m === "blitz" ? "Solo Blitz" : "Duel"}
                     </span>
-                    <span className="text-xs font-mono text-zinc-500 leading-relaxed block">
+                    <span className="text-xs font-mono text-bb-ink-faint leading-relaxed block">
                       {m === "blitz"
                         ? "4 problems · ladder around your rating"
                         : "5 problems · first AC claims each"}
@@ -151,13 +149,13 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                 exit={{ opacity: 0, height: 0 }}
                 className="overflow-hidden"
               >
-                <div className="mt-5 pt-5 border-t border-white/[0.08]">
-                  <p className="text-xs font-mono text-zinc-500 mb-3">
+                <div className="mt-5 pt-5 border-t border-bb-line">
+                  <p className="text-xs font-mono text-bb-ink-faint mb-3">
                     Your rival doesn't need an account here — any public Codeforces handle works.
                   </p>
                   {rival ? (
-                    <div className="flex items-center justify-between rounded-lg border border-white/[0.08] bg-white/[0.02] px-3.5 py-2.5">
-                      <span className="text-xs font-mono text-zinc-300">{rival.handle}</span>
+                    <div className="flex items-center justify-between spec-card px-3.5 py-2.5">
+                      <span className="text-xs font-mono text-bb-ink">{rival.handle}</span>
                       <div className="flex items-center gap-2">
                         <RatingBadge rating={rival.rating ?? null} />
                         <button
@@ -165,7 +163,7 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                             setRival(null);
                             setRivalInput("");
                           }}
-                          className="text-[10px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white transition-colors cursor-pointer"
+                          className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer"
                         >
                           change
                         </button>
@@ -181,26 +179,26 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                         }}
                         placeholder="rival's codeforces handle"
                         disabled={rivalStatus === "validating"}
-                        className="flex-1 h-9 px-3 rounded-lg text-xs font-mono text-white bg-[#0a0a0f] placeholder-zinc-700 focus:outline-none border border-white/[0.08] focus:border-white/[0.2] transition-colors disabled:opacity-50"
+                        className="flex-1 h-9 px-3 rounded-lg text-xs font-mono text-bb-ink bg-bb-paper-raised placeholder-bb-ink-faint focus:outline-none border border-bb-line focus:border-bb-line-strong transition-colors disabled:opacity-50"
                       />
                       <button
                         onClick={fetchRival}
                         disabled={rivalStatus === "validating"}
-                        className="shrink-0 h-9 px-4 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-[10px] font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors disabled:opacity-50 cursor-pointer"
+                        className="btn-outline shrink-0 h-9 px-4 text-[10px] font-mono uppercase tracking-wider disabled:opacity-50 cursor-pointer"
                       >
                         {rivalStatus === "validating" ? "Checking…" : "Fetch"}
                       </button>
                     </div>
                   )}
-                  {rivalError && <p className="text-xs font-mono text-rose-400 mt-2">{rivalError}</p>}
+                  {rivalError && <p className="text-xs font-mono text-bb-red mt-2">{rivalError}</p>}
                 </div>
               </motion.div>
             )}
           </AnimatePresence>
 
           {targets && (
-            <div className="mt-5 pt-5 border-t border-white/[0.08]">
-              <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-500 block mb-2.5">
+            <div className="mt-5 pt-5 border-t border-bb-line">
+              <span className="label-caps block mb-2.5">
                 Target draw
               </span>
               <div className="flex flex-wrap gap-2 mb-2.5">
@@ -208,7 +206,7 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                   <RatingBadge key={i} rating={t} />
                 ))}
               </div>
-              <p className="text-[11px] font-mono text-zinc-600 leading-relaxed">
+              <p className="text-[11px] font-mono text-bb-ink-faint leading-relaxed">
                 {mode === "blitz"
                   ? "Staircase from just-below your rating up to a stretch problem."
                   : "Anchored 60/40 toward the lower rating, capped so the gap never dominates."}
@@ -222,11 +220,11 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
             onClick={handleStart}
             onMouseEnter={() => canStart && playSound("hover")}
             disabled={!canStart || starting}
-            className="w-full mt-6 h-11 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
+            className="btn-primary w-full mt-6 h-11 font-bold font-mono text-xs uppercase tracking-wider disabled:opacity-40 disabled:cursor-not-allowed cursor-pointer"
           >
             {starting ? "Drawing problems…" : "Start Session"}
           </motion.button>
-          {startError && <p className="text-xs font-mono text-rose-400 mt-3 text-center">{startError}</p>}
+          {startError && <p className="text-xs font-mono text-bb-red mt-3 text-center">{startError}</p>}
         </motion.div>
       </div>
 
@@ -235,12 +233,12 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
           initial={{ opacity: 0, x: 15 }}
           animate={{ opacity: 1, x: 0 }}
           transition={{ delay: 0.1 }}
-          className="rounded-xl border border-white/[0.08] bg-[#111116] p-6"
+          className="spec-card p-6"
         >
-          <h4 className="text-[10px] font-mono uppercase tracking-wider font-medium text-zinc-500 mb-4 border-b border-white/[0.08] pb-2">
+          <h4 className="label-caps mb-4 border-b border-bb-line pb-2">
             How it works
           </h4>
-          <ul className="flex flex-col gap-3 text-sm text-zinc-400 font-sans leading-relaxed list-none pl-0">
+          <ul className="flex flex-col gap-3 text-sm text-bb-ink-soft font-sans leading-relaxed list-none pl-0">
             {[
               "Solve on codeforces.com using your linked handle.",
               "Accepted verdicts are detected automatically within ~15s.",
@@ -248,7 +246,7 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
               "Problems either of you already solved are excluded.",
             ].map((rule, i) => (
               <li key={i} className="flex gap-2.5 items-start">
-                <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a] mt-2 shrink-0" />
+                <span className="w-1.5 h-1.5 rounded-full bg-bb-orange mt-2 shrink-0" />
                 <span>{rule}</span>
               </li>
             ))}

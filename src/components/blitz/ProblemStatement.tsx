@@ -44,8 +44,8 @@ const MathText: React.FC<{ text: string }> = ({ text }) => {
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
   <div className="mb-6">
-    <span className="text-xs text-zinc-500 font-semibold tracking-wider uppercase block mb-2">{title}</span>
-    <div className="text-sm text-zinc-300">{children}</div>
+    <span className="label-caps block mb-2">{title}</span>
+    <div className="text-sm text-bb-ink-soft">{children}</div>
   </div>
 );
 
@@ -62,7 +62,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
           // clipboard unavailable — no-op
         }
       }}
-      className="text-[9px] font-mono uppercase tracking-wider text-zinc-500 hover:text-white transition-colors cursor-pointer shrink-0"
+      className="text-[9px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer shrink-0"
     >
       {copied ? "copied ✓" : "copy"}
     </button>
@@ -76,24 +76,24 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
     hasFigure(statement.description) || hasFigure(statement.inputFormat) || hasFigure(statement.outputFormat) || hasFigure(statement.note);
 
   return (
-    <div className="flex-1 min-h-[460px] rounded-xl border border-white/[0.08] bg-[#0c0c11] p-6 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 min-h-[460px] spec-card p-6 overflow-y-auto custom-scrollbar">
       {/* Header */}
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-5 pb-5 border-b border-white/[0.06]">
+      <div className="flex items-start justify-between gap-4 flex-wrap mb-5 pb-5 border-b border-bb-line">
         <div>
-          <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+          <span className="label-caps">
             {statement.contestId}
             {statement.index}
           </span>
-          <h3 className="text-2xl font-heading font-extrabold text-white mt-1">{statement.title ?? "Untitled"}</h3>
+          <h3 className="text-2xl font-heading font-extrabold text-bb-ink mt-1">{statement.title ?? "Untitled"}</h3>
         </div>
         <div className="flex items-center gap-2 flex-wrap">
           {statement.timeLimitMs !== null && (
-            <span className="text-[10px] font-mono px-2 py-1 rounded border border-white/[0.08] bg-white/[0.02] text-zinc-400">
+            <span className="pill text-[10px] font-mono px-2 py-1 border border-bb-line bg-bb-paper text-bb-ink-soft">
               {statement.timeLimitMs / 1000}s
             </span>
           )}
           {statement.memoryLimitMb !== null && (
-            <span className="text-[10px] font-mono px-2 py-1 rounded border border-white/[0.08] bg-white/[0.02] text-zinc-400">
+            <span className="pill text-[10px] font-mono px-2 py-1 border border-bb-line bg-bb-paper text-bb-ink-soft">
               {statement.memoryLimitMb}MB
             </span>
           )}
@@ -102,13 +102,13 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
       </div>
 
       {figureOmitted && (
-        <div className="mb-5 rounded-lg border border-amber-400/20 bg-amber-400/[0.04] px-3.5 py-2.5 text-xs font-mono text-amber-200/80">
+        <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs font-mono text-amber-800">
           This statement references a figure that can't be shown here —{" "}
           <a
             href={problemUrl(statement)}
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-amber-100"
+            className="underline hover:text-amber-950"
           >
             view it on Codeforces ↗
           </a>
@@ -116,7 +116,7 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
       )}
 
       {statement.description && (
-        <div className="mb-6 text-sm text-zinc-300">
+        <div className="mb-6 text-sm text-bb-ink-soft">
           <MathText text={statement.description} />
         </div>
       )}
@@ -137,17 +137,17 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
         <Section title="Examples">
           <div className="flex flex-col gap-4">
             {statement.examples.map((ex, i) => (
-              <div key={i} className="rounded-xl border border-white/[0.06] bg-white/[0.02] overflow-hidden font-mono text-xs">
-                <div className="flex items-center justify-between px-4 py-2 border-b border-white/[0.06] bg-white/[0.01]">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500">Input {i + 1}</span>
+              <div key={i} className="rounded-lg border border-bb-line bg-bb-paper overflow-hidden font-mono text-xs">
+                <div className="flex items-center justify-between px-4 py-2 border-b border-bb-line bg-bb-paper-raised">
+                  <span className="text-[10px] uppercase tracking-wider text-bb-ink-faint">Input {i + 1}</span>
                   <CopyButton text={ex.input} />
                 </div>
-                <pre className="px-4 py-3 text-zinc-300 whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.input}</pre>
-                <div className="flex items-center justify-between px-4 py-2 border-y border-white/[0.06] bg-white/[0.01]">
-                  <span className="text-[10px] uppercase tracking-wider text-zinc-500">Output {i + 1}</span>
+                <pre className="px-4 py-3 text-bb-ink-soft whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.input}</pre>
+                <div className="flex items-center justify-between px-4 py-2 border-y border-bb-line bg-bb-paper-raised">
+                  <span className="text-[10px] uppercase tracking-wider text-bb-ink-faint">Output {i + 1}</span>
                   <CopyButton text={ex.output} />
                 </div>
-                <pre className="px-4 py-3 text-zinc-300 whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.output}</pre>
+                <pre className="px-4 py-3 text-bb-ink-soft whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.output}</pre>
               </div>
             ))}
           </div>
@@ -161,14 +161,14 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
       )}
 
       {/* Attribution — required by the dataset's ODC-By 4.0 license */}
-      <div className="mt-8 pt-4 border-t border-white/[0.06] text-[10px] font-mono text-zinc-600 leading-relaxed">
+      <div className="mt-8 pt-4 border-t border-bb-line text-[10px] font-mono text-bb-ink-faint leading-relaxed">
         Problem ©{" "}
         <a
           href={problemUrl(statement)}
           target="_blank"
           rel="noopener noreferrer"
           onClick={() => playSound("click")}
-          className="underline hover:text-zinc-400 transition-colors"
+          className="underline hover:text-bb-orange transition-colors"
         >
           Codeforces
         </a>{" "}
@@ -177,7 +177,7 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
           href="https://huggingface.co/datasets/open-r1/codeforces"
           target="_blank"
           rel="noopener noreferrer"
-          className="underline hover:text-zinc-400 transition-colors"
+          className="underline hover:text-bb-orange transition-colors"
         >
           open-r1/codeforces
         </a>{" "}

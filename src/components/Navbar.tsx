@@ -8,12 +8,12 @@ interface NavbarProps {
   onNavigate: (tab: string) => void;
   onLogout: () => void;
   onHoverSound: () => void;
-  soundEnabled: boolean;
-  onToggleSound: () => void;
+  theme: 'light' | 'dark';
+  onToggleTheme: () => void;
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab, xp, username, onNavigate, onLogout, onHoverSound, soundEnabled, onToggleSound,
+  activeTab, xp, username, onNavigate, onLogout, onHoverSound, theme, onToggleTheme,
 }) => {
   const tabs = [
     { id: 'home', n: '01', label: 'Problems' },
@@ -73,34 +73,20 @@ export const Navbar: React.FC<NavbarProps> = ({
 
         {/* Right side */}
         <div className="flex items-center gap-4">
-          {/* Sound toggle */}
+          {/* Theme toggle — icon shows the mode you'll switch to */}
           <button
-            onClick={() => {
-              onToggleSound();
-              if (!soundEnabled) {
-                setTimeout(() => {
-                  try {
-                    const ctx = new (window.AudioContext || (window as any).webkitAudioContext)();
-                    const osc = ctx.createOscillator();
-                    const gain = ctx.createGain();
-                    osc.connect(gain); gain.connect(ctx.destination);
-                    osc.frequency.setValueAtTime(800, ctx.currentTime);
-                    gain.gain.setValueAtTime(0.04, ctx.currentTime);
-                    gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + 0.05);
-                    osc.start(); osc.stop(ctx.currentTime + 0.05);
-                  } catch(e) {}
-                }, 50);
-              }
-            }}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-bb-ink-faint hover:text-bb-ink hover:bg-bb-ink/[0.05] transition-all cursor-pointer"
+            onClick={onToggleTheme}
+            onMouseEnter={onHoverSound}
+            aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
+            className="w-8 h-8 rounded-full flex items-center justify-center text-bb-ink-faint hover:text-bb-orange hover:bg-bb-ink/[0.05] transition-all cursor-pointer"
           >
-            {soundEnabled ? (
+            {theme === 'light' ? (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M19.114 5.636a9 9 0 010 12.728M16.463 8.288a5.25 5.25 0 010 7.424M6.75 8.25l4.72-4.72a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M21.752 15.002A9.72 9.72 0 0118 15.75c-5.385 0-9.75-4.365-9.75-9.75 0-1.33.266-2.597.748-3.752A9.753 9.753 0 003 11.25C3 16.635 7.365 21 12.75 21a9.753 9.753 0 009.002-5.998z" />
               </svg>
             ) : (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" d="M17.25 9.75L19.5 12m0 0l2.25 2.25M19.5 12l2.25-2.25M19.5 12l-2.25 2.25m-10.5-6L11.47 3.53a.75.75 0 011.28.53v15.88a.75.75 0 01-1.28.53l-4.72-4.72H4.51c-.88 0-1.704-.507-1.938-1.354A9.01 9.01 0 012.25 12c0-.83.112-1.633.322-2.396C2.806 8.756 3.63 8.25 4.51 8.25H6.75z" />
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 3v2.25m6.364.386-1.591 1.591M21 12h-2.25m-.386 6.364-1.591-1.591M12 18.75V21m-4.773-4.227-1.591 1.591M5.25 12H3m4.227-4.773L5.636 5.636M15.75 12a3.75 3.75 0 11-7.5 0 3.75 3.75 0 017.5 0z" />
               </svg>
             )}
           </button>

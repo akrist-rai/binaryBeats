@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Navbar } from "./components/Navbar";
 import { LeetCodeDashboard } from "./components/LeetCodeDashboard";
@@ -7,6 +7,8 @@ import { LeaderboardView } from "./components/LeaderboardView";
 import { CommunityView } from "./components/CommunityView";
 import { synthSound } from "./utils/audio";
 
+type Theme = "light" | "dark";
+
 export default function App() {
   const [activeTab, setActiveTab] = useState("home");
   const [xp, setXp] = useState(() => {
@@ -14,11 +16,21 @@ export default function App() {
     return saved ? parseInt(saved, 10) : 230;
   });
   const [username] = useState("akrist");
-  const [soundEnabled, setSoundEnabled] = useState(() => {
+  // No UI toggle for this anymore — sound just plays, same default as before.
+  const [soundEnabled] = useState(() => {
     const saved = localStorage.getItem("bb_sound");
     return saved !== "false";
   });
+  const [theme, setTheme] = useState<Theme>(() => {
+    const saved = localStorage.getItem("bb_theme");
+    return saved === "dark" ? "dark" : "light";
+  });
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string } | null>(null);
+
+  useEffect(() => {
+    document.documentElement.dataset.theme = theme;
+    localStorage.setItem("bb_theme", theme);
+  }, [theme]);
 
   const handleAddXp = (amount: number) => {
     setXp((prev) => {
@@ -34,12 +46,9 @@ export default function App() {
     if (type === "hover") synthSound.hover();
   };
 
-  const handleToggleSound = () => {
-    setSoundEnabled((prev) => {
-      const next = !prev;
-      localStorage.setItem("bb_sound", String(next));
-      return next;
-    });
+  const handleToggleTheme = () => {
+    playSound("click");
+    setTheme((prev) => (prev === "light" ? "dark" : "light"));
   };
 
   const handleTabChange = (tab: string) => {
@@ -66,8 +75,8 @@ export default function App() {
         onNavigate={handleTabChange}
         onLogout={() => { playSound("click"); alert("Logging out..."); }}
         onHoverSound={() => playSound("hover")}
-        soundEnabled={soundEnabled}
-        onToggleSound={handleToggleSound}
+        theme={theme}
+        onToggleTheme={handleToggleTheme}
       />
 
       <main className="w-full flex-1 flex flex-col relative z-10">

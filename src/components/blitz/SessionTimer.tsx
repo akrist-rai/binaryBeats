@@ -26,8 +26,8 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({ startedAtSeconds, ru
 
   return (
     <div className="flex flex-col">
-      <span className="text-[10px] font-mono tracking-wider uppercase text-zinc-600 mb-1">Elapsed</span>
-      <span className="text-3xl font-mono font-black text-[#c3f73a] leading-none tabular-nums">
+      <span className="label-caps mb-1">Elapsed</span>
+      <span className="stat-num text-3xl text-bb-ink leading-none tabular-nums">
         {formatElapsed(elapsed)}
       </span>
     </div>

@@ -34,6 +34,25 @@ const VERDICT_LABEL: Record<Verdict["status"], string> = {
   CE: "Compilation Error",
 };
 
+// Bright, saturated verdict colors tuned to read on the near-black terminal
+// surface — AC gets the full neon accent, failures get a hot red, TLE gets
+// amber so it reads distinctly from a hard failure at a glance.
+const VERDICT_TEXT: Record<Verdict["status"], string> = {
+  AC: "text-bb-term-acc",
+  WA: "text-[#ff5c5c]",
+  TLE: "text-amber-400",
+  RE: "text-[#ff5c5c]",
+  CE: "text-[#ff5c5c]",
+};
+
+const VERDICT_PANEL: Record<Verdict["status"], string> = {
+  AC: "border-bb-term-acc/30 bg-bb-term-acc/[0.07]",
+  WA: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
+  TLE: "border-amber-400/30 bg-amber-400/[0.07]",
+  RE: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
+  CE: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
+};
+
 export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   problemKey,
   sessionId,
@@ -176,22 +195,18 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const lines = draft.code.split("\n");
 
   return (
-    <div className="flex-1 flex flex-col gap-4 min-h-0">
+    <div className="terminal-panel flex-1 flex flex-col gap-4 min-h-0 p-4">
       {/* Verdict banner */}
       {verdict && (
         <div
-          className={`rounded-xl border px-5 py-3.5 flex items-center justify-between gap-3 flex-wrap font-mono ${
-            verdict.status === "AC"
-              ? "border-[#c3f73a]/30 bg-[#c3f73a]/[0.06]"
-              : "border-rose-500/25 bg-rose-500/[0.04]"
-          }`}
+          className={`rounded-lg border px-5 py-3.5 flex items-center justify-between gap-3 flex-wrap font-mono ${VERDICT_PANEL[verdict.status]}`}
         >
           <div className="flex items-center gap-3">
-            <span className={`text-sm font-black uppercase tracking-wider ${verdict.status === "AC" ? "text-[#c3f73a]" : "text-rose-400"}`}>
+            <span className={`text-sm font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${verdict.status === "AC" ? "term-text-glow" : ""}`}>
               {VERDICT_LABEL[verdict.status]}
             </span>
             {verdict.status !== "CE" && (
-              <span className="text-xs text-zinc-400">
+              <span className="text-xs text-bb-term-text/60">
                 {verdict.passedCount} / {verdict.totalCount} tests
                 {verdict.failedTestIndex !== undefined && ` · failed on test ${verdict.failedTestIndex}`}
                 {verdict.status === "AC" && ` · ${verdict.timeMs} ms`}
@@ -199,26 +214,26 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             )}
           </div>
           {verdict.status === "AC" && verdict.solveRecorded && (
-            <span className="text-[10px] uppercase tracking-wider text-[#c3f73a]/80">solve recorded ✓</span>
+            <span className="text-[10px] uppercase tracking-wider text-bb-term-acc/80">solve recorded ✓</span>
           )}
         </div>
       )}
 
       {/* Editor */}
-      <div className="flex-1 min-h-[360px] relative rounded-xl border border-white/[0.08] bg-[#0c0c11] overflow-hidden flex flex-col font-mono">
-        <div className="h-9 bg-white/[0.01] border-b border-white/[0.08] flex items-center justify-between px-4 select-none">
-          <span className="text-xs font-bold text-white">solution.cpp</span>
+      <div className="flex-1 min-h-[360px] relative rounded-lg border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono">
+        <div className="h-9 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-4 select-none">
+          <span className="text-xs font-bold text-bb-term-text">solution.cpp</span>
           <div className="flex items-center gap-1.5">
-            <span className="w-2.5 h-2.5 rounded-full bg-rose-500/20" />
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/20" />
-            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/20" />
+            <span className="w-2.5 h-2.5 rounded-full bg-[#ff5c5c]/25" />
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-500/25" />
+            <span className="w-2.5 h-2.5 rounded-full bg-emerald-500/25" />
           </div>
         </div>
 
         <div className="flex-1 relative flex overflow-hidden">
           <div
             ref={gutterRef}
-            className="w-11 bg-[#09090d] border-r border-white/[0.04] flex flex-col pt-4 items-end pr-3 text-zinc-600 text-xs select-none overflow-hidden leading-relaxed custom-scrollbar font-mono"
+            className="w-11 bg-bb-term-bg border-r border-bb-term-line flex flex-col pt-4 items-end pr-3 text-bb-term-text/35 text-xs select-none overflow-hidden leading-relaxed custom-scrollbar-dark font-mono"
           >
             {lines.map((_, idx) => (
               <div key={idx} className="h-[21px] flex items-center font-bold">
@@ -230,7 +245,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           <div className="flex-1 relative overflow-hidden bg-transparent">
             <pre
               ref={highlightRef}
-              className="absolute inset-0 p-4 text-xs text-zinc-300 leading-relaxed overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
+              className="absolute inset-0 p-4 text-xs text-bb-term-text leading-relaxed overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
               dangerouslySetInnerHTML={{ __html: getHighlightedCode(draft.code) }}
             />
             <textarea
@@ -238,15 +253,15 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               value={draft.code}
               onChange={(e) => setCode(e.target.value)}
               onScroll={handleScroll}
-              className="absolute inset-0 p-4 text-xs text-transparent caret-white selection:bg-[#35e8ff]/20 selection:text-zinc-100 leading-relaxed overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar"
+              className="absolute inset-0 p-4 text-xs text-transparent caret-bb-term-acc selection:bg-bb-term-acc2/20 selection:text-bb-term-text leading-relaxed overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar-dark"
               spellCheck={false}
             />
           </div>
         </div>
 
-        <div className="h-7 bg-[#09090d] border-t border-white/[0.08] flex items-center justify-between px-4 text-[10px] font-mono text-zinc-500 select-none">
-          <span className="flex items-center gap-1.5 text-[#c3f73a] font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-[#c3f73a]" />
+        <div className="h-7 bg-bb-term-bg border-t border-bb-term-line flex items-center justify-between px-4 text-[10px] font-mono text-bb-term-text/50 select-none">
+          <span className="flex items-center gap-1.5 text-bb-term-acc font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-bb-term-acc" />
             C++17
           </span>
           <span>{lines.length} lines</span>
@@ -254,8 +269,8 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       </div>
 
       {/* Console */}
-      <div className="h-48 rounded-xl border border-white/[0.08] bg-[#0c0c11] overflow-hidden flex flex-col font-mono text-xs shrink-0">
-        <div className="h-9 bg-white/[0.01] border-b border-white/[0.08] flex items-center justify-between px-4 select-none">
+      <div className="h-48 rounded-lg border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono text-xs shrink-0">
+        <div className="h-9 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-4 select-none">
           <div className="flex gap-5 items-center h-full">
             {(
               [
@@ -268,49 +283,53 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 key={tab.id}
                 onClick={() => setConsoleTab(tab.id)}
                 className={`h-full text-[10px] font-mono tracking-wider uppercase cursor-pointer border-b-2 flex items-center transition-all ${
-                  consoleTab === tab.id ? "border-[#c3f73a] text-white" : "border-transparent text-zinc-500 hover:text-zinc-300"
+                  consoleTab === tab.id ? "border-bb-term-acc text-bb-term-text" : "border-transparent text-bb-term-text/40 hover:text-bb-term-text/70"
                 }`}
               >
                 {tab.label}
               </button>
             ))}
           </div>
-          {statusLine && <span className="text-[#c3f73a] animate-pulse text-[10px] font-mono">{statusLine}</span>}
+          {statusLine && <span className="text-bb-term-acc animate-pulse text-[10px] font-mono">{statusLine}</span>}
         </div>
 
-        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar bg-black/10">
+        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar-dark bg-bb-term-bg/30">
           {consoleTab === "stdin" ? (
             <textarea
               value={draft.stdin}
               onChange={(e) => setStdin(e.target.value)}
               placeholder="stdin for Run — optional"
               spellCheck={false}
-              className="w-full h-full bg-transparent text-zinc-300 placeholder-zinc-700 focus:outline-none resize-none"
+              className="w-full h-full bg-transparent text-bb-term-text placeholder-bb-term-text/30 focus:outline-none resize-none"
             />
           ) : consoleTab === "samples" ? (
             samples ? (
               <div className="flex flex-col gap-2.5">
                 {samples.map((s) => (
-                  <div key={s.index} className="rounded-lg border border-white/[0.06] overflow-hidden">
+                  <div key={s.index} className="rounded-lg border border-bb-term-line overflow-hidden">
                     <div
                       className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider ${
-                        s.pass ? "text-[#c3f73a] bg-[#c3f73a]/[0.05]" : "text-rose-400 bg-rose-500/[0.05]"
+                        s.pass
+                          ? "text-bb-term-acc bg-bb-term-acc/[0.06]"
+                          : s.outcome === "tle"
+                            ? "text-amber-400 bg-amber-400/[0.06]"
+                            : "text-[#ff5c5c] bg-[#ff5c5c]/[0.06]"
                       }`}
                     >
                       <span>
                         Sample {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
                       </span>
-                      <span className="text-zinc-500">{s.timeMs} ms</span>
+                      <span className="text-bb-term-text/40">{s.timeMs} ms</span>
                     </div>
                     {!s.pass && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-white/[0.06] text-[11px]">
+                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bb-term-line text-[11px]">
                         <div className="p-2.5">
-                          <span className="text-zinc-600 block mb-1">expected</span>
-                          <pre className="text-zinc-300 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar">{s.expected}</pre>
+                          <span className="text-bb-term-text/40 block mb-1">expected</span>
+                          <pre className="text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.expected}</pre>
                         </div>
                         <div className="p-2.5">
-                          <span className="text-zinc-600 block mb-1">your output</span>
-                          <pre className="text-zinc-300 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar">{s.actual || "(empty)"}</pre>
+                          <span className="text-bb-term-text/40 block mb-1">your output</span>
+                          <pre className="text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual || "(empty)"}</pre>
                         </div>
                       </div>
                     )}
@@ -318,19 +337,19 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 ))}
               </div>
             ) : (
-              <span className="text-zinc-600">Run Samples to check your code against the statement's examples.</span>
+              <span className="text-bb-term-text/40">Run Samples to check your code against the statement's examples.</span>
             )
           ) : compileError ? (
-            <span className="text-rose-400 whitespace-pre-wrap">{compileError}</span>
+            <span className="text-[#ff5c5c] whitespace-pre-wrap">{compileError}</span>
           ) : customOut ? (
             <>
-              <span className="text-zinc-300 whitespace-pre-wrap">
+              <span className="text-bb-term-text/90 whitespace-pre-wrap">
                 {customOut.timedOut ? "(time limit exceeded)" : customOut.stdout || "(no output)"}
               </span>
-              {customOut.stderr && <span className="text-rose-400 whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
+              {customOut.stderr && <span className="text-[#ff5c5c] whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
             </>
           ) : (
-            <span className="text-zinc-600">
+            <span className="text-bb-term-text/40">
               {judgeable
                 ? "Run executes against your custom input; Submit judges against the full official test suite, right here."
                 : "Run executes against your custom input. This problem has no local test suite — submit on Codeforces for the verdict."}
@@ -345,7 +364,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           <button
             onClick={handleSubmit}
             disabled={busy !== null}
-            className="h-10 px-6 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+            className="h-10 px-6 rounded-lg bg-bb-term-acc hover:brightness-110 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
           >
             {busy === "submit" ? "Judging…" : "Submit"}
           </button>
@@ -354,7 +373,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           <button
             onClick={handleRunSamples}
             disabled={busy !== null}
-            className="h-10 px-5 rounded-lg bg-white hover:bg-zinc-100 text-zinc-950 font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+            className="h-10 px-5 rounded-lg bg-bb-term-text hover:brightness-90 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
           >
             {busy === "samples" ? "Running…" : "Run Samples"}
           </button>
@@ -364,19 +383,19 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           disabled={busy !== null}
           className={`h-10 px-5 rounded-lg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer ${
             examples.length > 0
-              ? "border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-zinc-300 hover:text-white"
-              : "bg-white hover:bg-zinc-100 text-zinc-950"
+              ? "border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text"
+              : "bg-bb-term-text hover:brightness-90 text-bb-term-bg"
           }`}
         >
           {busy === "custom" ? "Running…" : "Run"}
         </button>
         <button
           onClick={handleCopy}
-          className="h-10 px-5 rounded-lg border border-white/[0.08] hover:border-white/[0.16] bg-[#111116] text-xs font-mono uppercase tracking-wider text-zinc-300 hover:text-white transition-colors cursor-pointer"
+          className="h-10 px-5 rounded-lg border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-xs font-mono uppercase tracking-wider text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer"
         >
           {copied ? "Copied ✓" : "Copy Code"}
         </button>
-        <span className="text-[9px] font-mono text-zinc-600 ml-auto">
+        <span className="text-[9px] font-mono text-bb-term-text/35 ml-auto">
           {judgeable
             ? "judged locally against the official Codeforces test suite (open-r1 dataset)"
             : "compile + run only — no local test suite for this problem, verify on Codeforces"}

@@ -7,6 +7,7 @@
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
     --bg:#08090a;
@@ -149,6 +150,15 @@
   .cta:hover{background:var(--amber-dim);}
   .cta:active{transform:translateY(1px);}
   .cta:disabled{cursor:wait; opacity:.7;}
+
+  .mode-switch{font-size:11px; letter-spacing:.06em; color:var(--muted); margin:-8px 0 20px;}
+  .mode-switch button{background:none; border:none; padding:0; margin:0; font:inherit; color:var(--amber-dim); cursor:pointer; text-decoration:underline dotted;}
+
+  .or-divider{display:flex; align-items:center; gap:10px; margin:18px 0; font-size:9.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;}
+  .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .google-slot{display:flex; justify-content:center; min-height:40px; margin-bottom:6px;}
+
+  .form-msg{font-size:10px; letter-spacing:.05em; color:var(--danger); margin:-10px 0 16px; min-height:12px; text-transform:none;}
 
   .fine-print{margin-top:16px; font-size:9.5px; letter-spacing:.04em; color:var(--muted); line-height:1.5; text-transform:uppercase;}
 
@@ -341,12 +351,16 @@
 
           <form id="loginForm">
             <div class="fields">
+              <div class="field" id="nameField" style="display:none;">
+                <label for="name">Display name</label>
+                <input id="name" type="text" placeholder="akrist" autocomplete="name">
+              </div>
               <div class="field" id="userField">
-                <label for="user">Operative name</label>
-                <input id="user" type="text" placeholder="akrist" autocomplete="username">
+                <label for="user">Email</label>
+                <input id="user" type="email" placeholder="you@example.com" autocomplete="username">
               </div>
               <div class="field" id="passField">
-                <label for="pass">Access code (4+ characters)</label>
+                <label for="pass">Access code (8+ characters)</label>
                 <input id="pass" type="password" placeholder="••••••••••" autocomplete="current-password">
               </div>
             </div>
@@ -356,13 +370,22 @@
                 <input type="checkbox" id="remember">
                 Keep me checked in
               </label>
-              <a class="forgot" href="#">Lost your code?</a>
+              <a class="forgot" href="#" title="Password reset isn't wired up yet">Lost your code?</a>
             </div>
+
+            <div class="form-msg" id="formMsg"></div>
 
             <button class="cta" type="submit" id="ctaBtn">
               <span id="ctaLabel">BOARD SYSTEM</span>
               <span>&raquo;&raquo;</span>
             </button>
+
+            <div class="mode-switch" id="modeSwitch">
+              New operative? <button type="button" id="modeToggleBtn">Create access</button>
+            </div>
+
+            <div class="or-divider" id="orDivider" style="display:none;">or</div>
+            <div class="google-slot" id="googleSlot" style="display:none;"></div>
 
             <div class="fine-print">
               Non-transferable · valid for this session only<br>
@@ -410,7 +433,9 @@
     </div>
   </div>
 
-<script>
+<script type="module">
+  import { API_ORIGIN } from './src/lib/apiBase.ts';
+
   var audioCtx = null;
   function ctx(){ if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } return audioCtx; }
 
@@ -541,11 +566,37 @@
   var form = document.getElementById('loginForm');
   var userField = document.getElementById('userField');
   var passField = document.getElementById('passField');
+  var nameField = document.getElementById('nameField');
   var passInput = document.getElementById('pass');
   var userInput = document.getElementById('user');
+  var nameInput = document.getElementById('name');
   var ctaBtn = document.getElementById('ctaBtn');
   var ctaLabel = document.getElementById('ctaLabel');
   var stamp = document.getElementById('stamp');
+  var formMsg = document.getElementById('formMsg');
+  var modeSwitch = document.getElementById('modeSwitch');
+
+  var mode = 'login';
+
+  function bindModeToggleBtn(){
+    document.getElementById('modeToggleBtn').addEventListener('click', function(){
+      setMode(mode === 'register' ? 'login' : 'register');
+    });
+  }
+
+  function setMode(next){
+    mode = next;
+    var isRegister = mode === 'register';
+    nameField.style.display = isRegister ? '' : 'none';
+    passInput.setAttribute('autocomplete', isRegister ? 'new-password' : 'current-password');
+    ctaLabel.textContent = isRegister ? 'REQUEST ACCESS' : 'BOARD SYSTEM';
+    modeSwitch.innerHTML = isRegister
+      ? 'Already an operative? <button type="button" id="modeToggleBtn">Sign in</button>'
+      : 'New operative? <button type="button" id="modeToggleBtn">Create access</button>';
+    bindModeToggleBtn();
+    formMsg.textContent = '';
+  }
+  bindModeToggleBtn();
 
   function showStamp(kind, text){
     stamp.className = 'stamp show ' + kind;
@@ -554,34 +605,107 @@
     setTimeout(function(){ stamp.className = 'stamp'; }, 2400);
   }
 
+  function setFormDisabled(disabled){
+    ctaBtn.disabled = disabled;
+    userInput.disabled = disabled;
+    passInput.disabled = disabled;
+    nameInput.disabled = disabled;
+  }
+
+  function shakeFields(fields){
+    fields.forEach(function(f){ f.classList.add('shake'); });
+    setTimeout(function(){ fields.forEach(function(f){ f.classList.remove('shake'); }); }, 400);
+  }
+
+  function onDenied(message, fields){
+    setFormDisabled(false);
+    formMsg.textContent = message || 'Access denied.';
+    scrambleTo('STATUS: ACCESS DENIED', function(){
+      showStamp('denied', 'DENIED');
+      if(fields && fields.length) shakeFields(fields);
+      setTimeout(function(){ idleCycle(); }, 2600);
+    });
+  }
+
+  function onGranted(){
+    scrambleTo('STATUS: ACCESS GRANTED', function(){
+      showStamp('granted', 'GRANTED');
+      setTimeout(function(){ window.location.href = '/'; }, 900);
+    });
+  }
+
+  function postJson(url, payload){
+    return fetch(url, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      credentials: 'include',
+      body: JSON.stringify(payload)
+    }).then(function(res){
+      return res.json().catch(function(){ return {}; }).then(function(data){
+        return { ok: res.ok, data: data };
+      });
+    }).catch(function(){
+      return { ok: false, data: { message: 'Could not reach the server. Is it running?' } };
+    });
+  }
+
   form.addEventListener('submit', function(e){
     e.preventDefault();
     if(statusCycleTimer) clearTimeout(statusCycleTimer);
-    var user = userInput.value.trim();
-    var pass = passInput.value;
-    ctaBtn.disabled = true; userInput.disabled = true; passInput.disabled = true;
-    ctaLabel.textContent = "VERIFYING";
+    formMsg.textContent = '';
 
-    scrambleTo("STATUS: VERIFYING CREDENTIALS", function(){
-      setTimeout(function(){
-        var ok = user.length > 0 && pass.length >= 4;
-        if(ok){
-          scrambleTo("STATUS: ACCESS GRANTED", function(){
-            showStamp('granted', 'GRANTED');
-            ctaLabel.textContent = "BOARD SYSTEM";
-          });
-        } else {
-          scrambleTo("STATUS: ACCESS DENIED", function(){
-            showStamp('denied', 'DENIED');
-            if(pass.length < 4){ passField.classList.add('shake'); }
-            if(user.length === 0){ userField.classList.add('shake'); }
-            setTimeout(function(){ passField.classList.remove('shake'); userField.classList.remove('shake'); }, 400);
-          });
-        }
-        ctaBtn.disabled = false; userInput.disabled = false; passInput.disabled = false;
-        setTimeout(function(){ idleCycle(); }, 2600);
-      }, 650);
+    var email = userInput.value.trim();
+    var pass = passInput.value;
+    var name = nameInput.value.trim();
+
+    if(!email){ return onDenied('Enter your email.', [userField]); }
+    if(pass.length < (mode === 'register' ? 8 : 1)){
+      return onDenied('Access code must be at least 8 characters.', [passField]);
+    }
+    if(mode === 'register' && !name){ return onDenied('Enter a display name.', [nameField]); }
+
+    setFormDisabled(true);
+    ctaLabel.textContent = 'VERIFYING';
+
+    var endpoint = API_ORIGIN + (mode === 'register' ? '/api/auth/register' : '/api/auth/login');
+    var payload = mode === 'register' ? { email: email, password: pass, name: name } : { email: email, password: pass };
+
+    scrambleTo('STATUS: VERIFYING CREDENTIALS', function(){
+      postJson(endpoint, payload).then(function(result){
+        if(result.ok){ onGranted(); }
+        else { onDenied(result.data && result.data.message, [userField, passField]); }
+      });
     }, true);
+  });
+
+  // ── Sign in with Google ──────────────────────────────────────────────────
+  // Client ID comes from the server so this static file never has to be
+  // hand-edited when it changes; the button hides itself if unconfigured.
+  window.addEventListener('load', function(){
+    var slot = document.getElementById('googleSlot');
+    var divider = document.getElementById('orDivider');
+
+    function handleGoogleCredential(response){
+      formMsg.textContent = '';
+      if(statusCycleTimer) clearTimeout(statusCycleTimer);
+      scrambleTo('STATUS: VERIFYING CREDENTIALS', function(){
+        postJson(API_ORIGIN + '/api/auth/google', { credential: response.credential }).then(function(result){
+          if(result.ok){ onGranted(); }
+          else { onDenied(result.data && result.data.message); }
+        });
+      }, true);
+    }
+
+    fetch(API_ORIGIN + '/api/auth/config').then(function(res){ return res.json(); }).then(function(cfg){
+      if(!cfg || !cfg.googleClientId || !window.google || !window.google.accounts) return;
+      window.google.accounts.id.initialize({
+        client_id: cfg.googleClientId,
+        callback: handleGoogleCredential
+      });
+      window.google.accounts.id.renderButton(slot, { theme: 'outline', size: 'large', width: 260 });
+      slot.style.display = 'flex';
+      divider.style.display = 'flex';
+    }).catch(function(){ /* backend unreachable — form-only login still works */ });
   });
 
   var swatch = document.getElementById('swatch');

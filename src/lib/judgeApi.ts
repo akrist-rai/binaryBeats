@@ -2,6 +2,8 @@
 // and runs C++ on the user's own machine, judging against the dataset's
 // official test suites. Mirrors blitzApi.ts's error-class pattern.
 
+import { API_ORIGIN } from "./apiBase";
+
 export type RunKind = "submit" | "samples" | "custom";
 export type RunState = "queued" | "compiling" | "running" | "done";
 
@@ -62,7 +64,7 @@ export class JudgeApiError extends Error {
   }
 }
 
-const API_BASE = "/api/judge";
+const API_BASE = `${API_ORIGIN}/api/judge`;
 const POLL_INTERVAL_MS = 800;
 
 function classify(status: number, errorCode?: string): JudgeApiErrorKind {

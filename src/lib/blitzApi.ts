@@ -4,6 +4,7 @@
 // the frontend just creates a session, reads it back, and renders it.
 
 import type { BlitzMode, BlitzSession } from "./blitzSession";
+import { API_ORIGIN } from "./apiBase";
 
 export type BlitzApiErrorKind = "NOT_FOUND" | "RATE_LIMITED" | "BAD_REQUEST" | "NO_PROBLEMS" | "API_FAILED" | "NETWORK";
 
@@ -17,7 +18,7 @@ export class BlitzApiError extends Error {
   }
 }
 
-const API_BASE = "/api/blitz";
+const API_BASE = `${API_ORIGIN}/api/blitz`;
 
 /** localStorage key holding the currently-active session's id (not the session
  *  itself — that lives server-side now). Shared between BlitzDuelView (owns

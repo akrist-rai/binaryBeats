@@ -6,16 +6,17 @@ import { BlitzDuelView } from "./components/blitz/BlitzDuelView";
 import { LeaderboardView } from "./components/LeaderboardView";
 import { CommunityView } from "./components/CommunityView";
 import { synthSound } from "./utils/audio";
+import { useAuth } from "./hooks/useAuth";
 
 type Theme = "light" | "dark";
 
 export default function App() {
+  const { user, status: authStatus, logout } = useAuth();
   const [activeTab, setActiveTab] = useState("home");
   const [xp, setXp] = useState(() => {
     const saved = localStorage.getItem("bb_xp");
     return saved ? parseInt(saved, 10) : 230;
   });
-  const [username] = useState("akrist");
   // No UI toggle for this anymore — sound just plays, same default as before.
   const [soundEnabled] = useState(() => {
     const saved = localStorage.getItem("bb_sound");
@@ -31,6 +32,12 @@ export default function App() {
     document.documentElement.dataset.theme = theme;
     localStorage.setItem("bb_theme", theme);
   }, [theme]);
+
+  useEffect(() => {
+    if (authStatus === "unauthenticated") {
+      window.location.href = "/login.html";
+    }
+  }, [authStatus]);
 
   const handleAddXp = (amount: number) => {
     setXp((prev) => {
@@ -61,6 +68,14 @@ export default function App() {
     setActiveTab("community");
   };
 
+  if (authStatus !== "authenticated" || !user) {
+    // "checking" renders nothing (avoids a flash of the dashboard before the
+    // session check resolves); "unauthenticated" is mid-redirect to login.html.
+    return <div className="w-full min-h-screen bg-bb-paper" />;
+  }
+
+  const username = user.name || user.email;
+
   return (
     <div className="w-full min-h-screen bg-bb-paper text-bb-ink flex flex-col font-sans noise-bg relative overflow-x-hidden">
       {/* Shared ambient background — faint blueprint grid, sits behind every tab */}
@@ -73,7 +88,7 @@ export default function App() {
         xp={xp}
         username={username}
         onNavigate={handleTabChange}
-        onLogout={() => { playSound("click"); alert("Logging out..."); }}
+        onLogout={() => { playSound("click"); logout(); }}
         onHoverSound={() => playSound("hover")}
         theme={theme}
         onToggleTheme={handleToggleTheme}

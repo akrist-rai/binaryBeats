@@ -5,8 +5,7 @@
 // the lowest-rated page. Each band query is index-backed (~1ms server-side)
 // and the result is cached in-memory for the life of the tab.
 import type { Problem } from "../hooks/useProblems";
-
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
+import { API_ORIGIN } from "./apiBase";
 
 export interface OrbitRing {
   min: number;
@@ -39,7 +38,7 @@ async function fetchBand(min: number, max: number): Promise<Problem[]> {
     pageSize: String(PER_BAND),
   });
   try {
-    const res = await fetch(`${API_BASE}/api/problems?${params}`);
+    const res = await fetch(`${API_ORIGIN}/api/problems?${params}`);
     if (!res.ok) return [];
     const data = (await res.json()) as { problems: Problem[] };
     return data.problems;

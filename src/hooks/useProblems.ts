@@ -1,4 +1,5 @@
 import { useState, useEffect, useCallback } from "react";
+import { API_ORIGIN } from "../lib/apiBase";
 
 export interface Problem {
   key: string;
@@ -36,8 +37,6 @@ export interface UseProblemsResult {
   refresh: () => void;
 }
 
-const API_BASE = import.meta.env.VITE_API_URL ?? "http://localhost:4000";
-
 export function useProblems(opts: UseProblemsOptions = {}): UseProblemsResult {
   const [problems, setProblems] = useState<Problem[]>([]);
   const [total, setTotal] = useState(0);
@@ -63,7 +62,7 @@ export function useProblems(opts: UseProblemsOptions = {}): UseProblemsResult {
     setLoading(true);
     setError(null);
 
-    fetch(`${API_BASE}/api/problems?${params}`)
+    fetch(`${API_ORIGIN}/api/problems?${params}`)
       .then((r) => {
         if (!r.ok) throw new Error(`Server returned ${r.status}`);
         return r.json() as Promise<{ problems: Problem[]; total: number; page: number; pages: number }>;

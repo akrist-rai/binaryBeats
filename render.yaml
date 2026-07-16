@@ -1,0 +1,22 @@
+# Render Blueprint for the backend only (server/). The frontend deploys to
+# Vercel separately — see DEPLOYMENT.md.
+#
+# Usage: Render dashboard → New → Blueprint → point at this repo. Render reads
+# this file and provisions the service below.
+services:
+  - type: web
+    name: binary-beats-api
+    env: docker
+    dockerfilePath: ./server/Dockerfile
+    dockerContext: ./server
+    plan: starter
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        sync: false # set manually: Neon connection string
+      - key: SESSION_SECRET
+        generateValue: true # Render generates a random 32+ char value
+      - key: GOOGLE_CLIENT_ID
+        sync: false # optional — leave unset to disable Google sign-in

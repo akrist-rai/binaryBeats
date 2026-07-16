@@ -1,0 +1,10 @@
+# The backend (Koa API + Postgres) doesn't run on Vercel — see DEPLOYMENT.md.
+# Keep it, its secrets, and its node_modules out of the frontend deployment.
+server
+
+# Design references / prototypes not part of the built app.
+design
+DESIGN.md
+extra
+login.html
+access.html

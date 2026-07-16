@@ -3,6 +3,8 @@
 // and payload trimming so every browser tab isn't independently hammering
 // Codeforces or re-fetching the ~9000-problem catalog.
 
+import { API_ORIGIN } from "./apiBase";
+
 export interface CfUser {
   handle: string;
   rating: number | null;
@@ -37,8 +39,7 @@ export class CfApiError extends Error {
   }
 }
 
-// Relative — proxied to the Koa backend (server/) by Vite's dev-server proxy.
-const API_BASE = "/api/cf";
+const API_BASE = `${API_ORIGIN}/api/cf`;
 
 function classifyStatus(status: number): CfErrorKind {
   if (status === 404) return "NOT_FOUND";

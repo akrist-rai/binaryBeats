@@ -3,6 +3,8 @@
 // dataset (ODC-By 4.0) ingested into a server-side SQLite DB — official test
 // cases never reach the browser.
 
+import { API_ORIGIN } from "./apiBase";
+
 export interface ProblemStatementData {
   key: string;
   contestId: number;
@@ -39,7 +41,7 @@ export async function fetchStatement(key: string): Promise<ProblemStatementData>
 
   let res: Response;
   try {
-    res = await fetch(`/api/problems/${encodeURIComponent(key)}/statement`);
+    res = await fetch(`${API_ORIGIN}/api/problems/${encodeURIComponent(key)}/statement`);
   } catch {
     throw new ProblemsApiError("NETWORK", "Could not reach the Binary Beats API.");
   }

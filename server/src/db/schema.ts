@@ -6,6 +6,7 @@
  *   tests          — gzip-compressed official test inputs/outputs (bytea)
  *   blitz_sessions — persistent sessions (replaces in-memory Map)
  *   ingest_meta    — tracks which parquet files have been ingested
+ *   users          — account records (password and/or Google sign-in)
  */
 import {
   pgTable,
@@ -16,6 +17,7 @@ import {
   timestamp,
   primaryKey,
   index,
+  uniqueIndex,
   customType,
 } from "drizzle-orm/pg-core";
 
@@ -99,3 +101,24 @@ export const ingestMeta = pgTable("ingest_meta", {
   rows: integer("rows"),
   ingestedAt: timestamp("ingested_at", { withTimezone: true }),
 });
+
+// ─── users ──────────────────────────────────────────────────────────────────
+// A user can have a password, a linked Google account, or both — whichever
+// they signed up with. At least one of passwordHash / googleId is expected.
+
+export const users = pgTable(
+  "users",
+  {
+    id: text("id").primaryKey(),
+    email: text("email").notNull(),
+    name: text("name").notNull(),
+    passwordHash: text("password_hash"),
+    googleId: text("google_id"),
+    avatarUrl: text("avatar_url"),
+    createdAt: timestamp("created_at", { withTimezone: true }).notNull().defaultNow(),
+  },
+  (table) => [
+    uniqueIndex("idx_users_email").on(table.email),
+    uniqueIndex("idx_users_google_id").on(table.googleId),
+  ]
+);

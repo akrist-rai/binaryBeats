@@ -58,14 +58,15 @@ export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSection
 
       <motion.div className="flex flex-col lg:flex-row lg:items-end justify-between gap-6 mb-7"
         variants={{ hidden: { opacity:0, y:-14 }, visible: { opacity:1, y:0, transition:{ duration:0.5 } } }}>
-        <div>
+        <div className="relative">
+          <span aria-hidden className="pointer-events-none select-none absolute -top-10 -left-1 -z-10 text-[150px] font-heading font-black text-bb-ink/[0.045] leading-none">01</span>
           <span className="eyebrow mb-3">/01 <span className="text-bb-ink-faint normal-case">·</span> Problem Set</span>
           <h1 className="text-4xl md:text-[48px] font-heading font-extrabold tracking-tight leading-[1.05] text-bb-ink mt-2">
             Problems
           </h1>
           <p className="text-sm text-bb-ink-soft mt-2.5 font-mono">Real CF problems · local C++17 judge · open-r1/codeforces dataset</p>
         </div>
-        <div className="w-full lg:w-[380px] spec-card corner-marks overflow-hidden shrink-0">
+        <div className="w-full lg:w-[380px] spec-card corner-marks chamfer-tr overflow-hidden shrink-0">
           {cfHandle
             ? <div className="p-4 flex items-center justify-between gap-3">
                 <div className="flex items-center gap-3 min-w-0">
@@ -91,7 +92,7 @@ export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSection
         </div>
       </motion.div>
 
-      <motion.div className="flex items-center justify-between mb-7 pt-5 border-t border-bb-line"
+      <motion.div className="flex items-center justify-between mb-7 pt-5 dashed-rule"
         variants={{ hidden:{opacity:0}, visible:{opacity:1} }}>
         <div className="flex items-center gap-1.5 text-[10px] font-mono">
           <span className="text-bb-ink-faint uppercase tracking-wider">Total XP</span><span className="text-bb-orange font-bold">{xp}</span>

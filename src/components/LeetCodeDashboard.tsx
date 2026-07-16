@@ -61,6 +61,8 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
   const open = (key: string) => { playSound('click'); setActiveKey(key); };
   const back = () => { playSound('click'); setActiveKey(null); };
 
+  const nextUp = problems.find(p => !solvedKeys.includes(p.key)) ?? problems[0] ?? null;
+
   return (
     <div className="w-full min-h-[calc(100vh-64px)] text-bb-ink flex flex-col">
       <div className="w-full max-w-[1400px] mx-auto px-6 lg:px-8 py-10 flex-1 flex flex-col gap-10">
@@ -178,11 +180,14 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
                               const isSolved = solvedKeys.includes(p.key);
                               const diff = !p.rating ? 'Unrated' : p.rating<=1300 ? 'Easy' : p.rating<=1900 ? 'Medium' : 'Hard';
                               const dc = diff==='Easy' ? 'text-bb-lime border-bb-lime/40 bg-bb-lime/10' : diff==='Medium' ? 'text-bb-orange border-bb-orange/40 bg-bb-orange/10' : 'text-bb-red border-bb-red/40 bg-bb-red/10';
+                              const accentBar = diff==='Easy' ? 'bg-bb-lime' : diff==='Medium' ? 'bg-bb-orange' : diff==='Hard' ? 'bg-bb-red' : 'bg-bb-line-strong';
                               return (
                                 <motion.div key={p.key} layout
                                   initial={{opacity:0}} animate={{opacity:1}} transition={{delay:i*0.015}}
                                   onClick={() => open(p.key)} onMouseEnter={() => playSound('hover')}
-                                  className="grid grid-cols-[32px_1fr_90px_80px] gap-2 items-center px-4 py-3.5 rounded-lg border cursor-pointer transition-all group border-bb-line bg-bb-paper-raised hover:border-bb-line-strong">
+                                  className="relative grid grid-cols-[32px_1fr_90px_80px] gap-2 items-center pl-5 pr-4 py-3.5 rounded-lg border cursor-pointer transition-all group border-bb-line bg-bb-paper-raised hover:border-bb-line-strong overflow-hidden">
+                                  <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar}`} />
+                                  <span className="link-chip">↗</span>
                                   <div className="flex justify-center">
                                     {isSolved ? (
                                       <div className="w-4 h-4 rounded-full bg-bb-lime/15 border border-bb-lime flex items-center justify-center text-bb-lime text-[10px] font-mono font-bold select-none">✓</div>
@@ -222,7 +227,7 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
                       <div className="flex items-center gap-2">
                         <button onClick={() => setPage(p => Math.max(1, p-1))} disabled={page<=1}
                           className="px-2 py-1 rounded border border-bb-line text-bb-ink-faint hover:text-bb-ink disabled:opacity-30 cursor-pointer transition-colors">←</button>
-                        <span className="text-bb-ink">{page} / {pages}</span>
+                        <span className="text-bb-ink tabular-nums">{String(page).padStart(2,'0')} / {String(pages).padStart(2,'0')}</span>
                         <button onClick={() => setPage(p => Math.min(pages, p+1))} disabled={page>=pages}
                           className="px-2 py-1 rounded border border-bb-line text-bb-ink-faint hover:text-bb-ink disabled:opacity-30 cursor-pointer transition-colors">→</button>
                       </div>
@@ -232,6 +237,25 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
 
                 {/* RIGHT SIDEBAR */}
                 <div className="flex flex-col gap-4">
+                  {/* Next Up — a practical, always-relevant starting point */}
+                  {nextUp && (
+                    <div className="spec-card corner-marks p-5 relative overflow-hidden">
+                      <div className="eyebrow mb-3">Next Up</div>
+                      <div className="text-[10px] font-mono text-bb-ink-faint tabular-nums mb-1">{nextUp.contestId}{nextUp.index}</div>
+                      <div className="text-base font-heading font-bold text-bb-ink mb-3 leading-snug">{nextUp.title ?? nextUp.key}</div>
+                      <div className="flex items-center gap-2 mb-4 flex-wrap">
+                        <RatingBadge rating={nextUp.rating} />
+                        {nextUp.tags[0] && (
+                          <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">{nextUp.tags[0]}</span>
+                        )}
+                      </div>
+                      <button onClick={() => open(nextUp.key)} onMouseEnter={() => playSound('hover')}
+                        className="btn-primary w-full h-9 text-[11px] font-mono font-bold uppercase tracking-wider cursor-pointer">
+                        Solve →
+                      </button>
+                    </div>
+                  )}
+
                   {/* Tag filter */}
                   <div className="spec-card p-5">
                     <h4 className="label-caps mb-3">Filter by Topic</h4>

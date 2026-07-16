@@ -27,7 +27,7 @@ export const HandleLinkCard: React.FC<HandleLinkCardProps> = ({ validating, erro
     <motion.div
       initial={{ opacity: 0, y: 15 }}
       animate={{ opacity: 1, y: 0 }}
-      className="max-w-2xl mx-auto w-full spec-card corner-marks p-10 text-center"
+      className="max-w-2xl mx-auto w-full spec-card corner-marks chamfer-tr overflow-hidden p-10 text-center"
     >
       <span className="eyebrow">Codeforces Arena</span>
       <h3 className="editorial text-3xl text-bb-ink mt-3 mb-3">

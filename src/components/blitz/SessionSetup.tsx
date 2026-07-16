@@ -197,7 +197,7 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
           </AnimatePresence>
 
           {targets && (
-            <div className="mt-5 pt-5 border-t border-bb-line">
+            <div className="mt-5 pt-5 dashed-rule">
               <span className="label-caps block mb-2.5">
                 Target draw
               </span>

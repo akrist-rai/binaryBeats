@@ -85,6 +85,12 @@
   h1, h2, h3 {
     font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
   }
+
+  :focus-visible {
+    outline: 2px solid var(--bb-orange, #E15A20);
+    outline-offset: 2px;
+    border-radius: 2px;
+  }
 }
 
 /* ─── Grain texture (kept — matches the grain/halftone motif on the board) ─── */
@@ -186,6 +192,95 @@
 .pill {
   border-radius: 9999px;
   font-family: 'JetBrains Mono', monospace;
+}
+
+/* ─── Refinement kit (stage 2 — recurring finishing details from the board) ─── */
+
+/* Corner "open/explore" affordance chip — anchor to a card's top-right corner,
+   reveal on hover. One reusable glyph instead of a generic chevron. */
+.link-chip {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  width: 22px;
+  height: 22px;
+  border-radius: 9999px;
+  border: 1px solid var(--bb-line-strong, rgba(23, 20, 15, 0.28));
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--bb-ink-faint, #8C8371);
+  opacity: 0;
+  transform: translate(-2px, 2px);
+  transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+  pointer-events: none;
+}
+.group:hover .link-chip {
+  opacity: 1;
+  transform: translate(0, 0);
+  color: var(--bb-orange, #E15A20);
+  border-color: var(--bb-orange, #E15A20);
+}
+
+/* Avatar-stack separation ring — a paper-colored ring instead of a shadow,
+   so overlapping avatars stay legible in both themes automatically. */
+.avatar-ring {
+  box-shadow: 0 0 0 2px var(--bb-paper, #F3EEE2);
+}
+
+/* Dashed hairline divider — annotation-register counterpoint to the solid
+   hairline rule used everywhere else. Use sparingly, one per view at most. */
+.dashed-rule {
+  border-top: 1px dashed var(--bb-line-strong, rgba(23, 20, 15, 0.28));
+}
+
+/* Sticker-tag flourish — a small deliberate tilt against the grid. Reserve
+   for exactly one badge per screen; overuse cancels the effect. */
+.sticker-tag {
+  transform: rotate(-3deg);
+}
+
+/* Inline blinking caret — reads as "live/ready", not just decorative type. */
+.caret-inline {
+  display: inline-block;
+  width: 0.5em;
+  border-right: 2px solid currentColor;
+  margin-left: 1px;
+  animation: blink-caret 1s step-end infinite;
+}
+
+/* Ghosted step state — future/inactive steps recede by opacity alone, no
+   extra chrome; pair with a plain full-opacity step for "active." */
+.step-ghost {
+  opacity: 0.35;
+}
+
+/* Chamfered corner — cut exactly one corner at 45° on a single hero
+   container per view, breaking the otherwise uniform radius language.
+   Overusing this defeats the point; reserve for one landmark element. */
+.chamfer-tr {
+  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
+}
+
+/* ─── CRT scanlines — scoped strictly to the code editor's terminal glass,
+   never the paper register. A faint horizontal grain, not a gimmick. ─── */
+.scanlines {
+  position: relative;
+}
+.scanlines::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image: repeating-linear-gradient(
+    to bottom,
+    rgba(243, 238, 226, 0.05) 0px,
+    rgba(243, 238, 226, 0.05) 1px,
+    transparent 1px,
+    transparent 3px
+  );
+  pointer-events: none;
+  z-index: 20;
+  mix-blend-mode: overlay;
 }
 
 /* ─── Buttons ─── */

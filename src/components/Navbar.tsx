@@ -39,7 +39,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           <span className="text-[17px] font-bold text-bb-ink tracking-tight font-heading">
             Binary Beats
           </span>
-          <span className="hidden sm:inline text-[9px] font-mono font-bold uppercase tracking-widest text-bb-ink-faint border border-bb-line-strong rounded-full px-2 py-0.5 ml-0.5">
+          <span className="sticker-tag hidden sm:inline text-[9px] font-mono font-bold uppercase tracking-widest text-bb-ink-faint border border-bb-line-strong rounded-full px-2 py-0.5 ml-0.5">
             C++17
           </span>
         </div>

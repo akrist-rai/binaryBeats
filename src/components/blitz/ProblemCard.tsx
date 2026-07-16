@@ -31,10 +31,11 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
         onOpen();
       }}
       onMouseEnter={() => playSound("hover")}
-      className={`flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors border-l-2 group ${
+      className={`relative flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors border-l-2 group ${
         solved ? "border-l-bb-lime bg-bb-ink/[0.02]" : "border-l-transparent hover:bg-bb-ink/[0.02] hover:border-l-bb-line-strong"
       }`}
     >
+      <span className="link-chip">↗</span>
       <span className="text-sm font-mono font-bold text-bb-ink-faint w-5 shrink-0">{LETTERS[orderIndex] ?? orderIndex + 1}</span>
 
       <div className="flex-1 min-w-0">

@@ -394,7 +394,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       ← Back to Feed
                     </button>
 
-                    <span className="pill text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 border border-bb-orange/30 bg-bb-orange/[0.06] text-bb-orange">
+                    <span className="sticker-tag pill text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 border border-bb-orange/30 bg-bb-orange/[0.06] text-bb-orange">
                       {selectedThread.tag}
                     </span>
                   </div>
@@ -527,8 +527,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             playSound('click');
                             setSelectedThread(t);
                           }}
-                          className="spec-card p-5 cursor-pointer flex gap-4 items-start group"
+                          className="relative spec-card p-5 cursor-pointer flex gap-4 items-start group"
                         >
+                          <span className="link-chip">↗</span>
                           {/* Left avatar column */}
                           <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
                             {t.avatar}

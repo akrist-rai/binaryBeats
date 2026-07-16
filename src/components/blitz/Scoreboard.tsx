@@ -20,8 +20,8 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => 
           Progress
         </h4>
         <div className="flex items-baseline gap-2 mb-3">
-          <span className="stat-num text-2xl text-bb-ink">{solved}</span>
-          <span className="text-sm font-mono text-bb-ink-faint">/ {total} solved</span>
+          <span className="stat-num text-2xl text-bb-ink">{String(solved).padStart(2, '0')}</span>
+          <span className="text-sm font-mono text-bb-ink-faint">/ {String(total).padStart(2, '0')} solved</span>
         </div>
         <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
           <motion.div

@@ -8,6 +8,7 @@ import { gunzipSync } from "node:zlib";
 import { eq, and, sql, ilike, gte, lte, inArray } from "drizzle-orm";
 import { db } from "./db/index.js";
 import { problems, tests } from "./db/schema.js";
+import { fetchOfficialTestsFromHF } from "./hfTestFetch.js";
 
 export interface ProblemStatement {
   key: string;
@@ -79,9 +80,68 @@ export async function getStatement(key: string): Promise<ProblemStatement | unde
   return toStatement(rows[0]);
 }
 
+// ── Hugging Face fallback for locally-incomplete "judgeable" problems ───────
+// Some problems have `tests_complete = true` (the *source* dataset does have
+// a full suite) but ended up with few or no rows in the `tests` table — the
+// Neon free tier is already at its 512 MB cap, so a prior bulk migration got
+// cut off partway. Rather than growing that table further, missing suites
+// are recovered from Hugging Face on demand and cached in memory for the
+// life of the process (test content is static, so no TTL is needed — just a
+// byte-size cap with FIFO eviction so this can't grow unbounded).
+const HF_FALLBACK_CACHE_MAX_BYTES = 64 * 1024 * 1024;
+const hfFallbackCache = new Map<string, { input: string; output: string }[]>();
+const hfFallbackInFlight = new Map<string, Promise<{ input: string; output: string }[] | undefined>>();
+let hfFallbackCacheBytes = 0;
+
+function testsByteSize(list: { input: string; output: string }[]): number {
+  let n = 0;
+  for (const t of list) n += Buffer.byteLength(t.input, "utf8") + Buffer.byteLength(t.output, "utf8");
+  return n;
+}
+
+function cacheHfTests(key: string, list: { input: string; output: string }[]): void {
+  const bytes = testsByteSize(list);
+  while (hfFallbackCacheBytes + bytes > HF_FALLBACK_CACHE_MAX_BYTES && hfFallbackCache.size > 0) {
+    const oldestKey = hfFallbackCache.keys().next().value as string;
+    hfFallbackCacheBytes -= testsByteSize(hfFallbackCache.get(oldestKey)!);
+    hfFallbackCache.delete(oldestKey);
+  }
+  hfFallbackCache.set(key, list);
+  hfFallbackCacheBytes += bytes;
+}
+
+async function recoverTestsFromHF(
+  key: string,
+  contestId: number,
+  index: string
+): Promise<{ input: string; output: string }[] | undefined> {
+  const cached = hfFallbackCache.get(key);
+  if (cached) return cached;
+
+  let inFlight = hfFallbackInFlight.get(key);
+  if (!inFlight) {
+    inFlight = fetchOfficialTestsFromHF(contestId, index).finally(() => hfFallbackInFlight.delete(key));
+    hfFallbackInFlight.set(key, inFlight);
+  }
+  const list = await inFlight;
+  if (list && list.length > 0) cacheHfTests(key, list);
+  return list;
+}
+
+async function getStoredTestCount(key: string): Promise<number> {
+  const rows = await db
+    .select({ c: sql<number>`COUNT(*)::int` })
+    .from(tests)
+    .where(eq(tests.problemKey, key));
+  return rows[0]?.c ?? 0;
+}
+
 export async function getJudgeInfo(key: string): Promise<JudgeInfo | undefined> {
+  const upperKey = key.toUpperCase();
   const rows = await db
     .select({
+      contestId: problems.contestId,
+      problemIndex: problems.problemIndex,
       timeLimitMs: problems.timeLimitMs,
       memoryLimitMb: problems.memoryLimitMb,
       testCount: problems.testCount,
@@ -90,25 +150,45 @@ export async function getJudgeInfo(key: string): Promise<JudgeInfo | undefined> 
       interactive: problems.interactive,
     })
     .from(problems)
-    .where(eq(problems.problemKey, key.toUpperCase()))
+    .where(eq(problems.problemKey, upperKey))
     .limit(1);
 
   const row = rows[0];
   if (!row || !rowIsJudgeable(row)) return undefined;
+
+  const storedCount = await getStoredTestCount(upperKey);
+  if (storedCount >= row.testCount && row.testCount > 0) {
+    return {
+      timeLimitMs: row.timeLimitMs ?? 2000,
+      memoryLimitMb: row.memoryLimitMb ?? 256,
+      testCount: row.testCount,
+      hasChecker: row.hasChecker,
+    };
+  }
+
+  const recovered = await recoverTestsFromHF(upperKey, row.contestId, row.problemIndex);
+  if (!recovered || recovered.length === 0) return undefined;
+
   return {
     timeLimitMs: row.timeLimitMs ?? 2000,
     memoryLimitMb: row.memoryLimitMb ?? 256,
-    testCount: row.testCount,
+    testCount: recovered.length,
     hasChecker: row.hasChecker,
   };
 }
 
-/** Fetch and decompress a single official test. */
+/** Fetch and decompress a single official test — served from the Hugging
+ *  Face recovery cache when this problem's suite was recovered from there,
+ *  otherwise read straight from Postgres. */
 export async function getTest(key: string, index: number): Promise<{ input: string; output: string } | undefined> {
+  const upperKey = key.toUpperCase();
+  const cached = hfFallbackCache.get(upperKey);
+  if (cached) return cached[index];
+
   const rows = await db
     .select({ input: tests.input, output: tests.output })
     .from(tests)
-    .where(and(eq(tests.problemKey, key.toUpperCase()), eq(tests.testIndex, index)))
+    .where(and(eq(tests.problemKey, upperKey), eq(tests.testIndex, index)))
     .limit(1);
 
   const row = rows[0];

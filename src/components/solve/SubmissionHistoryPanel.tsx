@@ -14,7 +14,18 @@ function formatTime(seconds: number): string {
 
 export const SubmissionHistoryPanel: React.FC<SubmissionHistoryPanelProps> = ({ history, onRestore }) => {
   if (history.length === 0) {
-    return <span className="text-bb-term-text/40">Submit a solution to start building this problem's attempt history.</span>;
+    return (
+      <div className="h-full flex flex-col items-center justify-center gap-2.5 text-center px-6">
+        <div className="w-8 h-8 rounded-full border border-bb-term-line flex items-center justify-center text-bb-term-text/25 shrink-0">
+          <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+            <path strokeLinecap="round" strokeLinejoin="round" d="M12 8v4l2.5 2.5M20 12a8 8 0 11-8-8" />
+          </svg>
+        </div>
+        <span className="text-bb-term-text/40 text-[11px] leading-relaxed max-w-sm">
+          Submit a solution to start building this problem's attempt history.
+        </span>
+      </div>
+    );
   }
 
   return (

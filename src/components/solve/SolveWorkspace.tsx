@@ -27,7 +27,7 @@ export const SolveWorkspace: React.FC<SolveWorkspaceProps> = (props) => {
 
   return (
     <div
-      className="flex-1 flex flex-col min-h-0 rounded-lg border border-bb-term-line bg-bb-term-bg overflow-hidden shadow-2xl shadow-black/20"
+      className="flex-1 flex flex-col min-h-0 rounded-lg border border-bb-term-line bg-bb-term-bg overflow-hidden shadow-2xl shadow-black/20 corner-marks-term"
       style={{ minHeight: 640 }}
     >
       {/* Title bar */}

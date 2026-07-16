@@ -261,22 +261,44 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
           transition={{ delay: 0.1 }}
           className="spec-card p-6"
         >
-          <h4 className="label-caps mb-4 border-b border-bb-line pb-2">
-            How it works
-          </h4>
-          <ul className="flex flex-col gap-3 text-sm text-bb-ink-soft font-sans leading-relaxed list-none pl-0">
+          <div className="flex items-center justify-between mb-5 border-b border-bb-line pb-2">
+            <h4 className="label-caps">Detection Pipeline</h4>
+            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-lime">
+              <span className="relative flex w-1.5 h-1.5">
+                <span className="absolute inset-0 rounded-full bg-bb-lime animate-pulse-lime" />
+                <span className="absolute -inset-1 rounded-full border border-bb-lime/50 animate-ping" />
+              </span>
+              live
+            </span>
+          </div>
+
+          <div className="relative pl-1">
+            <div
+              aria-hidden
+              className="absolute left-[14px] top-3 bottom-3 w-px"
+              style={{ backgroundImage: "repeating-linear-gradient(to bottom, var(--bb-line-strong) 0 3px, transparent 3px 7px)" }}
+            />
             {[
-              "Solve on codeforces.com using your linked handle.",
-              "Accepted verdicts are detected automatically within ~15s.",
-              "Only submissions made after the draw count.",
-              "Problems either of you already solved are excluded.",
-            ].map((rule, i) => (
-              <li key={i} className="flex gap-2.5 items-start">
-                <span className="w-1.5 h-1.5 rounded-full bg-bb-orange mt-2 shrink-0" />
-                <span>{rule}</span>
-              </li>
+              { text: "Solve on codeforces.com using your linked handle.", meta: null },
+              { text: "Accepted verdicts are detected automatically.", meta: "~15s poll · codeforces api" },
+              { text: "Only submissions made after the draw count.", meta: "timestamp-gated" },
+              { text: "Problems either of you already solved are excluded.", meta: "dedup vs. solve history" },
+            ].map((step, i, arr) => (
+              <div key={i} className={`relative flex gap-3 ${i < arr.length - 1 ? "pb-5" : ""}`}>
+                <div className="relative z-10 w-7 h-7 rounded-full border border-bb-line-strong bg-bb-paper-raised flex items-center justify-center shrink-0 font-mono text-[10px] font-bold text-bb-orange">
+                  {String(i + 1).padStart(2, "0")}
+                </div>
+                <div className="pt-0.5 min-w-0">
+                  <p className="text-sm text-bb-ink-soft leading-snug">{step.text}</p>
+                  {step.meta && (
+                    <span className="inline-block mt-1.5 text-[9px] font-mono uppercase tracking-wider text-bb-ink-faint border border-bb-line rounded px-1.5 py-0.5">
+                      {step.meta}
+                    </span>
+                  )}
+                </div>
+              </div>
             ))}
-          </ul>
+          </div>
         </motion.div>
       </div>
       </div>

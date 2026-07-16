@@ -1,6 +1,7 @@
 import React from "react";
 import { problemUrl } from "../../lib/codeforces";
 import type { ProblemStatementData } from "../../lib/problemsApi";
+import { RatingBadge } from "../blitz/RatingBadge";
 import { ProblemStatement } from "./ProblemStatement";
 import type { SolvableProblem } from "./types";
 
@@ -33,13 +34,19 @@ export const StatementPane: React.FC<StatementPaneProps> = ({ problem, statement
 
   return (
     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-dark bg-bb-term-surface p-5">
-      <div className="flex items-start justify-between gap-4 flex-wrap mb-4 pb-4 border-b border-bb-term-line">
-        <div>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/35 tabular-nums">
-            {problem.contestId}
-            {problem.index}
-          </span>
-          <h3 className="text-lg font-heading font-bold text-bb-term-text mt-1">{problem.title}</h3>
+      <div className="mb-4 pb-4 border-b border-bb-term-line">
+        <span className="eyebrow-term mb-1.5">
+          /01 <span className="text-bb-term-text/25 normal-case">·</span> Problem
+        </span>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/35 tabular-nums">
+              {problem.contestId}
+              {problem.index}
+            </span>
+            <h3 className="text-lg font-heading font-bold text-bb-term-text mt-1">{problem.title}</h3>
+          </div>
+          <RatingBadge rating={problem.rating} className="shrink-0" />
         </div>
       </div>
 

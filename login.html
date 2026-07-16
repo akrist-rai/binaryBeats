@@ -52,26 +52,45 @@
   .marquee-label{font-size:9px; letter-spacing:.16em; color:#57544a; text-transform:uppercase; white-space:nowrap;}
   .flap-row{display:flex; gap:2px;}
   .flap-cell{
-    position:relative; display:flex; align-items:center; justify-content:center;
-    width:15px; height:22px; background:#111; border-radius:2px; overflow:hidden;
-    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.6) inset;
-    perspective:60px; flex-shrink:0;
+    position:relative; width:15px; height:22px; border-radius:2px; overflow:hidden;
+    background:#111; box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
+    perspective:100px; flex-shrink:0;
   }
-  .flap-cell::after{content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,0.65); z-index:2;}
-  .flap-inner{
+  .flap-cell::after{
+    content:""; position:absolute; left:0; right:0; top:50%; height:1px;
+    background:rgba(0,0,0,0.75); z-index:9; pointer-events:none;
+  }
+  .flap-half{ position:absolute; left:0; right:0; height:50%; overflow:hidden; display:flex; justify-content:center; background:#111; }
+  .flap-half.top{ top:0; align-items:flex-start; border-radius:2px 2px 0 0; }
+  .flap-half.bottom{ bottom:0; align-items:flex-start; border-radius:0 0 2px 2px; background:#0b0b0b; }
+  .flap-char{
     font-family:'JetBrains Mono', monospace; font-weight:700; font-size:11px; color:var(--amber);
-    text-shadow:0 0 6px rgba(255,138,61,0.5);
+    text-shadow:0 0 6px rgba(255,138,61,0.5); height:22px; line-height:22px; width:15px; display:block; text-align:center;
   }
-  .flap-cell.flip .flap-inner{ animation: flapRotate .2s linear; }
-  @keyframes flapRotate{
-    0%{ transform:rotateX(0);} 49%{ transform:rotateX(-90deg); } 50%{ transform:rotateX(90deg); } 100%{ transform:rotateX(0); }
-  }
+  .flap-half.bottom .flap-char{ margin-top:-11px; }
+  .flap-leaf{ z-index:8; backface-visibility:hidden; will-change:transform; }
+  .flap-leaf.top{ transform-origin:bottom; box-shadow:0 1px 4px rgba(0,0,0,0.55); }
+  .flap-leaf.bottom{ transform-origin:top; transform:rotateX(90deg); box-shadow:0 -1px 4px rgba(0,0,0,0.55); }
+
   .clock-row{display:flex; gap:2px;}
   .clock-row .flap-cell{width:12px; height:19px;}
-  .clock-row .flap-inner{font-size:9.5px; color:var(--lime); text-shadow:0 0 6px rgba(200,255,77,0.45);}
+  .clock-row .flap-char{font-size:9.5px; color:var(--lime); text-shadow:0 0 6px rgba(200,255,77,0.45); height:19px; line-height:19px; width:12px;}
+  .clock-row .flap-half.bottom .flap-char{margin-top:-9.5px;}
 
   /* ── 3D stage ───────────────────────────────────────────────────────── */
-  .deck{ perspective:1600px; width:min(880px, 100%); }
+  .deck{
+    position:relative; perspective:1600px; width:min(880px, 100%);
+    animation: deckIn .7s cubic-bezier(.16,1,.3,1) both;
+  }
+  @keyframes deckIn{
+    from{ opacity:0; transform:translateY(36px) scale(.97); }
+    to{ opacity:1; transform:translateY(0) scale(1); }
+  }
+  .deck-shadow{
+    position:absolute; left:8%; right:8%; bottom:-16px; height:36px; z-index:-1;
+    background:radial-gradient(ellipse at center, rgba(0,0,0,0.6), rgba(0,0,0,0) 72%);
+    filter:blur(9px); opacity:.85; transition:transform .12s ease-out;
+  }
   .tilt{
     position:relative; width:100%; transform-style:preserve-3d;
     transition:transform .12s ease-out;
@@ -85,6 +104,7 @@
   .face{
     grid-area:1/1;
     backface-visibility:hidden;
+    transform-style:preserve-3d;
     background:linear-gradient(160deg, var(--card), var(--card-2));
     color:var(--ink);
     border-radius:14px;
@@ -98,31 +118,40 @@
   }
   .face.back{ transform:rotateY(180deg); }
 
-  /* laminate sheen, follows tilt via JS-set custom props */
+  /* laminate sheen + holographic foil strip, follow tilt via JS-set custom props inherited from .face */
   .sheen{
     position:absolute; inset:0; pointer-events:none; z-index:5; border-radius:14px;
     background:radial-gradient(circle at var(--sx,50%) var(--sy,20%), rgba(255,255,255,0.55), rgba(255,255,255,0.06) 32%, transparent 55%);
     mix-blend-mode:overlay; opacity:.8;
   }
+  .foil-strip{
+    position:absolute; top:0; bottom:0; left:0; width:11px; z-index:7; pointer-events:none;
+    background:linear-gradient(180deg,
+      rgba(255,138,61,.6), rgba(200,255,77,.55), rgba(110,180,255,.55), rgba(255,120,200,.55), rgba(255,138,61,.6));
+    background-size:100% 240%;
+    background-position: 0 calc(50% + (var(--sy, 20%) - 50%) * 0.7);
+    mix-blend-mode:color-dodge; opacity:.55;
+  }
+  .face.back .foil-strip{ left:auto; right:0; }
 
   /* grommet / hole punch */
   .grommet{
     position:absolute; top:18px; left:18px; width:20px; height:20px; border-radius:50%;
     background:radial-gradient(circle at 35% 35%, #444 0%, #0d0d0d 60%, #000 100%);
     box-shadow:0 1px 2px rgba(0,0,0,0.5), inset 0 0 0 2px #6b6b6b;
-    z-index:6;
+    z-index:6; transform:translateZ(18px);
   }
   .face.back .grommet{ left:auto; right:18px; }
 
   .member-ribbon{
     position:absolute; top:14px; right:-38px; width:150px; text-align:center;
     background:var(--red); color:#fff2ee; font-family:'Bebas Neue', sans-serif;
-    font-size:11px; letter-spacing:.24em; padding:4px 0; transform:rotate(40deg);
+    font-size:11px; letter-spacing:.24em; padding:4px 0; transform:rotate(40deg) translateZ(28px);
     box-shadow:0 2px 6px rgba(0,0,0,0.35); z-index:6;
   }
-  .face.back .member-ribbon{ right:auto; left:-38px; transform:rotate(-40deg); background:var(--ink); color:var(--lime); }
+  .face.back .member-ribbon{ right:auto; left:-38px; transform:rotate(-40deg) translateZ(28px); background:var(--ink); color:var(--lime); }
 
-  .card-top{display:flex; align-items:flex-start; justify-content:space-between; padding-left:34px; margin-bottom:14px;}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; padding-left:34px; margin-bottom:14px; transform:translateZ(14px);}
   .brand{font-family:'Bebas Neue', sans-serif; font-size:13px; letter-spacing:.22em; color:var(--ink);}
   .brand b{color:var(--red);}
   .subline{font-size:8.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase; margin-top:2px;}
@@ -131,11 +160,11 @@
 
   .card-body{display:grid; grid-template-columns:1fr 130px; gap:22px; align-items:start;}
 
-  h1.title{font-family:'Bebas Neue', sans-serif; font-size:38px; line-height:.95; margin:0 0 3px; padding-left:34px; letter-spacing:.01em;}
+  h1.title{font-family:'Bebas Neue', sans-serif; font-size:38px; line-height:.95; margin:0 0 3px; padding-left:34px; letter-spacing:.01em; transform:translateZ(22px); text-shadow:0 1px 0 rgba(255,255,255,.4);}
   .tagline{font-size:10px; letter-spacing:.05em; color:var(--muted); margin-bottom:16px; padding-left:34px;}
   .tagline .prompt{color:var(--red); font-weight:700;}
 
-  .status-row{display:flex; align-items:center; gap:8px; padding-left:34px; margin-bottom:16px;}
+  .status-row{display:flex; align-items:center; gap:8px; padding-left:34px; margin-bottom:16px; transform:translateZ(12px);}
   .status-dot{width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0;}
   .status-dot.busy{background:var(--amber); animation:pulse 1s infinite;}
   .status-dot.granted{background:var(--success);}
@@ -145,23 +174,33 @@
 
   form{margin:0;}
   .fields{display:flex; flex-direction:column; gap:14px; margin-bottom:14px;}
-  .field label{display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-weight:700;}
+  .field{position:relative;}
+  .field label{display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-weight:700; transition:color .15s ease;}
+  .field:focus-within label{color:var(--red);}
   .field input{
     width:100%; border:none; border-bottom:1.5px solid var(--ink); background:transparent;
     font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:600; color:var(--ink);
     padding:3px 2px 7px; outline:none; letter-spacing:.02em;
   }
   .field input::placeholder{color:var(--muted); font-weight:400;}
-  .field input:focus{border-bottom-color:var(--red);}
   .field input:disabled{opacity:.5;}
+  .field::after{
+    content:""; position:absolute; left:0; right:0; bottom:0; height:1.5px;
+    background:var(--red); box-shadow:0 0 8px rgba(196,36,28,.55);
+    transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.4,0,.2,1);
+    pointer-events:none;
+  }
+  .field:focus-within::after{transform:scaleX(1);}
   .field.shake input{animation:shake .4s ease;}
   @keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);}}
 
   .toggle-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:10px;}
-  .stay{display:flex; align-items:center; gap:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; user-select:none;}
-  .stay input{appearance:none; width:12px; height:12px; border:1.5px solid var(--ink); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer;}
+  .stay{display:flex; align-items:center; gap:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; -webkit-user-select:none; user-select:none;}
+  .stay input{appearance:none; width:12px; height:12px; border:1.5px solid var(--ink); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer; transition:transform .1s ease, background .15s ease;}
+  .stay input:active{transform:scale(.82);}
   .stay input:checked{background:var(--ink);}
-  .stay input:checked::after{content:""; width:6px; height:6px; background:var(--card);}
+  .stay input:checked::after{content:""; width:6px; height:6px; background:var(--card); animation:checkPop .18s cubic-bezier(.34,1.56,.64,1);}
+  @keyframes checkPop{from{transform:scale(0);} to{transform:scale(1);}}
   .forgot{color:var(--red); text-decoration:none; border-bottom:1px dotted var(--red); letter-spacing:.04em;}
 
   .form-msg{font-size:9.5px; letter-spacing:.03em; color:var(--red); margin:-6px 0 12px; min-height:12px;}
@@ -170,10 +209,18 @@
     width:100%; background:var(--ink); color:var(--card); border:none;
     font-family:'Bebas Neue', sans-serif; font-size:18px; letter-spacing:.14em;
     padding:13px 16px; display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; transition:background .15s ease; border-radius:3px;
+    cursor:pointer; transition:background .15s ease, transform .12s ease, box-shadow .12s ease;
+    border-radius:3px; position:relative; overflow:hidden; transform:translateZ(8px);
+    box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 3px 0 rgba(0,0,0,.35);
   }
+  .cta::before{
+    content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
+    background:linear-gradient(120deg, transparent, rgba(255,255,255,.2), transparent);
+    transform:skewX(-20deg); transition:left .5s ease; pointer-events:none;
+  }
+  .cta:hover::before{left:120%;}
   .cta:hover{background:var(--red);}
-  .cta:active{transform:translateY(1px);}
+  .cta:active{transform:translateY(2px) translateZ(8px); box-shadow:0 0 0 rgba(0,0,0,0) inset, 0 1px 0 rgba(0,0,0,.35);}
   .cta:disabled{cursor:wait; opacity:.7;}
 
   .or-divider{display:flex; align-items:center; gap:10px; margin:14px 0 10px; font-size:9px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;}
@@ -181,7 +228,7 @@
   .google-slot{display:flex; justify-content:center; min-height:38px;}
 
   /* photo swatch — laminated mugshot */
-  .id-photo{display:flex; flex-direction:column; align-items:center; gap:8px;}
+  .id-photo{display:flex; flex-direction:column; align-items:center; gap:8px; transform:translateZ(16px);}
   .swatch{
     width:100%; aspect-ratio:3/4; border:2px solid var(--ink); position:relative;
     background:repeating-linear-gradient(45deg, #d8cdb0 0 2px, transparent 2px 6px), var(--card-2);
@@ -211,7 +258,7 @@
   }
   .perf-line::before{left:-9px;} .perf-line::after{right:-9px;}
 
-  .ephemera{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-left:34px;}
+  .ephemera{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-left:34px; transform:translateZ(10px);}
   .ephemera-left{display:flex; flex-direction:column; gap:6px;}
   .barcode{width:150px; height:34px;}
   .code-num{font-size:9.5px; letter-spacing:.25em; color:var(--muted);}
@@ -276,11 +323,11 @@
     .schedule-row{grid-template-columns:1fr 70px 70px; font-size:9.5px;}
   }
   @media (prefers-reduced-motion: reduce){
-    .flap-cell.flip .flap-inner{animation:none;}
     .status-dot.busy{animation:none;}
     .field.shake input{animation:none;}
     .stamp.show{animation:none; opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1);}
     .flip{transition:none;}
+    .deck{animation:none; opacity:1; transform:none;}
   }
 </style>
 </head>
@@ -293,12 +340,14 @@
   </div>
 
   <div class="deck" id="deck">
+    <div class="deck-shadow" id="deckShadow"></div>
     <div class="tilt" id="tilt">
       <div class="flip" id="flip">
 
         <!-- ══ FRONT — SIGN IN ══ -->
         <div class="face front">
           <div class="sheen"></div>
+          <div class="foil-strip"></div>
           <div class="grommet"></div>
           <div class="member-ribbon">MEMBER</div>
 
@@ -376,6 +425,7 @@
         <!-- ══ BACK — SIGN UP ══ -->
         <div class="face back">
           <div class="sheen"></div>
+          <div class="foil-strip"></div>
           <div class="grommet"></div>
           <div class="member-ribbon">NEW</div>
 
@@ -511,35 +561,101 @@
 
   // ── split-flap board ─────────────────────────────────────────────────
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+  var BOOT_GLYPHS = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+
   function makeFlapBoard(container, width){
     var cells = [];
+
+    function half(kind, isLeaf){
+      var el = document.createElement('span');
+      el.className = isLeaf ? 'flap-half flap-leaf ' + kind : 'flap-half ' + kind;
+      var ch = document.createElement('span');
+      ch.className = 'flap-char';
+      el.appendChild(ch);
+      return { el: el, ch: ch };
+    }
+
     for(var i=0;i<width;i++){
       var cell = document.createElement('span');
       cell.className = 'flap-cell';
-      var inner = document.createElement('span');
-      inner.className = 'flap-inner';
-      inner.textContent = ' ';
-      cell.appendChild(inner);
+
+      var top = half('top', false);
+      var bottom = half('bottom', false);
+      var topLeaf = half('top', true);
+      var bottomLeaf = half('bottom', true);
+
+      cell.appendChild(top.el);
+      cell.appendChild(bottom.el);
+      cell.appendChild(topLeaf.el);
+      cell.appendChild(bottomLeaf.el);
       container.appendChild(cell);
-      cells.push({ cell: cell, inner: inner, current: ' ' });
+
+      cells.push({ current: ' ', top: top, bottom: bottom, topLeaf: topLeaf, bottomLeaf: bottomLeaf });
     }
+
+    function disp(ch){ return ch === ' ' ? '\u00A0' : ch; }
+
+    function flipCell(c, ch, beep){
+      if(c.current === ch) return;
+      var oldCh = c.current;
+      c.current = ch;
+
+      if(reduce){
+        c.top.ch.textContent = disp(ch);
+        c.bottom.ch.textContent = disp(ch);
+        return;
+      }
+
+      // top face already holds the incoming char, hidden behind the falling leaf
+      c.top.ch.textContent = disp(ch);
+      c.topLeaf.ch.textContent = disp(oldCh);
+      c.bottomLeaf.ch.textContent = disp(ch);
+
+      // reset leaves to their resting pose with no transition, then force reflow
+      c.topLeaf.el.style.transition = 'none';
+      c.topLeaf.el.style.transform = 'rotateX(0deg)';
+      c.bottomLeaf.el.style.transition = 'none';
+      c.bottomLeaf.el.style.transform = 'rotateX(90deg)';
+      void c.topLeaf.el.offsetWidth;
+
+      if(beep) playFlap();
+
+      c.topLeaf.el.style.transition = 'transform .15s cubic-bezier(.4,0,1,1)';
+      c.topLeaf.el.style.transform = 'rotateX(-90deg)';
+      setTimeout(function(){
+        c.bottomLeaf.el.style.transition = 'transform .16s cubic-bezier(0,0,.3,1)';
+        c.bottomLeaf.el.style.transform = 'rotateX(0deg)';
+      }, 120);
+      setTimeout(function(){
+        c.bottom.ch.textContent = disp(ch);
+      }, 280);
+    }
+
     function setText(text, beep){
       var padded = (text.toUpperCase() + Array(width+1).join(' ')).slice(0, width);
       for(var i=0;i<width;i++){
-        var ch = padded[i];
-        var c = cells[i];
-        if(c.current === ch) continue;
-        c.current = ch;
-        if(reduce){ c.inner.textContent = ch === ' ' ? ' ' : ch; continue; }
-        c.cell.classList.add('flip');
-        if(beep && i % 3 === 0) playFlap();
-        (function(cRef, chRef){
-          setTimeout(function(){ cRef.inner.textContent = chRef === ' ' ? ' ' : chRef; }, 95);
-          setTimeout(function(){ cRef.cell.classList.remove('flip'); }, 200);
-        })(c, ch);
+        flipCell(cells[i], padded[i], beep && i % 3 === 0);
       }
     }
-    return { setText: setText };
+
+    function boot(finalText){
+      var padded = (finalText.toUpperCase() + Array(width+1).join(' ')).slice(0, width);
+      if(reduce){ setText(finalText, false); return; }
+      cells.forEach(function(c, i){
+        var steps = 3 + Math.floor(Math.random()*3);
+        var delay = i * 28;
+        for(var s=0; s<steps; s++){
+          (function(idx, step, isLast){
+            setTimeout(function(){
+              var ch = isLast ? padded[idx] : BOOT_GLYPHS[Math.floor(Math.random()*BOOT_GLYPHS.length)];
+              flipCell(cells[idx], ch, step % 2 === 0);
+            }, delay + step * 85);
+          })(i, s, s === steps - 1);
+        }
+      });
+    }
+
+    return { setText: setText, boot: boot };
   }
 
   var statusBoard = makeFlapBoard(document.getElementById('flapStatus'), 24);
@@ -553,8 +669,8 @@
     statusBoard.setText(statusMsgs[msgIndex], true);
     idleTimer = setTimeout(idleCycle, 3600);
   }
-  statusBoard.setText(statusMsgs[0], false);
-  idleTimer = setTimeout(idleCycle, 3600);
+  statusBoard.boot(statusMsgs[0]);
+  idleTimer = setTimeout(idleCycle, 4400);
 
   function setMarquee(text){
     if(idleTimer) clearTimeout(idleTimer);
@@ -565,13 +681,12 @@
   }
 
   (function tickClock(){
-    function render(){
+    function stamp(){
       var d = new Date();
-      var s = (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+':'+(d.getSeconds()<10?'0':'')+d.getSeconds();
-      clockBoard.setText(s, false);
+      return (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+':'+(d.getSeconds()<10?'0':'')+d.getSeconds();
     }
-    render();
-    setInterval(render, 1000);
+    clockBoard.boot(stamp());
+    setInterval(function(){ clockBoard.setText(stamp(), false); }, 1000);
   })();
 
   // ── barcode + fake QR (decorative, deterministic per seed) ─────────────
@@ -644,7 +759,8 @@
   // ── 3D tilt on mouse move ───────────────────────────────────────────────
   var deck = document.getElementById('deck');
   var tiltEl = document.getElementById('tilt');
-  var sheens = document.querySelectorAll('.sheen');
+  var deckShadow = document.getElementById('deckShadow');
+  var faces = document.querySelectorAll('.face');
   if(!reduce){
     deck.addEventListener('pointermove', function(e){
       var rect = deck.getBoundingClientRect();
@@ -653,13 +769,15 @@
       var rx = (0.5 - py) * 14;
       var ry = (px - 0.5) * 18;
       tiltEl.style.transform = 'rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
-      sheens.forEach(function(s){
-        s.style.setProperty('--sx', (px*100).toFixed(1) + '%');
-        s.style.setProperty('--sy', (py*100).toFixed(1) + '%');
+      faces.forEach(function(f){
+        f.style.setProperty('--sx', (px*100).toFixed(1) + '%');
+        f.style.setProperty('--sy', (py*100).toFixed(1) + '%');
       });
+      deckShadow.style.transform = 'translateX(' + (-ry*1.4).toFixed(1) + 'px) scaleX(' + (1 - Math.abs(ry)/55).toFixed(2) + ')';
     });
     deck.addEventListener('pointerleave', function(){
       tiltEl.style.transform = '';
+      deckShadow.style.transform = '';
     });
   }
 

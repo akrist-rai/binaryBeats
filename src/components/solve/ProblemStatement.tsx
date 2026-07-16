@@ -4,6 +4,7 @@ import "katex/dist/katex.min.css";
 import { splitMathSegments } from "../../lib/mathText";
 import { problemUrl } from "../../lib/codeforces";
 import type { ProblemStatementData } from "../../lib/problemsApi";
+import { RatingBadge } from "../blitz/RatingBadge";
 
 interface ProblemStatementProps {
   statement: ProblemStatementData;
@@ -77,34 +78,49 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
   return (
     <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-dark bg-bb-term-surface [&_.katex]:text-current">
       {/* Sticky meta rail — constraints stay visible while the body scrolls beneath */}
-      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 flex-wrap px-5 pt-4 pb-3.5 border-b border-bb-term-line bg-bb-term-surface/95 backdrop-blur-sm">
-        <div>
-          <span className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/35 tabular-nums">
-            {statement.contestId}
-            {statement.index}
-          </span>
-          <h3 className="text-lg font-heading font-bold text-bb-term-text mt-1">{statement.title ?? "Untitled"}</h3>
+      <div className="sticky top-0 z-10 px-5 pt-3.5 pb-3.5 border-b border-bb-term-line bg-bb-term-surface/95 backdrop-blur-sm">
+        <span className="eyebrow-term mb-1.5">
+          /01 <span className="text-bb-term-text/25 normal-case">·</span> Problem
+        </span>
+        <div className="flex items-start justify-between gap-4 flex-wrap">
+          <div>
+            <span className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/35 tabular-nums">
+              {statement.contestId}
+              {statement.index}
+            </span>
+            <h3 className="text-lg font-heading font-bold text-bb-term-text mt-1">{statement.title ?? "Untitled"}</h3>
+          </div>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <RatingBadge rating={statement.rating} />
+            {statement.timeLimitMs !== null && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
+                {statement.timeLimitMs / 1000}s
+              </span>
+            )}
+            {statement.memoryLimitMb !== null && (
+              <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
+                {statement.memoryLimitMb}MB
+              </span>
+            )}
+            {statement.judgeable && statement.testCount > 0 && (
+              <span
+                title="Submit compiles and runs your code against every one of these, right here"
+                className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-acc/25 bg-bb-term-acc/[0.06] text-bb-term-acc"
+              >
+                {statement.testCount} hidden tests
+              </span>
+            )}
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 flex-wrap">
-          {statement.timeLimitMs !== null && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
-              {statement.timeLimitMs / 1000}s
-            </span>
-          )}
-          {statement.memoryLimitMb !== null && (
-            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
-              {statement.memoryLimitMb}MB
-            </span>
-          )}
-          {statement.judgeable && statement.testCount > 0 && (
-            <span
-              title="Submit compiles and runs your code against every one of these, right here"
-              className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-acc/25 bg-bb-term-acc/[0.06] text-bb-term-acc"
-            >
-              {statement.testCount} hidden tests
-            </span>
-          )}
-        </div>
+        {statement.tags.length > 0 && (
+          <div className="flex flex-wrap gap-1.5 mt-2.5">
+            {statement.tags.map((tag) => (
+              <span key={tag} className="text-[10px] font-mono px-1.5 py-0.5 rounded-full border border-bb-term-line text-bb-term-text/45">
+                {tag}
+              </span>
+            ))}
+          </div>
+        )}
       </div>
 
       <div className="p-5">

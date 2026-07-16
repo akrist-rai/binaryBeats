@@ -1,4 +1,4 @@
-import React, { useRef, useState } from "react";
+import React, { useEffect, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { motion } from "motion/react";
 import { useCodeDraft } from "../../hooks/useCodeDraft";
@@ -27,17 +27,44 @@ interface CodeWorkspaceProps {
   judgeable?: boolean;
   /** Count of hidden tests Submit judges against — purely for messaging. */
   testCount?: number;
-  /** Public examples (from the statement) — enables Run Samples. */
+  /** Public examples (from the statement) — enables Run. */
   examples?: { input: string; output: string }[];
   playSound?: (type: "click" | "hover") => void;
   /** Called after an in-app AC has been recorded into the session. */
   onAccepted?: () => void;
 }
 
-type ConsoleTab = "output" | "samples" | "stdin" | "history";
-type Busy = "custom" | "samples" | "submit" | null;
+type ConsoleTab = "tests" | "custom" | "history";
+type Busy = "tests" | "custom" | "submit" | null;
 
-const LINE_HEIGHT = 21;
+const FONT_SIZE_KEY = "bb_editor_fontsize_v1";
+const FONT_SIZE_MIN = 11;
+const FONT_SIZE_MAX = 18;
+const FONT_SIZE_DEFAULT = 12;
+const LINE_HEIGHT_RATIO = 21 / 12;
+
+function readFontSize(): number {
+  try {
+    const raw = Number(localStorage.getItem(FONT_SIZE_KEY));
+    return raw >= FONT_SIZE_MIN && raw <= FONT_SIZE_MAX ? raw : FONT_SIZE_DEFAULT;
+  } catch {
+    return FONT_SIZE_DEFAULT;
+  }
+}
+
+const CONSOLE_HEIGHT_KEY = "bb_console_height_v1";
+const CONSOLE_HEIGHT_MIN = 120;
+const CONSOLE_HEIGHT_MAX = 420;
+const CONSOLE_HEIGHT_DEFAULT = 176;
+
+function readConsoleHeight(): number {
+  try {
+    const raw = Number(localStorage.getItem(CONSOLE_HEIGHT_KEY));
+    return raw >= CONSOLE_HEIGHT_MIN && raw <= CONSOLE_HEIGHT_MAX ? raw : CONSOLE_HEIGHT_DEFAULT;
+  } catch {
+    return CONSOLE_HEIGHT_DEFAULT;
+  }
+}
 
 /** Indents/outdents every line touched by [selStart, selEnd] by one tab-stop. */
 function reindentBlock(code: string, selStart: number, selEnd: number, outdent: boolean) {
@@ -74,6 +101,72 @@ function reindentBlock(code: string, selStart: number, selEnd: number, outdent: 
   return { newCode, newSelStart, newSelEnd };
 }
 
+const ConsoleEmptyState: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
+  <div className="h-full flex flex-col items-center justify-center gap-2.5 text-center px-6">
+    <div className="w-8 h-8 rounded-full border border-bb-term-line flex items-center justify-center text-bb-term-text/25 shrink-0">
+      {icon}
+    </div>
+    <span className="text-bb-term-text/40 text-[11px] leading-relaxed max-w-sm">{children}</span>
+  </div>
+);
+
+const TerminalIcon: React.FC = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M6.75 8.25l3 3-3 3m5 0h3.5M3.75 5.25h16.5a1 1 0 011 1v11.5a1 1 0 01-1 1H3.75a1 1 0 01-1-1V6.25a1 1 0 011-1z" />
+  </svg>
+);
+
+const BeakerIcon: React.FC = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      d="M9.75 3.104v5.714a2.25 2.25 0 01-.659 1.591L4.5 15.001a2.25 2.25 0 00-.659 1.591v2.156A2.25 2.25 0 006.091 21h11.818a2.25 2.25 0 002.25-2.25v-2.156a2.25 2.25 0 00-.659-1.591l-4.591-4.592a2.25 2.25 0 01-.659-1.591V3.104M8.25 3h7.5"
+    />
+  </svg>
+);
+
+const PlayIcon: React.FC<{ className?: string }> = ({ className = "w-3.5 h-3.5" }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M5.25 5.653c0-1.427 1.529-2.33 2.779-1.643l11.54 6.347a1.875 1.875 0 010 3.286l-11.54 6.347c-1.25.687-2.779-.217-2.779-1.643V5.653z" />
+  </svg>
+);
+
+const CheckCircleIcon: React.FC = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" />
+    <path strokeLinecap="round" strokeLinejoin="round" d="M8.5 12.5l2.25 2.25L15.5 9.5" />
+  </svg>
+);
+
+const ClipboardIcon: React.FC = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M9 5.25H7.5A2.25 2.25 0 005.25 7.5v11.25a2.25 2.25 0 002.25 2.25h9a2.25 2.25 0 002.25-2.25V7.5a2.25 2.25 0 00-2.25-2.25H15M9 5.25a2.25 2.25 0 012.25-2.25h1.5A2.25 2.25 0 0115 5.25M9 5.25a2.25 2.25 0 002.25 2.25h1.5A2.25 2.25 0 0015 5.25" />
+  </svg>
+);
+
+const DownloadIcon: React.FC = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" d="M3.75 16.5v2.25A2.25 2.25 0 006 21h12a2.25 2.25 0 002.25-2.25V16.5M16.5 12L12 16.5m0 0L7.5 12m4.5 4.5V3" />
+  </svg>
+);
+
+const QuestionMarkIcon: React.FC = () => (
+  <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
+    <circle cx="12" cy="12" r="9" />
+    <path strokeLinecap="round" d="M9.5 9.25a2.5 2.5 0 014.5 1.5c0 1.5-2.25 1.75-2.25 3.5" />
+    <circle cx="12" cy="17" r="0.75" fill="currentColor" stroke="none" />
+  </svg>
+);
+
+const SHORTCUTS: [string, string][] = [
+  ["⌘/Ctrl ⏎", "Run sample tests"],
+  ["Tab", "Indent line / selection"],
+  ["⇧ Tab", "Outdent line / selection"],
+  ["⏎ after {", "Auto-indents new block"],
+  ["( [ { \" '", "Auto-close & type-through"],
+];
+
 export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   problemKey,
   sessionId,
@@ -88,20 +181,71 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const [busy, setBusy] = useState<Busy>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
-  const [consoleTab, setConsoleTab] = useState<ConsoleTab>("output");
+  const [consoleTab, setConsoleTab] = useState<ConsoleTab>("tests");
   const [copied, setCopied] = useState(false);
   const [cursor, setCursor] = useState({ line: 1, col: 1 });
   const [scrollTop, setScrollTop] = useState(0);
+  const [fontSize, setFontSize] = useState(readFontSize);
+  const [consoleHeight, setConsoleHeight] = useState(readConsoleHeight);
+  const [resizingConsole, setResizingConsole] = useState(false);
+  const [showShortcuts, setShowShortcuts] = useState(false);
 
-  const [customOut, setCustomOut] = useState<CustomOutput | null>(null);
-  const [compileError, setCompileError] = useState<string | null>(null);
+  // Tests tab (Run against examples / Submit against the hidden suite).
+  const [testsError, setTestsError] = useState<string | null>(null);
   const [samples, setSamples] = useState<SampleResult[] | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [showDiff, setShowDiff] = useState(false);
 
+  // Custom Input tab — demoted, self-contained secondary tool.
+  const [customOut, setCustomOut] = useState<CustomOutput | null>(null);
+  const [customError, setCustomError] = useState<string | null>(null);
+
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+  const consoleHeightRef = useRef(consoleHeight);
+  consoleHeightRef.current = consoleHeight;
+
+  const lineHeight = Math.round(fontSize * LINE_HEIGHT_RATIO);
+  const hasExamples = examples.length > 0;
+
+  const adjustFontSize = (delta: number) => {
+    setFontSize((prev) => {
+      const next = Math.min(FONT_SIZE_MAX, Math.max(FONT_SIZE_MIN, prev + delta));
+      try {
+        localStorage.setItem(FONT_SIZE_KEY, String(next));
+      } catch {
+        // ignore quota errors
+      }
+      return next;
+    });
+  };
+
+  useEffect(() => {
+    if (!resizingConsole) return;
+
+    const handleMove = (e: PointerEvent) => {
+      // Dragging the handle up (negative dy) grows the console.
+      const next = Math.min(CONSOLE_HEIGHT_MAX, Math.max(CONSOLE_HEIGHT_MIN, consoleHeightRef.current - e.movementY));
+      consoleHeightRef.current = next;
+      setConsoleHeight(next);
+    };
+    const handleUp = () => {
+      setResizingConsole(false);
+      try {
+        localStorage.setItem(CONSOLE_HEIGHT_KEY, String(consoleHeightRef.current));
+      } catch {
+        // ignore quota errors
+      }
+    };
+
+    window.addEventListener("pointermove", handleMove);
+    window.addEventListener("pointerup", handleUp, { once: true });
+    return () => {
+      window.removeEventListener("pointermove", handleMove);
+      window.removeEventListener("pointerup", handleUp);
+    };
+  }, [resizingConsole]);
 
   const hasUnsavedChanges = history.length > 0 && history[0].code !== draft.code;
   const memoryDisplay = verdict?.peakMemoryMb ?? customOut?.peakMemoryMb;
@@ -132,10 +276,10 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
     const el = textareaRef.current;
     if (!el) return;
 
-    // Ctrl/Cmd+Enter — run without leaving the keyboard.
+    // Ctrl/Cmd+Enter — run the sample tests without leaving the keyboard.
     if ((e.metaKey || e.ctrlKey) && e.key === "Enter") {
       e.preventDefault();
-      if (busy === null) void handleRun();
+      if (busy === null && hasExamples) void handleRunTests();
       return;
     }
 
@@ -214,63 +358,31 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
     }
   };
 
-  const handleRun = async () => {
-    setBusy("custom");
-    setCompileError(null);
-    setCustomOut(null);
-    setProgress(null);
-    setConsoleTab("output");
-    setStatusLine("Compiling…");
-
-    try {
-      const runId = await createRun({ kind: "custom", code: draft.code, stdin: draft.stdin });
-      const run = await pollRun(runId, (r) => {
-        setStatusLine(r.state === "compiling" || r.state === "queued" ? "Compiling…" : "Running…");
-      });
-      if (run.compileError) setCompileError(run.compileError);
-      else if (run.output) setCustomOut(run.output);
-    } catch (e) {
-      if (e instanceof JudgeApiError && (e.kind === "NETWORK" || e.kind === "JUDGE_BUSY" || e.kind === "API_FAILED")) {
-        // Local judge unreachable/busy — fall back to Wandbox so Run always works.
-        setStatusLine("Running via Wandbox…");
-        const r = await runCode(draft.code, draft.stdin);
-        if (r.compileError) setCompileError(r.compileError);
-        else setCustomOut({ stdout: r.output, stderr: r.stderr, timeMs: 0, exitCode: r.success ? 0 : null, timedOut: false });
-      } else {
-        setCompileError((e as Error).message);
-      }
-    } finally {
-      setBusy(null);
-      setStatusLine(null);
-      setProgress(null);
-    }
-  };
-
-  const handleRunSamples = async () => {
-    setBusy("samples");
-    setCompileError(null);
+  /** Primary action: compiles and runs against this problem's example tests. */
+  const handleRunTests = async () => {
+    if (!hasExamples) return;
+    setBusy("tests");
+    setTestsError(null);
     setSamples(null);
     setProgress(null);
-    setConsoleTab("samples");
+    setConsoleTab("tests");
     setStatusLine("Compiling…");
 
     try {
       const runId = await createRun({ kind: "samples", code: draft.code, problemKey });
       const run = await pollRun(runId, (r) => {
         if (r.state === "running" && r.progress) {
-          setStatusLine(`Sample ${Math.min(r.progress.done + 1, r.progress.total)} / ${r.progress.total}…`);
+          setStatusLine(`Test ${Math.min(r.progress.done + 1, r.progress.total)} / ${r.progress.total}…`);
           setProgress(r.progress);
         }
       });
       if (run.compileError) {
-        setCompileError(run.compileError);
-        setConsoleTab("output");
+        setTestsError(run.compileError);
       } else if (run.samples) {
         setSamples(run.samples);
       }
     } catch (e) {
-      setCompileError((e as Error).message);
-      setConsoleTab("output");
+      setTestsError((e as Error).message);
     } finally {
       setBusy(null);
       setStatusLine(null);
@@ -280,10 +392,11 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
 
   const handleSubmit = async () => {
     setBusy("submit");
-    setCompileError(null);
+    setTestsError(null);
     setVerdict(null);
     setShowDiff(false);
     setProgress(null);
+    setConsoleTab("tests");
     setStatusLine("Compiling…");
 
     try {
@@ -306,8 +419,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           code: draft.code,
         });
         if (run.verdict.status === "CE" && run.compileError) {
-          setCompileError(run.compileError);
-          setConsoleTab("output");
+          setTestsError(run.compileError);
         }
         if (run.verdict.status === "AC") {
           playSound?.("click");
@@ -316,16 +428,44 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       }
     } catch (e) {
       if (e instanceof JudgeApiError) {
-        setCompileError(e.message);
-        setConsoleTab("output");
+        setTestsError(e.message);
       } else {
-        setCompileError("Submitting failed — retry in a moment.");
-        setConsoleTab("output");
+        setTestsError("Submitting failed — retry in a moment.");
       }
     } finally {
       setBusy(null);
       setStatusLine(null);
       setProgress(null);
+    }
+  };
+
+  /** Secondary tool, tucked into its own tab: run against input you type in yourself. */
+  const handleRunCustom = async () => {
+    setBusy("custom");
+    setCustomError(null);
+    setCustomOut(null);
+    setStatusLine("Compiling…");
+
+    try {
+      const runId = await createRun({ kind: "custom", code: draft.code, stdin: draft.stdin });
+      const run = await pollRun(runId, (r) => {
+        setStatusLine(r.state === "compiling" || r.state === "queued" ? "Compiling…" : "Running…");
+      });
+      if (run.compileError) setCustomError(run.compileError);
+      else if (run.output) setCustomOut(run.output);
+    } catch (e) {
+      if (e instanceof JudgeApiError && (e.kind === "NETWORK" || e.kind === "JUDGE_BUSY" || e.kind === "API_FAILED")) {
+        // Local judge unreachable/busy — fall back to Wandbox so this always works.
+        setStatusLine("Running via Wandbox…");
+        const r = await runCode(draft.code, draft.stdin);
+        if (r.compileError) setCustomError(r.compileError);
+        else setCustomOut({ stdout: r.output, stderr: r.stderr, timeMs: 0, exitCode: r.success ? 0 : null, timedOut: false });
+      } else {
+        setCustomError((e as Error).message);
+      }
+    } finally {
+      setBusy(null);
+      setStatusLine(null);
     }
   };
 
@@ -342,6 +482,16 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const handleReset = () => {
     if (busy !== null) return;
     setCode(DEFAULT_CPP_CODE);
+  };
+
+  const handleDownload = () => {
+    const blob = new Blob([draft.code], { type: "text/x-c++src" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = "solution.cpp";
+    a.click();
+    URL.revokeObjectURL(url);
   };
 
   const lines = draft.code.split("\n");
@@ -400,10 +550,17 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         </div>
       )}
 
-      {/* Editor */}
-      <div className="flex-1 min-h-[360px] relative rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono">
+      {/* Editor + resizable console, grouped so the drag handle can sit between
+          them as a plain sibling — putting it inside the console's own
+          overflow-hidden box would clip it out of the hit-testable area. */}
+      <div className="flex-1 flex flex-col min-h-0">
+      <div className="flex-1 min-h-[360px] relative rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono corner-marks-term">
         <div className="h-8 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-3 select-none">
-          <div className="flex items-center gap-1.5 min-w-0">
+          <div className="flex items-center gap-2.5 min-w-0">
+            <span className="eyebrow-term hidden sm:inline-flex shrink-0">
+              /02 <span className="text-bb-term-text/25 normal-case">·</span> Editor
+            </span>
+            <span className="w-px h-3.5 bg-bb-term-line hidden sm:inline-block shrink-0" />
             <span className="text-[11.5px] font-bold text-bb-term-text shrink-0 flex items-center gap-1.5">
               solution.cpp
               {hasUnsavedChanges && (
@@ -411,27 +568,50 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               )}
             </span>
           </div>
-          <button
-            onClick={handleReset}
-            disabled={busy !== null}
-            title="Reset to starter template"
-            className="text-bb-term-text/35 hover:text-bb-term-acc transition-colors disabled:opacity-30 cursor-pointer shrink-0"
-          >
-            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
-            </svg>
-          </button>
+          <div className="flex items-center gap-3 shrink-0">
+            <div className="flex items-center gap-1 text-bb-term-text/50">
+              <button
+                onClick={() => adjustFontSize(-1)}
+                disabled={fontSize <= FONT_SIZE_MIN}
+                title="Decrease font size"
+                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-term-text transition-colors disabled:opacity-25 cursor-pointer"
+              >
+                A−
+              </button>
+              <span className="text-[9px] tabular-nums w-6 text-center select-none">{fontSize}px</span>
+              <button
+                onClick={() => adjustFontSize(1)}
+                disabled={fontSize >= FONT_SIZE_MAX}
+                title="Increase font size"
+                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-term-text transition-colors disabled:opacity-25 cursor-pointer"
+              >
+                A+
+              </button>
+            </div>
+            <button
+              onClick={handleReset}
+              disabled={busy !== null}
+              title="Reset to starter template"
+              className="text-bb-term-text/35 hover:text-bb-term-acc transition-colors disabled:opacity-30 cursor-pointer shrink-0"
+            >
+              <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
+              </svg>
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 relative flex overflow-hidden scanlines">
           <div
             ref={gutterRef}
-            className="w-11 bg-bb-term-bg border-r border-bb-term-line flex flex-col pt-4 items-end pr-3 text-bb-term-text/35 text-xs select-none overflow-hidden font-mono"
+            className="w-11 bg-bb-term-bg border-r border-bb-term-line flex flex-col pt-4 items-end pr-3 text-bb-term-text/35 select-none overflow-hidden font-mono"
+            style={{ fontSize }}
           >
             {lines.map((_, idx) => (
               <div
                 key={idx}
-                className={`w-full h-[21px] flex items-center justify-end font-bold transition-colors ${idx === cursor.line - 1 ? "text-bb-term-acc" : ""}`}
+                className={`w-full flex items-center justify-end font-bold transition-colors ${idx === cursor.line - 1 ? "text-bb-term-acc" : ""}`}
+                style={{ height: lineHeight }}
               >
                 {idx + 1}
               </div>
@@ -442,12 +622,12 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             <div
               aria-hidden="true"
               className="absolute left-0 right-0 bg-bb-term-acc/[0.06] pointer-events-none z-[1]"
-              style={{ top: (cursor.line - 1) * LINE_HEIGHT - scrollTop, height: LINE_HEIGHT }}
+              style={{ top: (cursor.line - 1) * lineHeight - scrollTop, height: lineHeight }}
             />
             <pre
               ref={highlightRef}
-              className="absolute inset-0 p-4 pt-4 text-xs text-bb-term-text overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
-              style={{ lineHeight: `${LINE_HEIGHT}px` }}
+              className="absolute inset-0 p-4 pt-4 text-bb-term-text overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
+              style={{ lineHeight: `${lineHeight}px`, fontSize }}
               dangerouslySetInnerHTML={{ __html: getHighlightedCode(draft.code) }}
             />
             <textarea
@@ -459,8 +639,8 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               onKeyUp={updateCursor}
               onClick={updateCursor}
               onSelect={updateCursor}
-              className="absolute inset-0 p-4 pt-4 text-xs text-transparent caret-bb-term-acc selection:bg-bb-term-acc2/20 selection:text-bb-term-text overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar-dark"
-              style={{ lineHeight: `${LINE_HEIGHT}px` }}
+              className="absolute inset-0 p-4 pt-4 text-transparent caret-bb-term-acc selection:bg-bb-term-acc2/20 selection:text-bb-term-text overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar-dark"
+              style={{ lineHeight: `${lineHeight}px`, fontSize }}
               spellCheck={false}
             />
           </div>
@@ -479,15 +659,41 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         </div>
       </div>
 
+      {/* Drag handle — a plain flex sibling between editor and console, not a
+          child of the console's overflow-hidden box (which would clip it out
+          of the hit-testable area entirely). */}
+      <div
+        onPointerDown={(e) => {
+          e.preventDefault();
+          setResizingConsole(true);
+        }}
+        role="separator"
+        aria-orientation="horizontal"
+        title="Drag to resize console"
+        className="h-3 shrink-0 cursor-row-resize flex items-center justify-center group/resize"
+      >
+        <div
+          className={`w-10 h-[3px] rounded-full transition-colors ${
+            resizingConsole ? "bg-bb-orange" : "bg-bb-term-line group-hover/resize:bg-bb-term-text/40"
+          }`}
+        />
+      </div>
+
       {/* Console */}
-      <div className="h-44 rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono text-xs shrink-0">
+      <div
+        className="rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono text-xs shrink-0 corner-marks-term"
+        style={{ height: consoleHeight }}
+      >
         <div className="h-8 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-3 select-none">
           <div className="flex gap-5 items-center h-full">
+            <span className="eyebrow-term hidden md:inline-flex shrink-0">
+              /03 <span className="text-bb-term-text/25 normal-case">·</span> Console
+            </span>
+            <span className="w-px h-3.5 bg-bb-term-line hidden md:inline-block shrink-0" />
             {(
               [
-                { id: "output" as const, label: "Output" },
-                ...(examples.length > 0 ? [{ id: "samples" as const, label: "Samples" }] : []),
-                { id: "stdin" as const, label: "Custom Input" },
+                { id: "tests" as const, label: "Tests" },
+                { id: "custom" as const, label: "Custom Input" },
                 { id: "history" as const, label: "History" },
               ]
             ).map((tab) => (
@@ -532,14 +738,45 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         </div>
 
         <div className="flex-1 p-3 overflow-y-auto custom-scrollbar-dark bg-bb-term-bg/30">
-          {consoleTab === "stdin" ? (
-            <textarea
-              value={draft.stdin}
-              onChange={(e) => setStdin(e.target.value)}
-              placeholder="stdin for Run — optional"
-              spellCheck={false}
-              className="w-full h-full bg-transparent text-bb-term-text placeholder-bb-term-text/30 focus:outline-none resize-none"
-            />
+          {consoleTab === "custom" ? (
+            <div className="h-full flex flex-col gap-2">
+              <div className="flex items-center justify-between shrink-0">
+                <span className="text-[9px] uppercase tracking-wider text-bb-term-text/35">
+                  optional — test your program against input you type in
+                </span>
+                <button
+                  onClick={handleRunCustom}
+                  disabled={busy !== null}
+                  className="h-6 px-2.5 rounded border border-bb-term-line hover:border-bb-term-acc/40 hover:text-bb-term-acc bg-bb-term-bg/60 text-bb-term-text/70 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-40 cursor-pointer flex items-center gap-1.5 shrink-0"
+                >
+                  <PlayIcon className="w-2.5 h-2.5" />
+                  {busy === "custom" ? "Running…" : "Run"}
+                </button>
+              </div>
+              <textarea
+                value={draft.stdin}
+                onChange={(e) => setStdin(e.target.value)}
+                placeholder="stdin — optional"
+                spellCheck={false}
+                className="flex-1 min-h-0 bg-bb-term-bg/40 rounded border border-bb-term-line p-2.5 text-bb-term-text placeholder-bb-term-text/30 focus:outline-none focus:border-bb-term-text/25 resize-none"
+              />
+              {(customError || customOut) && (
+                <div className="shrink-0 max-h-24 overflow-y-auto custom-scrollbar-dark rounded border border-bb-term-line bg-bb-term-bg/40 p-2.5">
+                  {customError ? (
+                    <span className="text-[#ff5c5c] whitespace-pre-wrap">{customError}</span>
+                  ) : (
+                    customOut && (
+                      <>
+                        <span className="text-bb-term-text/90 whitespace-pre-wrap">
+                          {customOut.timedOut ? "(time limit exceeded)" : customOut.stdout || "(no output)"}
+                        </span>
+                        {customOut.stderr && <span className="text-[#ff5c5c] whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
+                      </>
+                    )
+                  )}
+                </div>
+              )}
+            </div>
           ) : consoleTab === "history" ? (
             <SubmissionHistoryPanel
               history={history}
@@ -548,59 +785,51 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 playSound?.("click");
               }}
             />
-          ) : consoleTab === "samples" ? (
-            samples ? (
-              <div className="flex flex-col gap-2.5">
-                {samples.map((s) => (
-                  <div key={s.index} className="rounded border border-bb-term-line overflow-hidden">
-                    <div
-                      className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider ${
-                        s.pass
-                          ? "text-bb-term-acc bg-bb-term-acc/[0.06]"
-                          : s.outcome === "tle"
-                            ? "text-amber-400 bg-amber-400/[0.06]"
-                            : "text-[#ff5c5c] bg-[#ff5c5c]/[0.06]"
-                      }`}
-                    >
-                      <span>
-                        Sample {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
-                      </span>
-                      <span className="text-bb-term-text/40 tabular-nums">
-                        {s.timeMs} ms{s.peakMemoryMb !== undefined ? ` · ${s.peakMemoryMb} MB` : ""}
-                      </span>
-                    </div>
-                    {!s.pass &&
-                      (s.outcome === "ok" ? (
-                        <DiffViewer expected={s.expected} actual={s.actual} />
-                      ) : (
-                        <pre className="p-2.5 text-[11px] text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual}</pre>
-                      ))}
+          ) : testsError ? (
+            <span className="text-[#ff5c5c] whitespace-pre-wrap">{testsError}</span>
+          ) : samples ? (
+            <div className="flex flex-col gap-2.5">
+              {samples.map((s) => (
+                <div key={s.index} className="rounded border border-bb-term-line overflow-hidden">
+                  <div
+                    className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider ${
+                      s.pass
+                        ? "text-bb-term-acc bg-bb-term-acc/[0.06]"
+                        : s.outcome === "tle"
+                          ? "text-amber-400 bg-amber-400/[0.06]"
+                          : "text-[#ff5c5c] bg-[#ff5c5c]/[0.06]"
+                    }`}
+                  >
+                    <span>
+                      Test {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
+                    </span>
+                    <span className="text-bb-term-text/40 tabular-nums">
+                      {s.timeMs} ms{s.peakMemoryMb !== undefined ? ` · ${s.peakMemoryMb} MB` : ""}
+                    </span>
                   </div>
-                ))}
-              </div>
-            ) : (
-              <span className="text-bb-term-text/40">Run Samples to check your code against the statement's examples.</span>
-            )
-          ) : compileError ? (
-            <span className="text-[#ff5c5c] whitespace-pre-wrap">{compileError}</span>
-          ) : customOut ? (
-            <>
-              <span className="text-bb-term-text/90 whitespace-pre-wrap">
-                {customOut.timedOut ? "(time limit exceeded)" : customOut.stdout || "(no output)"}
-              </span>
-              {customOut.stderr && <span className="text-[#ff5c5c] whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
-            </>
-          ) : (
-            <>
-              <span className="text-bb-term-text/40">
-                {judgeable
-                  ? `Run executes against your custom input; Submit compiles and runs your code against all ${testCount} official hidden tests, right here.`
-                  : "Run executes against your custom input. This problem has no local test suite — submit on Codeforces for the verdict."}
-              </span>
+                  {!s.pass &&
+                    (s.outcome === "ok" ? (
+                      <DiffViewer expected={s.expected} actual={s.actual} />
+                    ) : (
+                      <pre className="p-2.5 text-[11px] text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual}</pre>
+                    ))}
+                </div>
+              ))}
+            </div>
+          ) : hasExamples ? (
+            <ConsoleEmptyState icon={<BeakerIcon />}>
+              Run compiles your code and checks it against this problem's {examples.length} example test{examples.length === 1 ? "" : "s"}.
               <span className="caret-inline text-bb-term-acc" />
-            </>
+            </ConsoleEmptyState>
+          ) : (
+            <ConsoleEmptyState icon={<TerminalIcon />}>
+              {judgeable
+                ? "This problem has no example tests to check locally — Submit judges directly against the official hidden suite."
+                : "This problem has no example tests, and no local test suite either — verify on Codeforces."}
+            </ConsoleEmptyState>
           )}
         </div>
+      </div>
       </div>
 
       {/* Actions */}
@@ -609,42 +838,77 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           <button
             onClick={handleSubmit}
             disabled={busy !== null}
-            className="h-9 px-5 rounded bg-bb-term-acc hover:brightness-110 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
+            className="h-9 px-5 rounded bg-bb-term-acc hover:brightness-110 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
           >
+            <CheckCircleIcon />
             {busy === "submit" ? "Judging…" : "Submit"}
           </button>
         )}
-        {examples.length > 0 && (
-          <button
-            onClick={handleRunSamples}
-            disabled={busy !== null}
-            className="h-9 px-4 rounded bg-bb-term-text hover:brightness-90 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer"
-          >
-            {busy === "samples" ? "Running…" : "Run Samples"}
-          </button>
-        )}
         <button
-          onClick={handleRun}
-          disabled={busy !== null}
-          className={`h-9 px-4 rounded font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2 ${
-            examples.length > 0
+          onClick={handleRunTests}
+          disabled={busy !== null || !hasExamples}
+          title={hasExamples ? undefined : "No example tests available for this problem"}
+          className={`h-9 px-4 rounded font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-40 cursor-pointer flex items-center gap-2 ${
+            judgeable
               ? "border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text"
               : "bg-bb-term-text hover:brightness-90 text-bb-term-bg"
           }`}
         >
-          {busy === "custom" ? "Running…" : "Run"}
-          <span className={`hidden sm:inline text-[9px] font-mono ${examples.length > 0 ? "text-bb-term-text/35" : "opacity-50"}`}>⌘⏎</span>
+          <PlayIcon />
+          {busy === "tests" ? "Running…" : "Run"}
+          <span className={`hidden sm:inline text-[9px] font-mono ${judgeable ? "text-bb-term-text/35" : "opacity-50"}`}>⌘⏎</span>
         </button>
         <button
           onClick={handleCopy}
-          className="h-9 px-4 rounded border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-xs font-mono uppercase tracking-wider text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer"
+          className="h-9 px-4 rounded border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-xs font-mono uppercase tracking-wider text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer flex items-center gap-2"
         >
-          {copied ? "Copied ✓" : "Copy Code"}
+          <ClipboardIcon />
+          {copied ? "Copied ✓" : "Copy"}
         </button>
+        <button
+          onClick={handleDownload}
+          title="Download solution.cpp"
+          className="h-9 w-9 rounded border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer flex items-center justify-center shrink-0"
+        >
+          <DownloadIcon />
+        </button>
+
+        <div className="relative shrink-0">
+          <button
+            onClick={() => setShowShortcuts((s) => !s)}
+            title="Keyboard shortcuts"
+            className={`h-9 w-9 rounded border transition-colors cursor-pointer flex items-center justify-center ${
+              showShortcuts
+                ? "border-bb-term-acc/40 bg-bb-term-acc/[0.08] text-bb-term-acc"
+                : "border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text"
+            }`}
+          >
+            <QuestionMarkIcon />
+          </button>
+          {showShortcuts && (
+            <>
+              <div className="fixed inset-0 z-30" onClick={() => setShowShortcuts(false)} />
+              <div className="absolute bottom-full right-0 mb-2 w-72 rounded border border-bb-term-line bg-bb-term-surface shadow-2xl shadow-black/40 p-3.5 z-40 corner-marks-term">
+                <span className="eyebrow-term mb-2.5">Shortcuts</span>
+                <div className="flex flex-col gap-2">
+                  {SHORTCUTS.map(([keys, desc]) => (
+                    <div key={desc} className="flex items-center justify-between gap-3">
+                      <span className="text-[11px] font-mono text-bb-term-text/55">{desc}</span>
+                      <span className="text-[10px] font-mono text-bb-term-text px-1.5 py-0.5 rounded bg-bb-term-bg border border-bb-term-line shrink-0 whitespace-nowrap">
+                        {keys}
+                      </span>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            </>
+          )}
+        </div>
+
         <span className="text-[9px] font-mono text-bb-term-text/35 ml-auto hidden md:inline">
           {judgeable
-            ? "judged locally against the official Codeforces test suite (open-r1 dataset)"
-            : "compile + run only — no local test suite for this problem, verify on Codeforces"}
+            ? `Run checks the examples; Submit judges all ${testCount} official hidden tests, right here.`
+            : "Run checks the examples. No local test suite for this problem — submit on Codeforces for the verdict."}
         </span>
       </div>
     </div>

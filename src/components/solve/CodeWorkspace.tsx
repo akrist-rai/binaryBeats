@@ -13,6 +13,7 @@ import {
   type SampleResult,
   type Verdict,
 } from "../../lib/judgeApi";
+import { ConfettiBurst } from "../Effects/ConfettiBurst";
 import { DiffViewer } from "./DiffViewer";
 import { SubmissionHistoryPanel } from "./SubmissionHistoryPanel";
 import { TestGrid, tilesFromProgress, tilesFromVerdict } from "./TestGrid";
@@ -195,6 +196,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const [samples, setSamples] = useState<SampleResult[] | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
   const [showDiff, setShowDiff] = useState(false);
+  const [submitCount, setSubmitCount] = useState(0);
 
   // Custom Input tab — demoted, self-contained secondary tool.
   const [customOut, setCustomOut] = useState<CustomOutput | null>(null);
@@ -409,6 +411,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       });
       if (run.verdict) {
         setVerdict(run.verdict);
+        setSubmitCount((c) => c + 1);
         addRecord({
           submittedAtSeconds: Math.floor(Date.now() / 1000),
           status: run.verdict.status,
@@ -498,24 +501,38 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
 
   return (
     <div className="flex-1 flex flex-col gap-3 min-h-0 p-3 bg-bb-term-bg">
-      {/* Verdict stamp */}
+      {/* Verdict stamp — keyed by submitCount so the whole thing (badge spring,
+          shake, confetti) remounts and replays on every submission, even a
+          repeat AC on the same code. */}
       {verdict && (
-        <div className={`rounded border px-4 py-3 flex flex-col gap-2.5 font-mono ${VERDICT_PANEL[verdict.status]}`}>
-          <div className="flex items-center gap-3 flex-wrap">
+        <div
+          key={submitCount}
+          className={`relative overflow-hidden rounded border px-4 py-3.5 flex flex-col gap-2.5 font-mono ${VERDICT_PANEL[verdict.status]} ${
+            verdict.status === "AC" ? "sheen" : "animate-shake"
+          }`}
+        >
+          {verdict.status === "AC" && <ConfettiBurst burstKey={submitCount} />}
+          <div className="flex items-center gap-3.5 flex-wrap relative z-10">
             <motion.div
-              initial={{ scale: 0.5, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              transition={{ type: "spring", stiffness: 380, damping: 20 }}
-              className={`shrink-0 w-9 h-9 rounded border-2 border-current flex items-center justify-center ${VERDICT_TEXT[verdict.status]}`}
+              initial={{ scale: 0.3, opacity: 0, rotate: -16 }}
+              animate={{ scale: 1, opacity: 1, rotate: 0 }}
+              transition={{ type: "spring", stiffness: 340, damping: 16 }}
+              className={`shrink-0 w-11 h-11 rounded border-2 border-current flex items-center justify-center ${VERDICT_TEXT[verdict.status]} ${
+                verdict.status === "AC" ? "card-glow-lime" : verdict.status === "TLE" ? "" : "card-glow-red"
+              }`}
             >
-              <span className="text-[11px] font-black tracking-tighter">{verdict.status}</span>
+              <span className="text-sm font-black tracking-tighter">{verdict.status}</span>
             </motion.div>
             <div className="flex items-center gap-3 flex-wrap">
-              <span className={`text-sm font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${verdict.status === "AC" ? "term-text-glow" : ""}`}>
+              <span
+                className={`font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${
+                  verdict.status === "AC" ? "text-xl glow-text-lime" : "text-base"
+                }`}
+              >
                 {VERDICT_LABEL[verdict.status]}
               </span>
               {verdict.status !== "CE" && (
-                <span className="text-xs text-bb-term-text/60">
+                <span className="text-xs text-bb-term-text/60 stat-num">
                   {verdict.passedCount} / {verdict.totalCount} tests
                   {verdict.failedTestIndex !== undefined && ` · failed on test ${verdict.failedTestIndex}`}
                   {verdict.status === "AC" && ` · ${verdict.timeMs} ms`}
@@ -541,11 +558,12 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               tiles={tilesFromVerdict(verdict)}
               failedIndex={verdict.failedTestIndex !== undefined ? verdict.failedTestIndex - 1 : undefined}
               onSelectFailed={verdict.failedTest ? () => setShowDiff(true) : undefined}
+              className="relative z-10"
             />
           )}
 
           {showDiff && verdict.failedTest && (
-            <DiffViewer expected={verdict.failedTest.expected} actual={verdict.failedTest.actual} />
+            <DiffViewer expected={verdict.failedTest.expected} actual={verdict.failedTest.actual} className="relative z-10" />
           )}
         </div>
       )}

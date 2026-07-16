@@ -593,7 +593,7 @@
       cells.push({ current: ' ', top: top, bottom: bottom, topLeaf: topLeaf, bottomLeaf: bottomLeaf });
     }
 
-    function disp(ch){ return ch === ' ' ? '\u00A0' : ch; }
+    function disp(ch){ return ch === ' ' ? ' ' : ch; }
 
     function flipCell(c, ch, beep){
       if(c.current === ch) return;

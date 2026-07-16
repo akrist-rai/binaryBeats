@@ -469,3 +469,90 @@
   margin-left: 4px;
   vertical-align: middle;
 }
+
+/* ══════════════════════════════════════════════════════════════════════
+   ARENA — a third, deliberately louder register reserved for Blitz/Duel.
+   Practice is calm paper; the editor is a quiet dark glass window; Blitz is
+   a live competition against another human, so it gets to be theatrical —
+   near-black, aurora glow, neon wins/losses. Reuses the terminal palette
+   (this *is* competitive/live, same signal the editor already carries) but
+   turns the intensity all the way up.
+   ══════════════════════════════════════════════════════════════════════ */
+
+.arena-bg {
+  background:
+    radial-gradient(ellipse 70% 45% at 15% -8%, rgba(195, 247, 58, 0.10), transparent 60%),
+    radial-gradient(ellipse 60% 45% at 100% 8%, rgba(53, 232, 255, 0.08), transparent 60%),
+    radial-gradient(ellipse 55% 40% at 50% 115%, rgba(225, 90, 32, 0.06), transparent 60%),
+    var(--bb-term-bg, #14110C);
+}
+.arena-grid {
+  background-image:
+    linear-gradient(rgba(244, 239, 228, 0.05) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(244, 239, 228, 0.05) 1px, transparent 1px);
+  background-size: 34px 34px;
+  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 85%);
+  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 85%);
+}
+
+@keyframes aurora-drift-b {
+  0%, 100% { transform: translate(0, 0) scale(1); }
+  50% { transform: translate(-50px, 50px) scale(1.2); }
+}
+.arena-glow-b {
+  position: absolute;
+  border-radius: 9999px;
+  filter: blur(80px);
+  pointer-events: none;
+  will-change: transform;
+  background: radial-gradient(circle, rgba(53, 232, 255, 0.22) 0%, transparent 70%);
+  animation: aurora-drift-b 24s ease-in-out infinite;
+}
+
+/* Text glow variants — victory (lime) / defeat (red) / draw (blue) reveals. */
+.glow-text-lime { text-shadow: 0 0 30px rgba(195, 247, 58, 0.55), 0 0 70px rgba(195, 247, 58, 0.25); }
+.glow-text-red { text-shadow: 0 0 30px rgba(255, 92, 92, 0.5), 0 0 70px rgba(255, 92, 92, 0.22); }
+.glow-text-blue { text-shadow: 0 0 30px rgba(53, 232, 255, 0.5), 0 0 70px rgba(53, 232, 255, 0.22); }
+
+/* Card-edge glow — difficulty/leader accents inside the arena register. */
+.card-glow-lime { box-shadow: 0 0 0 1px rgba(195, 247, 58, 0.25), 0 0 24px -6px rgba(195, 247, 58, 0.4); }
+.card-glow-orange { box-shadow: 0 0 0 1px rgba(255, 122, 69, 0.28), 0 0 24px -6px rgba(255, 122, 69, 0.4); }
+.card-glow-red { box-shadow: 0 0 0 1px rgba(255, 92, 92, 0.28), 0 0 24px -6px rgba(255, 92, 92, 0.4); }
+.card-glow-blue { box-shadow: 0 0 0 1px rgba(53, 232, 255, 0.25), 0 0 24px -6px rgba(53, 232, 255, 0.35); }
+
+/* Fail shake — a quick, small horizontal rattle. Reserved for one moment
+   (a fresh WA/RE/TLE stamp landing) — never looped, never on hover. */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+.animate-shake { animation: shake-x 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* Victory sheen — a single diagonal light sweep across a winning stamp/card. */
+@keyframes sheen-sweep {
+  from { transform: translateX(-150%) skewX(-20deg); }
+  to { transform: translateX(250%) skewX(-20deg); }
+}
+.sheen::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background: linear-gradient(100deg, transparent 30%, rgba(255, 255, 255, 0.16) 50%, transparent 70%);
+  animation: sheen-sweep 1.8s ease-in-out 0.3s 1;
+  pointer-events: none;
+}
+
+/* Hazard stripes — a construction/warning motif for the "end session" danger
+   zone, printed at low opacity so it reads as texture, not noise. */
+.hazard-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(255, 107, 87, 0.12) 0px,
+    rgba(255, 107, 87, 0.12) 6px,
+    transparent 6px,
+    transparent 14px
+  );
+}

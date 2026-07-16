@@ -2,10 +2,12 @@ import React, { useCallback, useEffect, useMemo, useState } from "react";
 import { motion, AnimatePresence } from "motion/react";
 import { useCfHandle } from "../../hooks/useCfHandle";
 import { useSessionPolling } from "../../hooks/useSessionPolling";
+import { useCountUp } from "../../hooks/useCountUp";
 import { BlitzApiError, SESSION_ID_KEY, createSession, endSession } from "../../lib/blitzApi";
 import { problemKey } from "../../lib/codeforces";
 import { claimedBy, scores, type BlitzMode, type BlitzSession } from "../../lib/blitzSession";
 import { logSolve } from "../../lib/activityLog";
+import { ConfettiBurst } from "../Effects/ConfettiBurst";
 import { HandleLinkCard } from "./HandleLinkCard";
 import { SessionSetup, type RivalInfo } from "./SessionSetup";
 import { ProblemCard } from "./ProblemCard";
@@ -42,10 +44,9 @@ function writeAwarded(sessionId: string, keys: Set<string>) {
   }
 }
 
-// Decorative deterministic "barcode" of the session id — the same spec-sheet/
-// shipping-label motif as CodeWorkspace's problem-key barcode, reimplemented
-// locally here since this view stays in the paper register. Purely visual;
-// no data is actually encoded.
+// Decorative deterministic "barcode" of the session id — a shipping-label/
+// spec-sheet motif, `currentColor`-driven so it reads on the arena's dark
+// surfaces. Purely visual; no data is actually encoded.
 const SessionBarcode: React.FC<{ value: string; className?: string }> = ({ value, className }) => {
   const bars = useMemo(() => {
     let seed = 0;
@@ -193,7 +194,12 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
   const linked = !!handle;
 
   return (
-    <div className="w-full min-h-[calc(100vh-56px)] text-bb-ink relative pb-12">
+    <div className="w-full min-h-[calc(100vh-56px)] relative pb-12 arena-bg">
+      <div aria-hidden className="absolute inset-0 overflow-hidden pointer-events-none">
+        <div className="absolute inset-0 arena-grid" />
+        <div className="arena-glow-b w-[420px] h-[420px] -top-32 -right-20" />
+      </div>
+
       {session && session.status === "active" && openProblemIndex !== null ? (
         /* ── WORKSPACE VIEW — full-bleed, no page max-width, desktop IDE layout ── */
         <div
@@ -221,24 +227,24 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
           <div className="relative">
             <span
               aria-hidden
-              className="pointer-events-none select-none absolute -top-8 -left-1 -z-10 text-[110px] font-heading font-black text-bb-ink/[0.045] leading-none"
+              className="pointer-events-none select-none absolute -top-8 -left-1 -z-10 text-[110px] font-heading font-black text-bb-term-text/[0.04] leading-none"
             >
               02
             </span>
-            <span className="eyebrow">/02 <span className="text-bb-ink-faint normal-case">·</span> Codeforces Arena</span>
-            <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-bb-ink mt-2 tracking-tight">
+            <span className="eyebrow-term">/02 <span className="text-bb-term-text/25 normal-case">·</span> Codeforces Arena</span>
+            <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-bb-term-text mt-2 tracking-tight">
               Blitz &amp; Duel
             </h2>
-            <p className="text-xs font-mono text-bb-ink-faint mt-1.5">Real problems. Real verdicts. Rating-matched.</p>
+            <p className="text-xs font-mono text-bb-term-text/45 mt-1.5">Real problems. Real verdicts. Rating-matched.</p>
           </div>
 
           {linked && (
-            <div className="flex items-center gap-2 rounded-lg border border-bb-line bg-bb-paper-raised px-3 py-1.5">
-              <span className="font-mono text-xs text-bb-ink">{handle}</span>
+            <div className="flex items-center gap-2 rounded-lg border border-bb-term-line bg-bb-term-surface px-3 py-1.5">
+              <span className="font-mono text-xs text-bb-term-text">{handle}</span>
               <RatingBadge rating={user?.rating ?? null} />
               <button
                 onClick={handleUnlink}
-                className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer"
+                className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/40 hover:text-bb-term-text transition-colors cursor-pointer"
               >
                 change
               </button>
@@ -275,13 +281,13 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
               exit={{ opacity: 0 }}
               className="grid grid-cols-1 lg:grid-cols-3 gap-8"
             >
-              <div className="lg:col-span-2 spec-card corner-marks overflow-hidden">
-                <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line gap-3">
+              <div className="lg:col-span-2 rounded-lg border border-bb-term-line bg-bb-term-surface overflow-hidden corner-marks-term">
+                <div className="flex items-center justify-between px-6 py-4 border-b border-bb-term-line gap-3">
                   <div className="flex items-center gap-3 min-w-0">
-                    <h3 className="label-caps shrink-0">
+                    <h3 className="eyebrow-term shrink-0">
                       Problem Set
                     </h3>
-                    <span className="hidden sm:flex items-center gap-2 min-w-0 text-bb-ink-faint/50">
+                    <span className="hidden sm:flex items-center gap-2 min-w-0 text-bb-term-text/30">
                       <SessionBarcode value={session.id} className="shrink-0" />
                       <span className="text-[9px] font-mono tracking-wider truncate">
                         #{session.id.slice(0, 8).toUpperCase()}
@@ -289,12 +295,11 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
                     </span>
                   </div>
                   <div className="flex items-center gap-1.5 shrink-0">
-                    <span
-                      className={`w-1.5 h-1.5 rounded-full ${
-                        pollState === "live" ? "bg-bb-lime animate-pulse" : "bg-bb-ink-faint"
-                      }`}
-                    />
-                    <span className="text-[10px] font-mono text-bb-ink-faint">
+                    <span className="relative flex w-1.5 h-1.5">
+                      <span className={`absolute inset-0 rounded-full ${pollState === "live" ? "bg-bb-term-acc2 animate-pulse" : "bg-bb-term-text/30"}`} />
+                      {pollState === "live" && <span className="absolute -inset-1 rounded-full border border-bb-term-acc2/50 animate-ping" />}
+                    </span>
+                    <span className="text-[10px] font-mono text-bb-term-text/40">
                       {pollState === "live"
                         ? "server watching submissions"
                         : pollState === "paused"
@@ -303,7 +308,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
                     </span>
                   </div>
                 </div>
-                <div className="flex flex-col divide-y divide-bb-line">
+                <div className="flex flex-col">
                   {session.problems.map((p, i) => (
                     <ProblemCard
                       key={problemKey(p)}
@@ -318,16 +323,14 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
               </div>
 
               <div className="flex flex-col gap-6">
-                <div className="spec-card p-5">
-                  <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
-                </div>
+                <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
 
                 <Scoreboard session={session} />
 
                 {session.mode === "duel" && (
                   <button
                     onClick={handleCopyLinks}
-                    className="btn-outline h-10 text-[10px] font-mono uppercase tracking-wider cursor-pointer"
+                    className="h-10 rounded-lg border border-bb-term-line hover:border-bb-term-text/25 text-bb-term-text/70 hover:text-bb-term-text text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
                   >
                     {copied ? "Copied ✓" : "Copy problem links"}
                   </button>
@@ -335,7 +338,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
 
                 <button
                   onClick={() => setConfirmingEnd(true)}
-                  className="h-10 rounded-full border border-bb-line text-bb-ink-faint hover:text-bb-red hover:border-bb-red/40 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
+                  className="h-10 rounded-lg border border-bb-term-line text-bb-term-text/40 hover:text-[#ff5c5c] hover:border-[#ff5c5c]/40 text-[10px] font-mono uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   End Session
                 </button>
@@ -347,17 +350,12 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
               initial={{ opacity: 0, y: 15 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="max-w-xl mx-auto w-full spec-card corner-marks p-8 text-center"
+              className="relative max-w-xl mx-auto w-full rounded-lg border border-bb-term-line bg-bb-term-surface corner-marks-term overflow-hidden p-8 text-center"
             >
               {session.mode === "duel" ? (
                 <FinishedDuelBanner session={session} />
               ) : (
-                <>
-                  <span className="eyebrow">Session Complete</span>
-                  <h3 className="text-2xl font-heading font-extrabold text-bb-ink mt-3 mb-1">
-                    {session.problems.length} / {session.problems.length} solved
-                  </h3>
-                </>
+                <FinishedBlitzBanner session={session} />
               )}
               <FinishedRecap session={session} />
               <motion.button
@@ -367,7 +365,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
                   playSound("click");
                   handleNewSession();
                 }}
-                className="btn-primary mt-6 px-5 h-10 font-bold font-mono text-xs uppercase tracking-wider cursor-pointer"
+                className="relative z-10 mt-6 px-5 h-10 rounded-full bg-bb-term-acc text-bb-term-bg hover:brightness-110 font-bold font-mono text-xs uppercase tracking-wider cursor-pointer transition-all"
               >
                 New Session
               </motion.button>
@@ -383,28 +381,28 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             exit={{ opacity: 0 }}
-            className="fixed inset-0 z-50 flex items-center justify-center bg-bb-ink/60 backdrop-blur-sm px-4"
+            className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm px-4"
           >
             <motion.div
               initial={{ opacity: 0, scale: 0.96 }}
               animate={{ opacity: 1, scale: 1 }}
               exit={{ opacity: 0, scale: 0.96 }}
-              className="w-full max-w-sm spec-card p-6"
+              className="w-full max-w-sm rounded-lg border border-bb-term-line bg-bb-term-surface p-6"
             >
-              <h4 className="text-sm font-bold font-heading text-bb-ink mb-2">End this session?</h4>
-              <p className="text-xs font-mono text-bb-ink-faint mb-5 leading-relaxed">
+              <h4 className="text-sm font-bold font-heading text-bb-term-text mb-2">End this session?</h4>
+              <p className="text-xs font-mono text-bb-term-text/50 mb-5 leading-relaxed">
                 Progress on unsolved problems will be discarded. Solved problems stay logged in your activity.
               </p>
               <div className="flex items-center gap-3">
                 <button
                   onClick={() => setConfirmingEnd(false)}
-                  className="btn-outline flex-1 h-9 text-xs font-mono uppercase tracking-wider cursor-pointer"
+                  className="flex-1 h-9 rounded-lg border border-bb-term-line hover:border-bb-term-text/25 text-bb-term-text/70 hover:text-bb-term-text text-xs font-mono uppercase tracking-wider transition-colors cursor-pointer"
                 >
                   Cancel
                 </button>
                 <button
                   onClick={handleEndSession}
-                  className="flex-1 h-9 rounded-full border border-bb-red/40 text-xs font-mono uppercase tracking-wider text-bb-red hover:bg-bb-red/10 transition-colors cursor-pointer"
+                  className="flex-1 h-9 rounded-lg border border-[#ff5c5c]/40 hazard-stripes text-xs font-mono uppercase tracking-wider text-[#ff5c5c] hover:bg-[#ff5c5c]/10 transition-colors cursor-pointer"
                 >
                   End Session
                 </button>
@@ -424,20 +422,40 @@ const FinishedDuelBanner: React.FC<{ session: BlitzSession }> = ({ session }) =>
   const meScore = sc[me] ?? 0;
   const rivalScore = sc[rival] ?? 0;
   const verdict = meScore === rivalScore ? "DRAW" : meScore > rivalScore ? "VICTORY" : "DEFEAT";
+  const meDisplay = useCountUp(meScore, 900);
+  const rivalDisplay = useCountUp(rivalScore, 900);
 
   return (
     <>
-      <span className="eyebrow">Duel Complete</span>
+      {verdict === "VICTORY" && <ConfettiBurst burstKey={session.id} count={40} />}
+      <span className="eyebrow-term relative z-10">Duel Complete</span>
       <h3
-        className={`editorial text-4xl mt-3 mb-1 ${
-          verdict === "VICTORY" ? "text-bb-lime" : verdict === "DEFEAT" ? "text-bb-ink-faint" : "text-bb-ink-soft"
+        className={`editorial text-5xl mt-3 mb-2 relative z-10 ${
+          verdict === "VICTORY" ? "text-bb-term-acc glow-text-lime" : verdict === "DEFEAT" ? "text-[#ff5c5c] glow-text-red" : "text-bb-term-acc2 glow-text-blue"
         }`}
       >
         {verdict}
       </h3>
-      <p className="text-sm font-mono text-bb-ink-soft">
-        {meScore} — {rivalScore}
+      <p className="text-lg font-mono text-bb-term-text/70 stat-num relative z-10">
+        {meDisplay} — {rivalDisplay}
       </p>
+    </>
+  );
+};
+
+const FinishedBlitzBanner: React.FC<{ session: BlitzSession }> = ({ session }) => {
+  const total = session.problems.length;
+  const solved = scores(session)[session.handles[0]] ?? 0;
+  const allSolved = solved === total && total > 0;
+  const display = useCountUp(solved, 900);
+
+  return (
+    <>
+      {allSolved && <ConfettiBurst burstKey={session.id} count={40} />}
+      <span className="eyebrow-term relative z-10">Session Complete</span>
+      <h3 className={`text-2xl font-heading font-extrabold mt-3 mb-1 relative z-10 stat-num ${allSolved ? "text-bb-term-acc glow-text-lime" : "text-bb-term-text"}`}>
+        {display} / {total} solved
+      </h3>
     </>
   );
 };
@@ -447,7 +465,7 @@ const FinishedRecap: React.FC<{ session: BlitzSession }> = ({ session }) => {
   const isDuel = session.mode === "duel";
 
   return (
-    <div className="mt-6 pt-6 border-t border-bb-line flex flex-col gap-2.5 text-left">
+    <div className="relative z-10 mt-6 pt-6 border-t border-bb-term-line flex flex-col gap-2.5 text-left">
       {session.problems.map((p) => {
         const key = problemKey(p);
         const winner = isDuel ? claimedBy(session, key) : session.results[me]?.[key] !== undefined ? me : null;
@@ -455,11 +473,11 @@ const FinishedRecap: React.FC<{ session: BlitzSession }> = ({ session }) => {
           <div key={key} className="flex items-center justify-between gap-3 text-xs font-mono">
             <div className="flex items-center gap-2 min-w-0">
               <RatingBadge rating={p.rating} />
-              <span className="text-bb-ink-soft truncate">{p.name}</span>
+              <span className="text-bb-term-text/60 truncate">{p.name}</span>
             </div>
             <span
               className={`shrink-0 ${
-                winner === me ? "text-bb-lime font-bold" : winner ? "text-bb-ink-soft" : "text-bb-ink-faint"
+                winner === me ? "text-bb-term-acc font-bold" : winner ? "text-bb-term-text/50" : "text-bb-term-text/30"
               }`}
             >
               {winner ? (isDuel ? (session.displayHandles[winner] ?? winner) : "Solved ✓") : "—"}

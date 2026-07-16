@@ -25,12 +25,17 @@ export const SessionTimer: React.FC<SessionTimerProps> = ({ startedAtSeconds, ru
   const elapsed = Math.max(0, now - startedAtSeconds);
 
   return (
-    <div className="flex flex-col">
-      <span className="label-caps mb-1 flex items-center gap-1.5">
+    <div className="rounded-lg border border-bb-term-line bg-bb-term-surface p-5 corner-marks-term flex flex-col items-center text-center">
+      <span className="eyebrow-term mb-3 flex items-center gap-1.5">
         Elapsed
-        {running && <span className="w-1.5 h-1.5 rounded-full bg-bb-lime animate-pulse" />}
+        {running && (
+          <span className="relative flex w-1.5 h-1.5">
+            <span className="absolute inset-0 rounded-full bg-bb-term-acc animate-pulse-lime" />
+            <span className="absolute -inset-1 rounded-full border border-bb-term-acc/50 animate-ping" />
+          </span>
+        )}
       </span>
-      <span className="stat-num text-3xl text-bb-ink leading-none tabular-nums">
+      <span className="stat-num text-4xl text-bb-term-text leading-none glow-text-lime tabular-nums">
         {formatElapsed(elapsed)}
       </span>
     </div>

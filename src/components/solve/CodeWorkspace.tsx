@@ -2,6 +2,7 @@ import React, { useMemo, useRef, useState } from "react";
 import { flushSync } from "react-dom";
 import { motion } from "motion/react";
 import { useCodeDraft } from "../../hooks/useCodeDraft";
+import { useSubmissionHistory } from "../../hooks/useSubmissionHistory";
 import { runCode, DEFAULT_CPP_CODE } from "../../lib/wandbox";
 import { getHighlightedCode } from "../../lib/cppHighlight";
 import {
@@ -12,9 +13,16 @@ import {
   type SampleResult,
   type Verdict,
 } from "../../lib/judgeApi";
+import { Barcode } from "./Barcode";
+import { DiffViewer } from "./DiffViewer";
+import { SubmissionHistoryPanel } from "./SubmissionHistoryPanel";
+import { TestGrid, tilesFromProgress, tilesFromVerdict } from "./TestGrid";
+import { VERDICT_LABEL, VERDICT_PANEL, VERDICT_TEXT } from "./verdictStyles";
 
 interface CodeWorkspaceProps {
   problemKey: string;
+  /** Blitz session to record a solve into — omitted in practice mode, where
+   *  Submit still judges against the full suite, it just records nothing. */
   sessionId?: string;
   /** Complete official test suite exists server-side — Submit is available. */
   judgeable?: boolean;
@@ -25,64 +33,10 @@ interface CodeWorkspaceProps {
   onAccepted?: () => void;
 }
 
-type ConsoleTab = "output" | "samples" | "stdin";
+type ConsoleTab = "output" | "samples" | "stdin" | "history";
 type Busy = "custom" | "samples" | "submit" | null;
 
 const LINE_HEIGHT = 21;
-
-const VERDICT_LABEL: Record<Verdict["status"], string> = {
-  AC: "Accepted",
-  WA: "Wrong Answer",
-  TLE: "Time Limit Exceeded",
-  RE: "Runtime Error",
-  CE: "Compilation Error",
-};
-
-// Bright, saturated verdict colors tuned to read on the near-black terminal
-// surface — AC gets the full neon accent, failures get a hot red, TLE gets
-// amber so it reads distinctly from a hard failure at a glance.
-const VERDICT_TEXT: Record<Verdict["status"], string> = {
-  AC: "text-bb-term-acc",
-  WA: "text-[#ff5c5c]",
-  TLE: "text-amber-400",
-  RE: "text-[#ff5c5c]",
-  CE: "text-[#ff5c5c]",
-};
-
-const VERDICT_PANEL: Record<Verdict["status"], string> = {
-  AC: "border-bb-term-acc/30 bg-bb-term-acc/[0.07]",
-  WA: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
-  TLE: "border-amber-400/30 bg-amber-400/[0.07]",
-  RE: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
-  CE: "border-[#ff5c5c]/30 bg-[#ff5c5c]/[0.07]",
-};
-
-// Decorative deterministic "barcode" of the problem key — a nod to the
-// spec-sheet/shipping-label motif (barcodes, serials) that recurred across
-// the moodboard. Purely visual; no data is actually encoded.
-const Barcode: React.FC<{ value: string; className?: string }> = ({ value, className }) => {
-  const bars = useMemo(() => {
-    let seed = 0;
-    for (let i = 0; i < value.length; i++) seed = (seed * 31 + value.charCodeAt(i)) >>> 0;
-    return Array.from({ length: 20 }, () => {
-      seed = (seed * 1103515245 + 12345) >>> 0;
-      return (seed >>> 16) % 3 === 0 ? 2 : 1;
-    });
-  }, [value]);
-  const width = bars.reduce((a, b) => a + b + 1, 0);
-  let x = 0;
-  return (
-    <svg width={width} height={12} viewBox={`0 0 ${width} 12`} className={className} aria-hidden="true">
-      {bars.map((w, i) => {
-        const rect = (
-          <rect key={i} x={x} y={0} width={w} height={12} fill="currentColor" />
-        );
-        x += w + 1;
-        return rect;
-      })}
-    </svg>
-  );
-};
 
 /** Indents/outdents every line touched by [selStart, selEnd] by one tab-stop. */
 function reindentBlock(code: string, selStart: number, selEnd: number, outdent: boolean) {
@@ -128,6 +82,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   onAccepted,
 }) => {
   const { draft, setCode, setStdin } = useCodeDraft(problemKey);
+  const { history, addRecord } = useSubmissionHistory(problemKey);
   const [busy, setBusy] = useState<Busy>(null);
   const [statusLine, setStatusLine] = useState<string | null>(null);
   const [progress, setProgress] = useState<{ done: number; total: number } | null>(null);
@@ -140,10 +95,14 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   const [compileError, setCompileError] = useState<string | null>(null);
   const [samples, setSamples] = useState<SampleResult[] | null>(null);
   const [verdict, setVerdict] = useState<Verdict | null>(null);
+  const [showDiff, setShowDiff] = useState(false);
 
   const textareaRef = useRef<HTMLTextAreaElement>(null);
   const highlightRef = useRef<HTMLPreElement>(null);
   const gutterRef = useRef<HTMLDivElement>(null);
+
+  const hasUnsavedChanges = history.length > 0 && history[0].code !== draft.code;
+  const memoryDisplay = verdict?.peakMemoryMb ?? customOut?.peakMemoryMb;
 
   const handleScroll = () => {
     if (!textareaRef.current) return;
@@ -318,10 +277,10 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   };
 
   const handleSubmit = async () => {
-    if (!sessionId) return;
     setBusy("submit");
     setCompileError(null);
     setVerdict(null);
+    setShowDiff(false);
     setProgress(null);
     setStatusLine("Compiling…");
 
@@ -335,6 +294,15 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       });
       if (run.verdict) {
         setVerdict(run.verdict);
+        addRecord({
+          submittedAtSeconds: Math.floor(Date.now() / 1000),
+          status: run.verdict.status,
+          passedCount: run.verdict.passedCount,
+          totalCount: run.verdict.totalCount,
+          timeMs: run.verdict.timeMs,
+          peakMemoryMb: run.verdict.peakMemoryMb,
+          code: draft.code,
+        });
         if (run.verdict.status === "CE" && run.compileError) {
           setCompileError(run.compileError);
           setConsoleTab("output");
@@ -380,29 +348,55 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
     <div className="terminal-panel flex-1 flex flex-col gap-4 min-h-0 p-4">
       {/* Verdict stamp */}
       {verdict && (
-        <div className={`rounded-lg border px-5 py-3.5 flex items-center gap-4 flex-wrap font-mono ${VERDICT_PANEL[verdict.status]}`}>
-          <motion.div
-            initial={{ scale: 0.4, rotate: -18, opacity: 0 }}
-            animate={{ scale: 1, rotate: -6, opacity: 1 }}
-            transition={{ type: "spring", stiffness: 320, damping: 16 }}
-            className={`shrink-0 w-12 h-12 rounded-full border-2 border-current flex items-center justify-center ${VERDICT_TEXT[verdict.status]}`}
-          >
-            <span className="text-[13px] font-black tracking-tighter">{verdict.status}</span>
-          </motion.div>
-          <div className="flex items-center gap-3 flex-wrap">
-            <span className={`text-sm font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${verdict.status === "AC" ? "term-text-glow" : ""}`}>
-              {VERDICT_LABEL[verdict.status]}
-            </span>
-            {verdict.status !== "CE" && (
-              <span className="text-xs text-bb-term-text/60">
-                {verdict.passedCount} / {verdict.totalCount} tests
-                {verdict.failedTestIndex !== undefined && ` · failed on test ${verdict.failedTestIndex}`}
-                {verdict.status === "AC" && ` · ${verdict.timeMs} ms`}
+        <div className={`rounded-lg border corner-marks px-5 py-3.5 flex flex-col gap-3 font-mono ${VERDICT_PANEL[verdict.status]}`}>
+          <div className="flex items-center gap-4 flex-wrap">
+            <motion.div
+              initial={{ scale: 0.4, rotate: -18, opacity: 0 }}
+              animate={{ scale: 1, rotate: -6, opacity: 1 }}
+              transition={{ type: "spring", stiffness: 320, damping: 16 }}
+              className={`shrink-0 w-12 h-12 rounded-full border-2 border-current flex items-center justify-center ${VERDICT_TEXT[verdict.status]}`}
+            >
+              <span className="text-[13px] font-black tracking-tighter">{verdict.status}</span>
+            </motion.div>
+            <div className="flex items-center gap-3 flex-wrap">
+              <span className={`text-sm font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${verdict.status === "AC" ? "term-text-glow" : ""}`}>
+                {VERDICT_LABEL[verdict.status]}
               </span>
-            )}
+              {verdict.status !== "CE" && (
+                <span className="text-xs text-bb-term-text/60">
+                  {verdict.passedCount} / {verdict.totalCount} tests
+                  {verdict.failedTestIndex !== undefined && ` · failed on test ${verdict.failedTestIndex}`}
+                  {verdict.status === "AC" && ` · ${verdict.timeMs} ms`}
+                  {verdict.peakMemoryMb !== undefined && ` · ${verdict.peakMemoryMb} MB`}
+                </span>
+              )}
+              {verdict.status === "WA" && verdict.failedTest && (
+                <button
+                  onClick={() => setShowDiff((s) => !s)}
+                  className={`text-[10px] font-mono uppercase tracking-wider underline underline-offset-2 cursor-pointer ${VERDICT_TEXT[verdict.status]} opacity-80 hover:opacity-100 transition-opacity`}
+                >
+                  {showDiff ? "Hide Diff" : "View Diff"}
+                </button>
+              )}
+            </div>
+            <div className="ml-auto flex items-center gap-3">
+              <Barcode value={problemKey} height={10} className={`opacity-25 hidden md:block ${VERDICT_TEXT[verdict.status]}`} />
+              {verdict.status === "AC" && verdict.solveRecorded && (
+                <span className="text-[10px] uppercase tracking-wider text-bb-term-acc/80 whitespace-nowrap">solve recorded ✓</span>
+              )}
+            </div>
           </div>
-          {verdict.status === "AC" && verdict.solveRecorded && (
-            <span className="text-[10px] uppercase tracking-wider text-bb-term-acc/80 ml-auto">solve recorded ✓</span>
+
+          {verdict.totalCount > 0 && (
+            <TestGrid
+              tiles={tilesFromVerdict(verdict)}
+              failedIndex={verdict.failedTestIndex !== undefined ? verdict.failedTestIndex - 1 : undefined}
+              onSelectFailed={verdict.failedTest ? () => setShowDiff(true) : undefined}
+            />
+          )}
+
+          {showDiff && verdict.failedTest && (
+            <DiffViewer expected={verdict.failedTest.expected} actual={verdict.failedTest.actual} />
           )}
         </div>
       )}
@@ -411,7 +405,12 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       <div className="flex-1 min-h-[360px] relative rounded-lg border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono">
         <div className="h-9 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-4 select-none">
           <div className="flex items-center gap-3 min-w-0">
-            <span className="text-xs font-bold text-bb-term-text shrink-0">solution.cpp</span>
+            <span className="text-xs font-bold text-bb-term-text shrink-0 flex items-center gap-1.5">
+              solution.cpp
+              {hasUnsavedChanges && (
+                <span className="w-1.5 h-1.5 rounded-full bg-bb-term-acc2" title="Changed since your last submission" />
+              )}
+            </span>
             <Barcode value={problemKey} className="text-bb-term-text/25 shrink-0 hidden sm:block" />
           </div>
           <div className="flex items-center gap-3 shrink-0">
@@ -482,7 +481,10 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             C++17
           </span>
           <span className="tabular-nums">Ln {cursor.line}, Col {cursor.col}</span>
-          <span>{lines.length} lines · UTF-8</span>
+          <span className="flex items-center gap-3 tabular-nums">
+            {memoryDisplay !== undefined && <span>{memoryDisplay} MB</span>}
+            <span>{lines.length} lines · UTF-8</span>
+          </span>
         </div>
       </div>
 
@@ -495,6 +497,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 { id: "output" as const, label: "Output" },
                 ...(examples.length > 0 ? [{ id: "samples" as const, label: "Samples" }] : []),
                 { id: "stdin" as const, label: "Custom Input" },
+                { id: "history" as const, label: "History" },
               ]
             ).map((tab) => (
               <button
@@ -510,21 +513,29 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           </div>
           {statusLine && (
             <div className="flex items-center gap-2.5">
-              <div className="flex gap-[3px]">
-                {progress
-                  ? Array.from({ length: progress.total }).map((_, i) => (
-                      <span key={i} className={`w-2.5 h-1.5 rounded-[1px] ${i < progress.done ? "bg-bb-term-acc" : "bg-bb-term-line"}`} />
-                    ))
-                  : Array.from({ length: 6 }).map((_, i) => (
-                      <motion.span
-                        key={i}
-                        className="w-2.5 h-1.5 rounded-[1px] bg-bb-term-acc"
-                        animate={{ opacity: [0.15, 1, 0.15] }}
-                        transition={{ duration: 1, repeat: Infinity, delay: i * 0.12 }}
-                      />
-                    ))}
-              </div>
-              <span className="text-bb-term-acc text-[10px] font-mono">{statusLine}</span>
+              {progress ? (
+                <TestGrid tiles={tilesFromProgress(progress)} />
+              ) : (
+                <div className="flex gap-[3px]">
+                  {Array.from({ length: 6 }).map((_, i) => (
+                    <motion.span
+                      key={i}
+                      className="w-2.5 h-1.5 rounded-[1px] bg-bb-term-acc"
+                      animate={{ opacity: [0.15, 1, 0.15] }}
+                      transition={{ duration: 1, repeat: Infinity, delay: i * 0.12 }}
+                    />
+                  ))}
+                </div>
+              )}
+              <motion.span
+                key={statusLine}
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                className="text-bb-term-acc text-[10px] font-mono"
+              >
+                <span className="text-bb-term-text/30">$</span> {statusLine}
+                <span className="caret-inline text-bb-term-acc" />
+              </motion.span>
             </div>
           )}
         </div>
@@ -537,6 +548,14 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               placeholder="stdin for Run — optional"
               spellCheck={false}
               className="w-full h-full bg-transparent text-bb-term-text placeholder-bb-term-text/30 focus:outline-none resize-none"
+            />
+          ) : consoleTab === "history" ? (
+            <SubmissionHistoryPanel
+              history={history}
+              onRestore={(code) => {
+                setCode(code);
+                playSound?.("click");
+              }}
             />
           ) : consoleTab === "samples" ? (
             samples ? (
@@ -555,20 +574,16 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                       <span>
                         Sample {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
                       </span>
-                      <span className="text-bb-term-text/40">{s.timeMs} ms</span>
+                      <span className="text-bb-term-text/40 tabular-nums">
+                        {s.timeMs} ms{s.peakMemoryMb !== undefined ? ` · ${s.peakMemoryMb} MB` : ""}
+                      </span>
                     </div>
-                    {!s.pass && (
-                      <div className="grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bb-term-line text-[11px]">
-                        <div className="p-2.5">
-                          <span className="text-bb-term-text/40 block mb-1">expected</span>
-                          <pre className="text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.expected}</pre>
-                        </div>
-                        <div className="p-2.5">
-                          <span className="text-bb-term-text/40 block mb-1">your output</span>
-                          <pre className="text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual || "(empty)"}</pre>
-                        </div>
-                      </div>
-                    )}
+                    {!s.pass &&
+                      (s.outcome === "ok" ? (
+                        <DiffViewer expected={s.expected} actual={s.actual} />
+                      ) : (
+                        <pre className="p-2.5 text-[11px] text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual}</pre>
+                      ))}
                   </div>
                 ))}
               </div>
@@ -599,7 +614,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
 
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
-        {judgeable && sessionId && (
+        {judgeable && (
           <button
             onClick={handleSubmit}
             disabled={busy !== null}

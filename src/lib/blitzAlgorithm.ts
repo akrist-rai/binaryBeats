@@ -51,10 +51,3 @@ export function buildDuelTargets(ratingA: number, ratingB: number): number[] {
   const offsets = [-200, -100, 0, 100, 200];
   return dedupeBump(offsets.map((o) => snapRating(anchor + o)));
 }
-
-/** XP payout, continuous with LeetCodeDashboard's Easy/Medium/Hard = 80/150/300 scale. */
-export function xpForRating(rating: number): number {
-  return clamp(Math.round(rating / 10), 80, 350);
-}
-
-export const DUEL_VICTORY_BONUS_XP = 100;

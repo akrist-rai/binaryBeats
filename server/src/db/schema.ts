@@ -6,7 +6,8 @@
  *   tests          — gzip-compressed official test inputs/outputs (bytea)
  *   blitz_sessions — persistent sessions (replaces in-memory Map)
  *   ingest_meta    — tracks which parquet files have been ingested
- *   users          — account records (password and/or Google sign-in)
+ *   users          — account records (password and/or Google sign-in);
+ *                    lives in a separate Neon project, see db/authDb.ts
  */
 import {
   pgTable,
@@ -105,6 +106,8 @@ export const ingestMeta = pgTable("ingest_meta", {
 // ─── users ──────────────────────────────────────────────────────────────────
 // A user can have a password, a linked Google account, or both — whichever
 // they signed up with. At least one of passwordHash / googleId is expected.
+// Queried exclusively through db/authDb.ts (a separate Neon project) — never
+// through the `db` export above, which points at the dataset DB.
 
 export const users = pgTable(
   "users",

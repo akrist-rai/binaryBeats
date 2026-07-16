@@ -1,9 +1,10 @@
 import React from 'react';
 import { motion } from 'motion/react';
+import { RatingBadge } from './blitz/RatingBadge';
 
 interface NavbarProps {
   activeTab: string;
-  xp: number;
+  rating: number | null;
   username: string;
   onNavigate: (tab: string) => void;
   onLogout: () => void;
@@ -13,7 +14,7 @@ interface NavbarProps {
 }
 
 export const Navbar: React.FC<NavbarProps> = ({
-  activeTab, xp, username, onNavigate, onLogout, onHoverSound, theme, onToggleTheme,
+  activeTab, rating, username, onNavigate, onLogout, onHoverSound, theme, onToggleTheme,
 }) => {
   const tabs = [
     { id: 'home', n: '01', label: 'Problems' },
@@ -91,10 +92,9 @@ export const Navbar: React.FC<NavbarProps> = ({
             )}
           </button>
 
-          {/* XP counter */}
+          {/* Rating — real Codeforces rating from the linked handle, if any */}
           <div className="flex items-center gap-1.5 text-[13px] pill border border-bb-line-strong px-2.5 py-1">
-            <span className="text-bb-orange font-bold font-mono stat-num">{xp}</span>
-            <span className="text-bb-ink-faint text-[10px] font-bold uppercase tracking-wider">XP</span>
+            <RatingBadge rating={rating} />
           </div>
 
           {/* Divider */}

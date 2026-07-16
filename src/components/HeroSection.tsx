@@ -6,16 +6,14 @@ import { computeStreak, getWeekActivity, getRecent, countBySource } from '../lib
 import { RatingBadge } from './blitz/RatingBadge';
 
 interface HeroSectionProps {
-  xp: number;
   total: number;
   playSound: (t: 'click' | 'hover') => void;
   onNavigateTab: (tab: string) => void;
 }
 
-export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSectionProps) => {
+export const HeroSection = ({ total, playSound, onNavigateTab }: HeroSectionProps) => {
   const { handle: cfHandle, user: cfUser } = useCfHandle();
   const [ratingHistory, setRatingHistory] = useState<CfRatingChange[]>([]);
-  const [countdown, setCountdown] = useState('');
   const [streak] = useState(() => computeStreak());
   const [weekActivity] = useState(() => getWeekActivity());
   const [recentActivity] = useState(() => getRecent(4));
@@ -42,14 +40,6 @@ export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSection
     return last.newRating - last.oldRating;
   }, [ratingHistory]);
 
-  useEffect(() => {
-    const tick = () => {
-      const d = new Date(); d.setHours(24, 0, 0, 0);
-      const ms = Math.max(0, d.getTime() - Date.now());
-      setCountdown(`${String(Math.floor(ms/3.6e6)).padStart(2,'0')}:${String(Math.floor((ms%3.6e6)/6e4)).padStart(2,'0')}:${String(Math.floor((ms%6e4)/1e3)).padStart(2,'0')}`);
-    };
-    tick(); const id = setInterval(tick, 1000); return () => clearInterval(id);
-  }, []);
 
   return (
     <motion.div className="border-b border-bb-line pb-9 mb-9"
@@ -89,17 +79,6 @@ export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSection
                 <span className="text-bb-ink-faint group-hover:text-bb-orange transition-colors">→</span>
               </button>
           }
-        </div>
-      </motion.div>
-
-      <motion.div className="flex items-center justify-between mb-7 pt-5 dashed-rule"
-        variants={{ hidden:{opacity:0}, visible:{opacity:1} }}>
-        <div className="flex items-center gap-1.5 text-[10px] font-mono">
-          <span className="text-bb-ink-faint uppercase tracking-wider">Total XP</span><span className="text-bb-orange font-bold">{xp}</span>
-        </div>
-        <div className="flex items-center gap-1.5 text-[10px] font-mono">
-          <span className="text-bb-ink-faint uppercase tracking-wider">Daily reset in</span>
-          <span className="text-bb-ink font-bold tabular-nums">{countdown}</span>
         </div>
       </motion.div>
 
@@ -169,8 +148,8 @@ export const HeroSection = ({ xp, total, playSound, onNavigateTab }: HeroSection
               <div className="text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider mt-0.5">CF solved</div>
             </div>
             <div className="text-right">
-              <div className="text-2xl stat-num text-bb-orange">{xp}</div>
-              <div className="text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider mt-0.5">total XP</div>
+              <div className="text-2xl stat-num text-bb-orange">{cfUser?.maxRating ?? '—'}</div>
+              <div className="text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider mt-0.5">max rating</div>
             </div>
           </div>
         </motion.div>

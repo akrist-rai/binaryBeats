@@ -4,24 +4,25 @@ import { useCfHandle } from "../../hooks/useCfHandle";
 import { useSessionPolling } from "../../hooks/useSessionPolling";
 import { BlitzApiError, SESSION_ID_KEY, createSession, endSession } from "../../lib/blitzApi";
 import { problemKey } from "../../lib/codeforces";
-import { DUEL_VICTORY_BONUS_XP, xpForRating } from "../../lib/blitzAlgorithm";
 import { claimedBy, scores, type BlitzMode, type BlitzSession } from "../../lib/blitzSession";
 import { logSolve } from "../../lib/activityLog";
 import { HandleLinkCard } from "./HandleLinkCard";
 import { SessionSetup, type RivalInfo } from "./SessionSetup";
 import { ProblemCard } from "./ProblemCard";
-import { ProblemWorkspace } from "./ProblemWorkspace";
 import { Scoreboard } from "./Scoreboard";
 import { SessionTimer } from "./SessionTimer";
 import { RatingBadge } from "./RatingBadge";
+import { SolveWorkspace } from "../solve/SolveWorkspace";
+import { deriveClaim, deriveProgress, deriveSidebarItems, sessionProblemToSolvable } from "../solve/adapters";
 
 interface BlitzDuelViewProps {
   playSound: (type: "click" | "hover") => void;
-  onAddXp: (amount: number) => void;
 }
 
+// Solves are detected via polling — this tracks which ones we've already
+// logged for a session so a re-render/reload doesn't log the same solve twice.
 function awardedKey(sessionId: string): string {
-  return `bb_xp_awarded_${sessionId}`;
+  return `bb_awarded_${sessionId}`;
 }
 
 function readAwarded(sessionId: string): Set<string> {
@@ -67,7 +68,7 @@ const SessionBarcode: React.FC<{ value: string; className?: string }> = ({ value
   );
 };
 
-export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp }) => {
+export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound }) => {
   const { handle, user, status, error, linkHandle, unlinkHandle } = useCfHandle();
 
   const [sessionId, setSessionId] = useState<string | null>(() => localStorage.getItem(SESSION_ID_KEY));
@@ -92,8 +93,10 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
     }
   }, [notFound]);
 
-  // Award XP the moment a problem is won. Idempotent across polls/reloads via a
-  // small locally-persisted "already awarded" set, keyed by session id.
+  // Log the solve the moment a problem is won. Idempotent across polls/reloads
+  // via a small locally-persisted "already logged" set, keyed by session id.
+  // Nothing here touches rating — like Codeforces itself, practice (solo Blitz
+  // or a Duel) never moves your rating, only real rated contests do.
   useEffect(() => {
     if (!session) return;
     const me = session.handles[0];
@@ -105,7 +108,6 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
       const winner =
         session.mode === "duel" ? claimedBy(session, key) : session.results[me]?.[key] !== undefined ? me : null;
       if (winner === me && !awarded.has(key)) {
-        onAddXp(xpForRating(p.rating));
         logSolve({
           source: "codeforces",
           key,
@@ -118,32 +120,11 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
       }
     }
 
-    if (session.status === "finished" && session.mode === "duel") {
-      const sc = scores(session);
-      const rival = session.handles[1];
-      if ((sc[me] ?? 0) > (sc[rival] ?? 0) && !awarded.has("duel_bonus")) {
-        onAddXp(DUEL_VICTORY_BONUS_XP);
-        awarded.add("duel_bonus");
-        changed = true;
-      }
-    }
-
     if (changed) {
       playSound("click");
       writeAwarded(session.id, awarded);
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [session]);
-
-  const xpEarned = useMemo(() => {
-    if (!session) return 0;
-    const awarded = readAwarded(session.id);
-    let total = 0;
-    for (const p of session.problems) {
-      if (awarded.has(problemKey(p))) total += xpForRating(p.rating);
-    }
-    if (awarded.has("duel_bonus")) total += DUEL_VICTORY_BONUS_XP;
-    return total;
   }, [session]);
 
   const handleStart = useCallback(
@@ -322,7 +303,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                         <SessionTimer startedAtSeconds={session.createdAtSeconds} running />
                       </div>
 
-                      <Scoreboard session={session} xpEarned={xpEarned} />
+                      <Scoreboard session={session} />
 
                       {session.mode === "duel" && (
                         <button
@@ -343,15 +324,19 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                   </motion.div>
                 ) : (
                   <motion.div key="workspace" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="flex-1 flex flex-col">
-                    <ProblemWorkspace
-                      session={session}
-                      problem={session.problems[openProblemIndex]}
+                    <SolveWorkspace
+                      mode="session"
+                      problem={sessionProblemToSolvable(session.problems[openProblemIndex])}
                       orderIndex={openProblemIndex}
+                      sidebarItems={deriveSidebarItems(session)}
+                      progress={deriveProgress(session)}
+                      claim={deriveClaim(session, problemKey(session.problems[openProblemIndex]))}
                       pollState={pollState}
-                      playSound={playSound}
+                      sessionId={session.id}
                       onBack={() => setOpenProblemIndex(null)}
                       onSelectProblem={setOpenProblemIndex}
                       onAccepted={() => void refetch()}
+                      playSound={playSound}
                     />
                   </motion.div>
                 )}
@@ -375,7 +360,6 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                   </h3>
                 </>
               )}
-              <p className="text-sm font-mono font-bold text-bb-lime mt-2">+{xpEarned} XP</p>
               <FinishedRecap session={session} />
               <motion.button
                 whileHover={{ scale: 1.03 }}
@@ -409,7 +393,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
             >
               <h4 className="text-sm font-bold font-heading text-bb-ink mb-2">End this session?</h4>
               <p className="text-xs font-mono text-bb-ink-faint mb-5 leading-relaxed">
-                Progress on unsolved problems will be discarded. XP already earned stays.
+                Progress on unsolved problems will be discarded. Solved problems stay logged in your activity.
               </p>
               <div className="flex items-center gap-3">
                 <button

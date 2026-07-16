@@ -2,29 +2,35 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ACCESS PASS // LOGIN</title>
+<title>ACCESS TERMINAL // BINARY BEATS</title>
+<link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
-    --bg:#08090a;
-    --amber:#ff5c1f;
-    --amber-dim:#c94a1a;
+    --bg:#07070a;
+    --amber:#ff8a3d;
+    --amber-dim:#c9601a;
     --lime:#c8ff4d;
     --danger:#ff4d4d;
-    --success:#7be07a;
-    --red:#e0362b;
-    --vcr-blue:#1a2a6b;
-    --vcr-text:#cfd8ff;
+    --success:#8CFF9B;
+    --red:#c4241c;
+    --card:#eee6d2;
+    --card-2:#e4d9bf;
+    --ink:#161309;
+    --muted:#7c7360;
+    --line:rgba(22,19,9,0.18);
+    --steel:#2a2c28;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     background:
-      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.045) 1px, transparent 1px) 0 0/26px 26px,
+      radial-gradient(ellipse 900px 500px at 50% -8%, rgba(255,138,61,0.09), transparent 60%),
+      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0/28px 28px,
       var(--bg);
     color:#efeadd;
     font-family:'JetBrains Mono', monospace;
@@ -32,413 +38,437 @@
     display:flex;
     flex-direction:column;
     align-items:center;
-    justify-content:center;
-    padding:70px 16px;
+    padding:26px 16px 60px;
     overflow-x:hidden;
   }
 
-  .topbar{display:flex; align-items:center; gap:24px; margin-bottom:30px;}
-  .route{display:flex; align-items:center; gap:10px; font-size:11px; letter-spacing:.18em; color:#6d6f6a; text-transform:uppercase;}
-  .route .node{color:#efeadd;} .route .chev{color:var(--amber);}
-
-  .theme-toggle{
-    display:flex; align-items:center; gap:8px; font-size:10px; letter-spacing:.1em;
-    color:#6d6f6a; text-transform:uppercase; cursor:pointer; user-select:none;
-    background:none; border:1px solid #33352f; padding:6px 10px; border-radius:20px;
+  /* ── Split-flap marquee ─────────────────────────────────────────────── */
+  .marquee{
+    display:flex; align-items:center; justify-content:space-between; gap:16px;
+    width:min(760px, 100%); background:#0a0a0a; border:1px solid #201f1c;
+    border-radius:6px; padding:10px 14px; margin-bottom:22px;
+    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 20px 40px -25px rgba(0,0,0,0.8);
   }
-  .theme-toggle .track{width:28px; height:14px; border-radius:8px; background:#33352f; position:relative;}
-  .theme-toggle .knob{position:absolute; top:2px; left:2px; width:10px; height:10px; border-radius:50%; background:var(--amber); transition:left .15s ease;}
-  .theme-toggle.noir .knob{left:16px; background:var(--lime);}
-
-  .stage{
-    position:relative; width:min(1040px, 96vw); padding:60px 150px;
-    --paper:#efeadd; --paper-2:#e4ded0; --paper-3:#d9d2c0; --ink:#14140f;
-    --muted:#8f8a78; --line:#c9c3af; --stub-bg:#111211;
+  .marquee-label{font-size:9px; letter-spacing:.16em; color:#57544a; text-transform:uppercase; white-space:nowrap;}
+  .flap-row{display:flex; gap:2px;}
+  .flap-cell{
+    position:relative; display:flex; align-items:center; justify-content:center;
+    width:15px; height:22px; background:#111; border-radius:2px; overflow:hidden;
+    box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.6) inset;
+    perspective:60px; flex-shrink:0;
   }
-  .stage.noir{
-    --paper:#1b1a17; --paper-2:#242320; --paper-3:#2c2b27; --ink:#efdcc0;
-    --muted:#7d7669; --line:#3a3830; --stub-bg:#050505;
+  .flap-cell::after{content:""; position:absolute; left:0; right:0; top:50%; height:1px; background:rgba(0,0,0,0.65); z-index:2;}
+  .flap-inner{
+    font-family:'JetBrains Mono', monospace; font-weight:700; font-size:11px; color:var(--amber);
+    text-shadow:0 0 6px rgba(255,138,61,0.5);
   }
-
-  .cross{position:absolute; width:14px;height:14px; color:#3a3c37; font-size:14px; line-height:14px; pointer-events:none;}
-  .cross::before{content:"+";}
-  .cross.tl{top:0;left:0;} .cross.tr{top:0;right:0;} .cross.bl{bottom:0;left:0;} .cross.br{bottom:0;right:0;}
-  .coord{position:absolute; font-size:9px; letter-spacing:.08em; color:#4a4c46; pointer-events:none; white-space:nowrap;}
-  .coord.c1{top:10px;left:30px;} .coord.c2{bottom:10px;right:30px;}
-
-  .vcr-tag{
-    position:absolute; top:6px; right:60px; background:var(--vcr-blue); color:var(--vcr-text);
-    border:2px solid #3a4bb0; padding:8px 12px; font-size:9.5px; letter-spacing:.1em; line-height:1.7;
-    transform:rotate(-4deg); box-shadow:6px 6px 0 rgba(0,0,0,0.35); z-index:5;
+  .flap-cell.flip .flap-inner{ animation: flapRotate .2s linear; }
+  @keyframes flapRotate{
+    0%{ transform:rotateX(0);} 49%{ transform:rotateX(-90deg); } 50%{ transform:rotateX(90deg); } 100%{ transform:rotateX(0); }
   }
-  .vcr-tag .hl{background:var(--vcr-text); color:var(--vcr-blue); padding:0 3px;}
-  .vcr-tag .arrow{color:#8fa0ff;}
+  .clock-row{display:flex; gap:2px;}
+  .clock-row .flap-cell{width:12px; height:19px;}
+  .clock-row .flap-inner{font-size:9.5px; color:var(--lime); text-shadow:0 0 6px rgba(200,255,77,0.45);}
 
-  .stack-wrap{position:relative;}
-  .stack-wrap::before, .stack-wrap::after{content:""; position:absolute; inset:0; background:var(--paper-2); z-index:-1;}
-  .stack-wrap::before{transform:rotate(-2.2deg) translate(-6px, 8px);}
-  .stack-wrap::after{transform:rotate(2deg) translate(8px, 5px); background:var(--paper-3);}
+  /* ── 3D stage ───────────────────────────────────────────────────────── */
+  .deck{ perspective:1600px; width:min(880px, 100%); }
+  .tilt{
+    position:relative; width:100%; transform-style:preserve-3d;
+    transition:transform .12s ease-out;
+  }
+  .flip{
+    display:grid; width:100%; transform-style:preserve-3d;
+    transition:transform .65s cubic-bezier(.34,1.15,.4,1);
+  }
+  .flip.flipped{ transform:rotateY(180deg); }
 
-  .ticket{
-    position:relative; display:grid; grid-template-columns:1fr 200px; width:100%;
-    background:var(--paper); color:var(--ink);
-    box-shadow: 0 40px 80px -30px rgba(0,0,0,0.75);
+  .face{
+    grid-area:1/1;
+    backface-visibility:hidden;
+    background:linear-gradient(160deg, var(--card), var(--card-2));
+    color:var(--ink);
+    border-radius:14px;
+    box-shadow:
+      0 2px 0 rgba(255,255,255,0.5) inset,
+      0 60px 90px -35px rgba(0,0,0,0.85),
+      0 10px 30px -12px rgba(0,0,0,0.6);
+    position:relative;
     overflow:hidden;
+    padding:26px 28px 22px;
+  }
+  .face.back{ transform:rotateY(180deg); }
+
+  /* laminate sheen, follows tilt via JS-set custom props */
+  .sheen{
+    position:absolute; inset:0; pointer-events:none; z-index:5; border-radius:14px;
+    background:radial-gradient(circle at var(--sx,50%) var(--sy,20%), rgba(255,255,255,0.55), rgba(255,255,255,0.06) 32%, transparent 55%);
+    mix-blend-mode:overlay; opacity:.8;
   }
 
-  .vip-ribbon{
-    position:absolute; top:0; right:0; width:110px; height:110px; overflow:hidden; z-index:6; pointer-events:none;
+  /* grommet / hole punch */
+  .grommet{
+    position:absolute; top:18px; left:18px; width:20px; height:20px; border-radius:50%;
+    background:radial-gradient(circle at 35% 35%, #444 0%, #0d0d0d 60%, #000 100%);
+    box-shadow:0 1px 2px rgba(0,0,0,0.5), inset 0 0 0 2px #6b6b6b;
+    z-index:6;
   }
-  .vip-ribbon span{
-    position:absolute; top:22px; right:-30px; width:150px; text-align:center;
-    background:var(--red); color:#fff0ee; font-family:'Bebas Neue', sans-serif;
-    font-size:12px; letter-spacing:.2em; padding:4px 0; transform:rotate(45deg);
-    box-shadow:0 2px 6px rgba(0,0,0,0.3);
+  .face.back .grommet{ left:auto; right:18px; }
+
+  .member-ribbon{
+    position:absolute; top:14px; right:-38px; width:150px; text-align:center;
+    background:var(--red); color:#fff2ee; font-family:'Bebas Neue', sans-serif;
+    font-size:11px; letter-spacing:.24em; padding:4px 0; transform:rotate(40deg);
+    box-shadow:0 2px 6px rgba(0,0,0,0.35); z-index:6;
   }
+  .face.back .member-ribbon{ right:auto; left:-38px; transform:rotate(-40deg); background:var(--ink); color:var(--lime); }
 
-  .main{padding:34px 36px 28px; position:relative; border-right:2px dashed var(--line);}
-  .top-row{display:flex; justify-content:space-between; align-items:flex-start; margin-bottom:16px;}
-  .brand-group{display:flex; align-items:center; gap:10px;}
-  .brand{font-family:'Bebas Neue', sans-serif; font-size:15px; letter-spacing:.22em; color:var(--ink);}
-  .brand span{color:var(--amber-dim);}
-  .serial{font-size:10px; letter-spacing:.1em; color:var(--muted); text-align:right;}
-  .issued{font-size:9px; letter-spacing:.1em; color:var(--muted); margin-top:4px; text-align:right;}
-  .issued b{color:var(--red);}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; padding-left:34px; margin-bottom:14px;}
+  .brand{font-family:'Bebas Neue', sans-serif; font-size:13px; letter-spacing:.22em; color:var(--ink);}
+  .brand b{color:var(--red);}
+  .subline{font-size:8.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase; margin-top:2px;}
+  .serial-block{text-align:right; font-size:8.5px; letter-spacing:.08em; color:var(--muted);}
+  .serial-block b{color:var(--ink); font-size:9.5px;}
 
-  h1.title{font-family:'Bebas Neue', sans-serif; font-size:52px; line-height:.92; letter-spacing:.01em; margin:0 0 4px; color:var(--ink);}
-  .tagline{font-size:11px; letter-spacing:.06em; color:var(--muted); margin-bottom:22px;}
-  .tagline .prompt{color:var(--amber-dim);}
+  .card-body{display:grid; grid-template-columns:1fr 130px; gap:22px; align-items:start;}
 
-  .flightline{display:flex; align-items:center; gap:14px; margin-bottom:26px;}
-  .flightline .pt{font-family:'Bebas Neue', sans-serif; font-size:22px; letter-spacing:.06em;}
-  .flightline .track{flex:1; position:relative; height:1px; background:repeating-linear-gradient(90deg, var(--muted) 0 6px, transparent 6px 12px);}
-  .flightline .track .dot{position:absolute; top:-3px; width:7px; height:7px; border-radius:50%; background:var(--amber); animation:travel 3.2s linear infinite;}
-  @keyframes travel{0%{left:0%;} 100%{left:calc(100% - 7px);}}
+  h1.title{font-family:'Bebas Neue', sans-serif; font-size:38px; line-height:.95; margin:0 0 3px; padding-left:34px; letter-spacing:.01em;}
+  .tagline{font-size:10px; letter-spacing:.05em; color:var(--muted); margin-bottom:16px; padding-left:34px;}
+  .tagline .prompt{color:var(--red); font-weight:700;}
 
-  .status-line{font-size:11px; letter-spacing:.12em; color:var(--amber-dim); text-transform:uppercase; margin-bottom:24px; min-height:14px;}
-  .status-line .cursor{display:inline-block; width:6px; height:11px; background:var(--amber-dim); margin-left:2px; animation:blink 1s steps(1) infinite; vertical-align:middle;}
-  @keyframes blink{50%{opacity:0;}}
+  .status-row{display:flex; align-items:center; gap:8px; padding-left:34px; margin-bottom:16px;}
+  .status-dot{width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0;}
+  .status-dot.busy{background:var(--amber); animation:pulse 1s infinite;}
+  .status-dot.granted{background:var(--success);}
+  .status-dot.denied{background:var(--danger);}
+  @keyframes pulse{50%{opacity:.35;}}
+  .status-text{font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700;}
 
   form{margin:0;}
-  .fields{display:grid; grid-template-columns:1fr 1fr; gap:18px 26px; margin-bottom:22px;}
-  .field{grid-column:span 2;}
-  label{display:block; font-size:10px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:6px;}
-  input{
+  .fields{display:flex; flex-direction:column; gap:14px; margin-bottom:14px;}
+  .field label{display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-weight:700;}
+  .field input{
     width:100%; border:none; border-bottom:1.5px solid var(--ink); background:transparent;
-    font-family:'JetBrains Mono', monospace; font-size:15px; font-weight:500; color:var(--ink);
-    padding:4px 2px 8px; outline:none; letter-spacing:.03em;
+    font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:600; color:var(--ink);
+    padding:3px 2px 7px; outline:none; letter-spacing:.02em;
   }
-  input::placeholder{color:var(--muted); font-weight:400;}
-  input:focus{border-bottom-color:var(--amber-dim);}
-  input:disabled{opacity:.5;}
+  .field input::placeholder{color:var(--muted); font-weight:400;}
+  .field input:focus{border-bottom-color:var(--red);}
+  .field input:disabled{opacity:.5;}
   .field.shake input{animation:shake .4s ease;}
   @keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);}}
 
-  .toggle-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:24px;}
-  .stay{display:flex; align-items:center; gap:8px; font-size:11px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase; cursor:pointer; user-select:none;}
-  .stay input{appearance:none; width:14px; height:14px; border:1.5px solid var(--ink); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer;}
+  .toggle-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:10px;}
+  .stay{display:flex; align-items:center; gap:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; user-select:none;}
+  .stay input{appearance:none; width:12px; height:12px; border:1.5px solid var(--ink); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer;}
   .stay input:checked{background:var(--ink);}
-  .stay input:checked::after{content:""; width:7px; height:7px; background:var(--paper);}
-  .forgot{font-size:11px; letter-spacing:.06em; color:var(--amber-dim); text-decoration:none; border-bottom:1px dotted var(--amber-dim);}
+  .stay input:checked::after{content:""; width:6px; height:6px; background:var(--card);}
+  .forgot{color:var(--red); text-decoration:none; border-bottom:1px dotted var(--red); letter-spacing:.04em;}
+
+  .form-msg{font-size:9.5px; letter-spacing:.03em; color:var(--red); margin:-6px 0 12px; min-height:12px;}
 
   .cta{
-    width:100%; background:var(--ink); color:var(--paper); border:none;
-    font-family:'Bebas Neue', sans-serif; font-size:20px; letter-spacing:.14em;
-    padding:15px 18px; display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; transition:background .15s ease;
+    width:100%; background:var(--ink); color:var(--card); border:none;
+    font-family:'Bebas Neue', sans-serif; font-size:18px; letter-spacing:.14em;
+    padding:13px 16px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; transition:background .15s ease; border-radius:3px;
   }
-  .cta:hover{background:var(--amber-dim);}
+  .cta:hover{background:var(--red);}
   .cta:active{transform:translateY(1px);}
   .cta:disabled{cursor:wait; opacity:.7;}
 
-  .mode-switch{font-size:11px; letter-spacing:.06em; color:var(--muted); margin:-8px 0 20px;}
-  .mode-switch button{background:none; border:none; padding:0; margin:0; font:inherit; color:var(--amber-dim); cursor:pointer; text-decoration:underline dotted;}
-
-  .or-divider{display:flex; align-items:center; gap:10px; margin:18px 0; font-size:9.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;}
+  .or-divider{display:flex; align-items:center; gap:10px; margin:14px 0 10px; font-size:9px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;}
   .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:var(--line);}
-  .google-slot{display:flex; justify-content:center; min-height:40px; margin-bottom:6px;}
+  .google-slot{display:flex; justify-content:center; min-height:38px;}
 
-  .form-msg{font-size:10px; letter-spacing:.05em; color:var(--danger); margin:-10px 0 16px; min-height:12px; text-transform:none;}
-
-  .fine-print{margin-top:16px; font-size:9.5px; letter-spacing:.04em; color:var(--muted); line-height:1.5; text-transform:uppercase;}
-
-  .perf{position:absolute; top:0; bottom:0; right:-9px; width:18px; display:flex; flex-direction:column; justify-content:space-between; pointer-events:none;}
-  .perf div{width:18px; height:18px; border-radius:50%; background:var(--bg);}
-
-  .side{background:var(--stub-bg); color:var(--lime); padding:26px 20px 20px; display:flex; flex-direction:column; align-items:center; position:relative;}
-  .side-label{writing-mode:vertical-rl; transform:rotate(180deg); font-family:'Bebas Neue', sans-serif; font-size:20px; letter-spacing:.28em; color:var(--lime); margin-bottom:18px;}
-
-  .id-block{width:100%; border:1px solid #2a2c28; padding:10px; margin-bottom:16px; position:relative;}
+  /* photo swatch — laminated mugshot */
+  .id-photo{display:flex; flex-direction:column; align-items:center; gap:8px;}
   .swatch{
-    width:100%; aspect-ratio:1; border:1px solid #2a2c28; margin-bottom:8px; position:relative;
-    background:repeating-linear-gradient(45deg, #1c1d1a 0 2px, transparent 2px 5px), #0d0e0c;
-    background-size:cover; background-position:center;
-    cursor:pointer; overflow:hidden;
+    width:100%; aspect-ratio:3/4; border:2px solid var(--ink); position:relative;
+    background:repeating-linear-gradient(45deg, #d8cdb0 0 2px, transparent 2px 6px), var(--card-2);
+    background-size:cover; background-position:center; cursor:pointer; overflow:hidden; border-radius:2px;
   }
-  .swatch.has-photo{background-image:none;}
   .swatch canvas{width:100%; height:100%; display:block; image-rendering:pixelated;}
   .swatch .drop-label{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; font-size:8px; letter-spacing:.08em; color:#6f7a5e; text-transform:uppercase;
-    padding:6px; pointer-events:none;
+    text-align:center; font-size:7.5px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase;
+    padding:6px; pointer-events:none; font-weight:700;
   }
-  .swatch.dragging{outline:2px dashed var(--lime); outline-offset:-4px;}
+  .swatch.dragging{outline:2px dashed var(--red); outline-offset:-4px;}
   .swatch .clear-photo{
-    position:absolute; top:3px; right:3px; width:16px; height:16px; background:#0d0e0c;
-    border:1px solid var(--lime); color:var(--lime); font-size:10px; line-height:1;
-    display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2;
+    position:absolute; top:3px; right:3px; width:15px; height:15px; background:var(--ink);
+    border:none; color:var(--card); font-size:9px; line-height:1;
+    display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; border-radius:2px;
   }
-  .id-block .id-label{font-size:8.5px; letter-spacing:.1em; color:#6f7a5e; text-transform:uppercase;}
-  .id-block .id-value{font-size:12px; color:var(--lime); letter-spacing:.05em; margin-top:2px;}
+  .id-plate{width:100%; text-align:center; font-size:7.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase;}
+  .id-plate b{display:block; font-size:10px; color:var(--ink); font-family:'Bebas Neue',sans-serif; letter-spacing:.08em; margin-top:1px;}
 
-  .rules-pop{
-    position:absolute; top:0; left:calc(100% + 14px); width:190px;
-    background:#efeadd; color:#14140f; border:1px solid #14140f; padding:12px 14px;
-    font-size:9.5px; line-height:1.7; letter-spacing:.03em; text-transform:none;
-    opacity:0; transform:translateX(-6px); pointer-events:none;
-    transition:opacity .15s ease, transform .15s ease; z-index:10;
-    box-shadow:6px 6px 0 rgba(0,0,0,0.4);
+  /* tear/perforation strip between body and footer ephemera */
+  .perf-line{
+    position:relative; height:0; border-top:2px dashed rgba(22,19,9,0.22); margin:18px -28px 14px; padding-left:34px;
   }
-  .rules-pop b{font-family:'Bebas Neue', sans-serif; letter-spacing:.1em; font-size:12px; display:block; margin-bottom:6px;}
-  .id-block:hover .rules-pop, .id-block:focus-within .rules-pop{opacity:1; transform:translateX(0); pointer-events:auto;}
+  .perf-line::before, .perf-line::after{
+    content:""; position:absolute; top:-9px; width:18px; height:18px; border-radius:50%; background:var(--bg);
+  }
+  .perf-line::before{left:-9px;} .perf-line::after{right:-9px;}
 
-  .barcode{width:100%; height:70px; margin-bottom:10px;}
-  .code-num{font-size:11px; letter-spacing:.3em; color:var(--lime); margin-bottom:18px;}
+  .ephemera{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-left:34px;}
+  .ephemera-left{display:flex; flex-direction:column; gap:6px;}
+  .barcode{width:150px; height:34px;}
+  .code-num{font-size:9.5px; letter-spacing:.25em; color:var(--muted);}
+  .qr{width:56px; height:56px; flex-shrink:0;}
 
-  .timer-block{margin-top:auto; width:100%; text-align:center; border-top:1px dashed #2a2c28; padding-top:16px;}
-  .timer-label{font-size:8.5px; letter-spacing:.14em; color:#6f7a5e; text-transform:uppercase; margin-bottom:10px;}
-  .dial-wrap{position:relative; width:98px; height:98px; margin:0 auto;}
-  .dial-wrap svg{transform:rotate(-90deg);}
-  .timer{position:absolute; inset:0; display:flex; align-items:center; justify-content:center; font-family:'Bebas Neue', sans-serif; font-size:19px; letter-spacing:.06em; color:var(--amber);}
-  .timer.final{color:var(--danger); animation:blink 0.6s steps(1) infinite;}
+  .mode-tabs{
+    position:absolute; top:64px; right:-1px; display:flex; flex-direction:column; gap:10px; z-index:8;
+    transform:translateX(100%);
+  }
+  .mode-tab{
+    writing-mode:vertical-rl; background:var(--ink); color:var(--muted); border:none; cursor:pointer;
+    font-family:'Bebas Neue', sans-serif; letter-spacing:.2em; font-size:12px; padding:12px 7px;
+    border-radius:0 4px 4px 0; box-shadow:3px 3px 0 rgba(0,0,0,0.35); transition:color .15s ease, background .15s ease;
+  }
+  .mode-tab[aria-selected="true"]{ background:var(--red); color:#fff2ee; }
+  .mode-tab:hover{ color:#fff2ee; }
 
-  .callout{position:absolute; width:150px; font-size:9.5px; letter-spacing:.06em; line-height:1.5; color:#9a9c92; text-transform:uppercase; z-index:4;}
-  .callout .dot{position:absolute; width:7px; height:7px; border-radius:50%; background:var(--amber);}
-  .callout .leader{position:absolute; height:1px; background:#5a5c54; transform-origin:0 0;}
-  .callout-a{top:38px; left:-6px; text-align:right;}
-  .callout-a .dot{top:4px; right:-14px;}
-  .callout-a .leader{top:7px; right:-104px; width:96px; transform:rotate(6deg);}
-  .callout-b{top:130px; right:-6px;}
-  .callout-b .dot{top:4px; left:-14px;}
-  .callout-b .leader{top:7px; left:-118px; width:110px; transform:rotate(-8deg);}
-  .callout-c{bottom:120px; right:-14px;}
-  .callout-c .dot{top:4px; left:-14px;}
-  .callout-c .leader{top:7px; left:-90px; width:82px; transform:rotate(10deg);}
-  .callout-d{bottom:44px; left:-14px; text-align:right;}
-  .callout-d .dot{top:4px; right:-14px;}
-  .callout-d .leader{top:7px; right:-100px; width:92px; transform:rotate(-9deg);}
-  .callout-e{top:-8px; right:100px; text-align:right;}
-  .callout-e .dot{top:4px; right:-14px;}
-  .callout-e .leader{top:7px; right:-84px; width:76px; transform:rotate(-16deg);}
-
-  .iso{width:22px; height:22px; flex-shrink:0;}
-
+  /* stamp */
   .stamp{
     position:absolute; top:44%; left:50%; font-family:'Bebas Neue', sans-serif;
-    font-size:40px; letter-spacing:.12em; padding:10px 22px; border:5px solid currentColor;
-    border-radius:8px; transform:translate(-50%,-50%) rotate(-14deg) scale(1.5);
+    font-size:34px; letter-spacing:.12em; padding:8px 18px; border:5px solid currentColor;
+    border-radius:8px; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1.5);
     opacity:0; pointer-events:none; z-index:20; mix-blend-mode:multiply;
   }
   .stamp.show{animation:stampHit .35s cubic-bezier(.2,1.4,.4,1) forwards;}
   @keyframes stampHit{
-    0%{opacity:0; transform:translate(-50%,-50%) rotate(-14deg) scale(1.8);}
-    60%{opacity:1; transform:translate(-50%,-50%) rotate(-14deg) scale(.94);}
-    100%{opacity:1; transform:translate(-50%,-50%) rotate(-14deg) scale(1);}
+    0%{opacity:0; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1.8);}
+    60%{opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(.94);}
+    100%{opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1);}
   }
   .stamp.denied{color:var(--danger);}
-  .stamp.granted{color:var(--success);}
+  .stamp.granted{color:#2f7d3a;}
 
-  @media (max-width:1100px){
-    .callout{display:none;}
-    .stage{padding:60px 16px;}
-    .vcr-tag{right:16px;}
+  /* ── Flight schedule footer board ───────────────────────────────────── */
+  .schedule{
+    width:min(880px, 100%); margin-top:26px; background:#0a0a0a; border:1px solid #201f1c; border-radius:6px;
+    overflow:hidden; box-shadow:0 30px 60px -30px rgba(0,0,0,0.8);
   }
-  @media (max-width:720px){
-    .ticket{grid-template-columns:1fr;}
-    .main{border-right:none; border-bottom:2px dashed var(--line); padding:28px 22px;}
-    .perf{display:none;}
-    .side{flex-direction:row; flex-wrap:wrap; padding:20px 22px;}
-    .side-label{writing-mode:horizontal-tb; transform:none; margin-bottom:0; margin-right:auto; font-size:16px;}
-    .id-block{width:100px; order:3;}
-    .rules-pop{left:0; top:calc(100% + 8px); width:100%;}
-    .barcode{width:100%; order:4;}
-    .code-num{order:5;}
-    .timer-block{width:100%; order:6; margin-top:14px;}
-    h1.title{font-size:38px;}
-    .vcr-tag{position:static; transform:rotate(-1deg); display:inline-block; margin-bottom:14px;}
-    .stack-wrap::before,.stack-wrap::after{display:none;}
-    .stamp{font-size:26px;}
+  .schedule-head{
+    display:flex; align-items:center; justify-content:space-between; padding:9px 16px;
+    border-bottom:1px solid #201f1c; font-size:9px; letter-spacing:.18em; color:#57544a; text-transform:uppercase;
+  }
+  .schedule-row{
+    display:grid; grid-template-columns:1fr 90px 90px; gap:8px; padding:10px 16px;
+    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.08em; color:var(--amber);
+    border-bottom:1px solid #16150f;
+  }
+  .schedule-row:last-child{border-bottom:none;}
+  .schedule-row span:nth-child(2){color:var(--lime); text-align:center;}
+  .schedule-row span:nth-child(3){color:#8a877a; text-align:right;}
+  .schedule-row.active{color:#fff; text-shadow:0 0 8px rgba(255,138,61,0.6);}
+  .schedule-row.active span:nth-child(2){animation:pulse 1s infinite;}
+
+  @media (max-width:760px){
+    .card-body{grid-template-columns:1fr; }
+    .id-photo{flex-direction:row; align-items:center;}
+    .swatch{width:70px; aspect-ratio:3/4;}
+    .id-plate{text-align:left;}
+    .mode-tabs{ position:static; transform:none; flex-direction:row; margin:14px 0 0; justify-content:center; }
+    .mode-tab{ writing-mode:horizontal-tb; border-radius:4px; padding:8px 14px; box-shadow:none; }
+    h1.title{font-size:30px;}
+    .schedule-row{grid-template-columns:1fr 70px 70px; font-size:9.5px;}
   }
   @media (prefers-reduced-motion: reduce){
-    .track .dot{animation:none; left:0;}
-    .status-line .cursor{animation:none;}
-    .timer.final{animation:none;}
+    .flap-cell.flip .flap-inner{animation:none;}
+    .status-dot.busy{animation:none;}
     .field.shake input{animation:none;}
-    .stamp.show{animation:none; opacity:1; transform:translate(-50%,-50%) rotate(-14deg) scale(1);}
+    .stamp.show{animation:none; opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1);}
+    .flip{transition:none;}
   }
 </style>
 </head>
 <body>
 
-  <div class="topbar">
-    <div class="route">
-      <span class="node">SYSTEM</span>
-      <span class="chev">&raquo;</span>
-      <span class="node">ACCESS</span>
-      <span class="chev">&raquo;</span>
-      <span style="color:var(--amber);">LOGIN</span>
-    </div>
-    <button class="theme-toggle" id="themeToggle" type="button" aria-pressed="false">
-      <span class="track"><span class="knob"></span></span>
-      <span id="themeLabel">LIGHT</span>
-    </button>
+  <div class="marquee">
+    <span class="marquee-label">BB · TERM 01</span>
+    <div class="flap-row" id="flapStatus"></div>
+    <div class="clock-row" id="flapClock"></div>
   </div>
 
-  <div class="stage" id="stage">
-    <div class="cross tl"></div>
-    <div class="cross tr"></div>
-    <div class="cross bl"></div>
-    <div class="cross br"></div>
-    <div class="coord c1">40.7128N -74.0060W</div>
-    <div class="coord c2">GRID REF · SECTOR 07</div>
+  <div class="deck" id="deck">
+    <div class="tilt" id="tilt">
+      <div class="flip" id="flip">
 
-    <div class="vcr-tag">
-      <div><span class="arrow">&#9654;</span> <span class="hl">SET UP ACCESS</span></div>
-      <div>&#9654; SET CLOCK</div>
-      <div>&#9654; IDIOMA/LANGUE : ENGLISH</div>
-    </div>
+        <!-- ══ FRONT — SIGN IN ══ -->
+        <div class="face front">
+          <div class="sheen"></div>
+          <div class="grommet"></div>
+          <div class="member-ribbon">MEMBER</div>
 
-    <div class="callout callout-a">System entry point — one pass, one session<span class="leader"></span><span class="dot"></span></div>
-    <div class="callout callout-b">Scan at every checkpoint<span class="leader"></span><span class="dot"></span></div>
-    <div class="callout callout-c">Auto-resets on expiry<span class="leader"></span><span class="dot"></span></div>
-    <div class="callout callout-d">Authorizes this session only, not the account<span class="leader"></span><span class="dot"></span></div>
-    <div class="callout callout-e">Priority tier, marked on issue<span class="leader"></span><span class="dot"></span></div>
-
-    <div class="stack-wrap">
-      <div class="ticket" id="ticket">
-        <div class="vip-ribbon"><span>VIP</span></div>
-        <div class="stamp" id="stamp">ACCESS</div>
-        <div class="perf">
-          <div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div><div></div>
-        </div>
-
-        <div class="main">
-          <div class="top-row">
-            <div class="brand-group">
-              <svg class="iso" viewBox="0 0 40 40" fill="none">
-                <path d="M20 4 L34 12 L20 20 L6 12 Z" fill="var(--paper)" stroke="var(--ink)" stroke-width="1.4"/>
-                <path d="M6 12 L6 24 L20 32 L20 20 Z" fill="var(--paper-3)" stroke="var(--ink)" stroke-width="1.4"/>
-                <path d="M34 12 L34 24 L20 32 L20 20 Z" fill="#c94a1a" stroke="var(--ink)" stroke-width="1.4"/>
-              </svg>
-              <div class="brand">HERMES<span>//</span>TERMINAL</div>
-            </div>
+          <div class="card-top">
             <div>
-              <div class="serial">PASS NO.<br>AK-7749-XJ</div>
-              <div class="issued">ISSUED <b>07.16.2026</b></div>
+              <div class="brand">BINARY<b>//</b>BEATS</div>
+              <div class="subline">Access Terminal · Operative Card</div>
+            </div>
+            <div class="serial-block">SERIAL<br><b id="serialFront">BB-7749-XJ</b></div>
+          </div>
+
+          <h1 class="title">ACCESS CARD</h1>
+          <div class="tagline"><span class="prompt">&gt;</span> Present credentials to board the mainframe</div>
+
+          <div class="status-row">
+            <span class="status-dot" id="statusDotFront"></span>
+            <span class="status-text" id="statusTextFront">AWAITING INPUT</span>
+          </div>
+
+          <div class="card-body">
+            <form id="signinForm">
+              <div class="fields">
+                <div class="field" id="signinEmailField">
+                  <label for="signinEmail">Email</label>
+                  <input id="signinEmail" type="email" placeholder="you@example.com" autocomplete="username">
+                </div>
+                <div class="field" id="signinPassField">
+                  <label for="signinPass">Access code</label>
+                  <input id="signinPass" type="password" placeholder="••••••••••" autocomplete="current-password">
+                </div>
+              </div>
+
+              <div class="toggle-row">
+                <label class="stay">
+                  <input type="checkbox" id="signinRemember">
+                  Keep me checked in
+                </label>
+                <a class="forgot" href="#" title="Password reset isn't wired up yet">Lost your code?</a>
+              </div>
+
+              <div class="form-msg" id="signinMsg"></div>
+
+              <button class="cta" type="submit" id="signinCta">
+                <span id="signinCtaLabel">BOARD SYSTEM</span>
+                <span>&raquo;&raquo;</span>
+              </button>
+
+              <div class="or-divider" id="orDividerFront" style="display:none;">or</div>
+              <div class="google-slot" id="googleSlotFront" style="display:none;"></div>
+            </form>
+
+            <div class="id-photo">
+              <div class="swatch" id="swatchFront">
+                <span class="drop-label" id="dropLabelFront">DRAG PHOTO<br>OR CLICK TO SCAN</span>
+                <button type="button" class="clear-photo" id="clearPhotoFront" style="display:none;" aria-label="Remove photo">&times;</button>
+              </div>
+              <input type="file" id="fileInputFront" accept="image/*" style="display:none;">
+              <div class="id-plate">Operative ID<b>07749 / AK</b></div>
             </div>
           </div>
 
-          <h1 class="title">ACCESS PASS</h1>
-          <div class="tagline"><span class="prompt">&gt;</span> OPERATIVE MIND. SYSTEM ACCESS. READY TO EXECUTE _</div>
+          <div class="perf-line"></div>
 
-          <div class="flightline">
-            <span class="pt">GUEST</span>
-            <div class="track"><div class="dot"></div></div>
-            <span class="pt">MAINFRAME</span>
+          <div class="ephemera">
+            <div class="ephemera-left">
+              <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeFront"></svg>
+              <div class="code-num" id="codeNumFront">XJ7K9AK04</div>
+            </div>
+            <svg class="qr" viewBox="0 0 29 29" id="qrFront"></svg>
           </div>
 
-          <div class="status-line" id="statusLine">STATUS: AWAITING INPUT<span class="cursor"></span></div>
-
-          <form id="loginForm">
-            <div class="fields">
-              <div class="field" id="nameField" style="display:none;">
-                <label for="name">Display name</label>
-                <input id="name" type="text" placeholder="akrist" autocomplete="name">
-              </div>
-              <div class="field" id="userField">
-                <label for="user">Email</label>
-                <input id="user" type="email" placeholder="you@example.com" autocomplete="username">
-              </div>
-              <div class="field" id="passField">
-                <label for="pass">Access code (8+ characters)</label>
-                <input id="pass" type="password" placeholder="••••••••••" autocomplete="current-password">
-              </div>
-            </div>
-
-            <div class="toggle-row">
-              <label class="stay">
-                <input type="checkbox" id="remember">
-                Keep me checked in
-              </label>
-              <a class="forgot" href="#" title="Password reset isn't wired up yet">Lost your code?</a>
-            </div>
-
-            <div class="form-msg" id="formMsg"></div>
-
-            <button class="cta" type="submit" id="ctaBtn">
-              <span id="ctaLabel">BOARD SYSTEM</span>
-              <span>&raquo;&raquo;</span>
-            </button>
-
-            <div class="mode-switch" id="modeSwitch">
-              New operative? <button type="button" id="modeToggleBtn">Create access</button>
-            </div>
-
-            <div class="or-divider" id="orDivider" style="display:none;">or</div>
-            <div class="google-slot" id="googleSlot" style="display:none;"></div>
-
-            <div class="fine-print">
-              Non-transferable · valid for this session only<br>
-              Present this pass at every checkpoint · keep until exit
-            </div>
-          </form>
+          <div class="stamp" id="stampFront">ACCESS</div>
         </div>
 
-        <div class="side">
-          <div class="side-label">BOARDING&nbsp;PASS</div>
+        <!-- ══ BACK — SIGN UP ══ -->
+        <div class="face back">
+          <div class="sheen"></div>
+          <div class="grommet"></div>
+          <div class="member-ribbon">NEW</div>
 
-          <div class="id-block" tabindex="0">
-            <div class="swatch" id="swatch">
-              <span class="drop-label" id="dropLabel">DRAG PHOTO<br>OR CLICK TO SCAN</span>
-              <button type="button" class="clear-photo" id="clearPhoto" style="display:none;" aria-label="Remove photo">&times;</button>
+          <div class="card-top">
+            <div>
+              <div class="brand">BINARY<b>//</b>BEATS</div>
+              <div class="subline">New Member Application</div>
             </div>
-            <input type="file" id="fileInput" accept="image/*" style="display:none;">
-            <div class="id-label">Operative ID</div>
-            <div class="id-value">07749 / AK</div>
-            <div class="rules-pop">
-              <b>Club rules</b>
-              1. You do not share your access code.<br>
-              2. You do not share your access code.<br>
-              3. One session at a time.<br>
-              4. If this is your first login, you have to change your code.
+            <div class="serial-block">SERIAL<br><b id="serialBack">BB-0000-NEW</b></div>
+          </div>
+
+          <h1 class="title">REQUEST ACCESS</h1>
+          <div class="tagline"><span class="prompt">&gt;</span> Enroll a new operative into the system</div>
+
+          <div class="status-row">
+            <span class="status-dot" id="statusDotBack"></span>
+            <span class="status-text" id="statusTextBack">AWAITING INPUT</span>
+          </div>
+
+          <div class="card-body">
+            <form id="signupForm">
+              <div class="fields">
+                <div class="field" id="signupNameField">
+                  <label for="signupName">Display name</label>
+                  <input id="signupName" type="text" placeholder="akrist" autocomplete="name">
+                </div>
+                <div class="field" id="signupEmailField">
+                  <label for="signupEmail">Email</label>
+                  <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username">
+                </div>
+                <div class="field" id="signupPassField">
+                  <label for="signupPass">Access code (8+ characters)</label>
+                  <input id="signupPass" type="password" placeholder="••••••••••" autocomplete="new-password">
+                </div>
+              </div>
+
+              <div class="form-msg" id="signupMsg"></div>
+
+              <button class="cta" type="submit" id="signupCta">
+                <span id="signupCtaLabel">REQUEST ACCESS</span>
+                <span>&raquo;&raquo;</span>
+              </button>
+
+              <div class="or-divider" id="orDividerBack" style="display:none;">or</div>
+              <div class="google-slot" id="googleSlotBack" style="display:none;"></div>
+            </form>
+
+            <div class="id-photo">
+              <div class="swatch" id="swatchBack">
+                <span class="drop-label" id="dropLabelBack">DRAG PHOTO<br>OR CLICK TO SCAN</span>
+                <button type="button" class="clear-photo" id="clearPhotoBack" style="display:none;" aria-label="Remove photo">&times;</button>
+              </div>
+              <input type="file" id="fileInputBack" accept="image/*" style="display:none;">
+              <div class="id-plate">Operative ID<b>PENDING</b></div>
             </div>
           </div>
 
-          <svg class="barcode" viewBox="0 0 160 70" preserveAspectRatio="none" id="barcodeSvg"></svg>
-          <div class="code-num">XJ7K9AK04</div>
+          <div class="perf-line"></div>
 
-          <div class="timer-block">
-            <div class="timer-label">Gate closes in</div>
-            <div class="dial-wrap">
-              <svg width="98" height="98" viewBox="0 0 98 98">
-                <circle cx="49" cy="49" r="42" fill="none" stroke="#2a2c28" stroke-width="6"/>
-                <circle id="dialRing" cx="49" cy="49" r="42" fill="none" stroke="#ff5c1f" stroke-width="6"
-                  stroke-dasharray="263.9" stroke-dashoffset="0" stroke-linecap="round"/>
-              </svg>
-              <div class="timer" id="timer">05:00</div>
+          <div class="ephemera">
+            <div class="ephemera-left">
+              <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeBack"></svg>
+              <div class="code-num" id="codeNumBack">NEW-APPLICANT</div>
             </div>
+            <svg class="qr" viewBox="0 0 29 29" id="qrBack"></svg>
           </div>
+
+          <div class="stamp" id="stampBack">ACCESS</div>
         </div>
+
+      </div>
+
+      <div class="mode-tabs" role="tablist">
+        <button type="button" role="tab" class="mode-tab" id="tabSignIn" aria-selected="true">SIGN IN</button>
+        <button type="button" role="tab" class="mode-tab" id="tabSignUp" aria-selected="false">SIGN UP</button>
       </div>
     </div>
+  </div>
+
+  <div class="schedule">
+    <div class="schedule-head"><span>Destination</span><span>Departures Board</span></div>
+    <div class="schedule-row active" id="scheduleActiveRow"><span>MAINFRAME</span><span id="scheduleStatus">BOARDING</span><span id="scheduleTimer">05:00</span></div>
+    <div class="schedule-row"><span>SANDBOX ENV</span><span>DELAYED</span><span>12:45</span></div>
+    <div class="schedule-row"><span>ARCHIVE</span><span>CLOSED</span><span>--:--</span></div>
+    <div class="schedule-row"><span>BLITZ ARENA</span><span>ON TIME</span><span>21:00</span></div>
   </div>
 
 <script type="module">
   import { API_ORIGIN } from './src/lib/apiBase.ts';
 
+  // ── audio (unchanged tiny synth beeps for tactile feedback) ─────────────
   var audioCtx = null;
   function ctx(){ if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } return audioCtx; }
-
   function playBeep(freq, dur, type){
     try{
       var ac = ctx();
@@ -452,7 +482,7 @@
       osc.start(); osc.stop(ac.currentTime + dur);
     }catch(e){}
   }
-
+  function playFlap(){ playBeep(600 + Math.random()*300, 0.02, 'square'); }
   function playStamp(){
     try{
       var ac = ctx();
@@ -479,161 +509,176 @@
     }catch(e){}
   }
 
-  (function(){
-    var svg = document.getElementById('barcodeSvg');
-    var x = 0;
-    var ns = "http://www.w3.org/2000/svg";
-    while(x < 160){
-      var w = Math.random() > 0.75 ? 3 : 1;
-      if(Math.random() > 0.5){
-        var rect = document.createElementNS(ns, 'rect');
-        rect.setAttribute('x', x); rect.setAttribute('y', 0);
-        rect.setAttribute('width', w); rect.setAttribute('height', 70);
-        rect.setAttribute('fill', '#c8ff4d');
-        svg.appendChild(rect);
-      }
-      x += w + 1;
-    }
-  })();
-
+  // ── split-flap board ─────────────────────────────────────────────────
   var reduce = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-  var line = document.getElementById('statusLine');
-  var chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
-  var statusCycleTimer = null;
-  var statusMsgs = ["STATUS: AWAITING INPUT", "STATUS: VERIFYING CREDENTIALS", "STATUS: ROUTE CLEAR"];
-  var msgIndex = 0;
-
-  function scrambleTo(target, done, beep){
-    var frame = 0;
-    var frames = reduce ? 1 : 8;
-    var iv = setInterval(function(){
-      frame++;
-      var out = "";
-      for(var c = 0; c < target.length; c++){
-        if(target[c] === " " || target[c] === ":" ){ out += target[c]; continue; }
-        if(frame >= frames || Math.random() < frame/frames){ out += target[c]; }
-        else { out += chars[Math.floor(Math.random()*chars.length)]; }
+  function makeFlapBoard(container, width){
+    var cells = [];
+    for(var i=0;i<width;i++){
+      var cell = document.createElement('span');
+      cell.className = 'flap-cell';
+      var inner = document.createElement('span');
+      inner.className = 'flap-inner';
+      inner.textContent = ' ';
+      cell.appendChild(inner);
+      container.appendChild(cell);
+      cells.push({ cell: cell, inner: inner, current: ' ' });
+    }
+    function setText(text, beep){
+      var padded = (text.toUpperCase() + Array(width+1).join(' ')).slice(0, width);
+      for(var i=0;i<width;i++){
+        var ch = padded[i];
+        var c = cells[i];
+        if(c.current === ch) continue;
+        c.current = ch;
+        if(reduce){ c.inner.textContent = ch === ' ' ? ' ' : ch; continue; }
+        c.cell.classList.add('flip');
+        if(beep && i % 3 === 0) playFlap();
+        (function(cRef, chRef){
+          setTimeout(function(){ cRef.inner.textContent = chRef === ' ' ? ' ' : chRef; }, 95);
+          setTimeout(function(){ cRef.cell.classList.remove('flip'); }, 200);
+        })(c, ch);
       }
-      line.innerHTML = out + '<span class="cursor"></span>';
-      if(beep && frame % 2 === 0) playBeep(1200 + Math.random()*400, 0.02, 'square');
-      if(frame >= frames){ clearInterval(iv); if(done) done(); }
-    }, 30);
+    }
+    return { setText: setText };
   }
 
+  var statusBoard = makeFlapBoard(document.getElementById('flapStatus'), 24);
+  var clockBoard = makeFlapBoard(document.getElementById('flapClock'), 8);
+
+  var statusMsgs = ['STATUS: AWAITING INPUT', 'STATUS: SYSTEM READY', 'STATUS: ROUTE CLEAR'];
+  var msgIndex = 0;
+  var idleTimer = null;
   function idleCycle(){
     msgIndex = (msgIndex + 1) % statusMsgs.length;
-    scrambleTo(statusMsgs[msgIndex], function(){ statusCycleTimer = setTimeout(idleCycle, 3200); }, false);
+    statusBoard.setText(statusMsgs[msgIndex], true);
+    idleTimer = setTimeout(idleCycle, 3600);
   }
-  statusCycleTimer = setTimeout(idleCycle, 3200);
+  statusBoard.setText(statusMsgs[0], false);
+  idleTimer = setTimeout(idleCycle, 3600);
 
-  (function(){
-    var el = document.getElementById('timer');
-    var ring = document.getElementById('dialRing');
-    var circumference = 263.9;
-    var full = 5*60;
-    var total = full;
+  function setMarquee(text){
+    if(idleTimer) clearTimeout(idleTimer);
+    statusBoard.setText(text, true);
+  }
+  function resumeMarqueeIdle(){
+    idleTimer = setTimeout(idleCycle, 2600);
+  }
+
+  (function tickClock(){
     function render(){
-      var m = Math.floor(total/60);
-      var s = total%60;
-      var frac = total/full;
-      ring.setAttribute('stroke-dashoffset', circumference * (1-frac));
-      if(total <= 30){
-        el.classList.add('final'); el.textContent = "FINAL";
-        ring.setAttribute('stroke', '#ff4d4d');
-      } else {
-        el.classList.remove('final');
-        el.textContent = (m<10?"0":"")+m+":"+(s<10?"0":"")+s;
-        ring.setAttribute('stroke', '#ff5c1f');
-      }
-      if(total <= 0){ total = full; return; }
-      total--;
+      var d = new Date();
+      var s = (d.getHours()<10?'0':'')+d.getHours()+':'+(d.getMinutes()<10?'0':'')+d.getMinutes()+':'+(d.getSeconds()<10?'0':'')+d.getSeconds();
+      clockBoard.setText(s, false);
     }
     render();
     setInterval(render, 1000);
   })();
 
-  var toggle = document.getElementById('themeToggle');
-  var stage = document.getElementById('stage');
-  var themeLabel = document.getElementById('themeLabel');
-  toggle.addEventListener('click', function(){
-    var noir = stage.classList.toggle('noir');
-    toggle.classList.toggle('noir', noir);
-    toggle.setAttribute('aria-pressed', String(noir));
-    themeLabel.textContent = noir ? 'NOIR' : 'LIGHT';
-    playBeep(noir ? 300 : 700, 0.05, 'triangle');
-  });
+  // ── barcode + fake QR (decorative, deterministic per seed) ─────────────
+  function seedRand(seed){
+    var s = 0;
+    for(var i=0;i<seed.length;i++) s = (s*31 + seed.charCodeAt(i)) >>> 0;
+    return function(){ s = (s*1103515245 + 12345) >>> 0; return (s>>>16)/65536; };
+  }
+  function buildBarcode(svg, seed){
+    var rand = seedRand(seed);
+    var ns = "http://www.w3.org/2000/svg";
+    var x = 0;
+    while(x < 160){
+      var w = rand() > 0.75 ? 3 : 1;
+      if(rand() > 0.5){
+        var rect = document.createElementNS(ns, 'rect');
+        rect.setAttribute('x', x); rect.setAttribute('y', 2);
+        rect.setAttribute('width', w); rect.setAttribute('height', 32);
+        rect.setAttribute('fill', '#161309');
+        svg.appendChild(rect);
+      }
+      x += w + 1;
+    }
+  }
+  function buildFakeQr(svg, seed){
+    var rand = seedRand(seed);
+    var n = 29;
+    var ns = "http://www.w3.org/2000/svg";
+    var grid = [];
+    for(var r=0;r<n;r++){ grid.push(new Array(n).fill(0)); }
+    function stampFinder(gx, gy){
+      for(var r=0;r<7;r++){
+        for(var c=0;c<7;c++){
+          var onBorder = r===0||r===6||c===0||c===6;
+          var onCore = r>=2&&r<=4&&c>=2&&c<=4;
+          grid[gy+r][gx+c] = (onBorder||onCore) ? 1 : 0;
+        }
+      }
+    }
+    stampFinder(0,0); stampFinder(n-7,0); stampFinder(0,n-7);
+    for(var r=0;r<n;r++){
+      for(var c=0;c<n;c++){
+        if(grid[r][c] !== 0) continue;
+        var inFinderZone = (r<8&&c<8)||(r<8&&c>=n-8)||(r>=n-8&&c<8);
+        if(inFinderZone) continue;
+        grid[r][c] = rand() > 0.56 ? 1 : 0;
+      }
+    }
+    var frag = document.createDocumentFragment();
+    for(var r=0;r<n;r++){
+      for(var c=0;c<n;c++){
+        if(!grid[r][c]) continue;
+        var rect = document.createElementNS(ns, 'rect');
+        rect.setAttribute('x', c); rect.setAttribute('y', r);
+        rect.setAttribute('width', 1); rect.setAttribute('height', 1);
+        rect.setAttribute('fill', '#161309');
+        frag.appendChild(rect);
+      }
+    }
+    svg.appendChild(frag);
+  }
+  var frontSeed = 'BB-' + Math.floor(Math.random()*1e9).toString(36).toUpperCase();
+  buildBarcode(document.getElementById('barcodeFront'), frontSeed);
+  buildFakeQr(document.getElementById('qrFront'), frontSeed);
+  buildBarcode(document.getElementById('barcodeBack'), 'NEW-' + frontSeed);
+  buildFakeQr(document.getElementById('qrBack'), 'NEW-' + frontSeed);
+  document.getElementById('serialFront').textContent = frontSeed;
+  document.getElementById('codeNumFront').textContent = frontSeed;
 
-  var form = document.getElementById('loginForm');
-  var userField = document.getElementById('userField');
-  var passField = document.getElementById('passField');
-  var nameField = document.getElementById('nameField');
-  var passInput = document.getElementById('pass');
-  var userInput = document.getElementById('user');
-  var nameInput = document.getElementById('name');
-  var ctaBtn = document.getElementById('ctaBtn');
-  var ctaLabel = document.getElementById('ctaLabel');
-  var stamp = document.getElementById('stamp');
-  var formMsg = document.getElementById('formMsg');
-  var modeSwitch = document.getElementById('modeSwitch');
-
-  var mode = 'login';
-
-  function bindModeToggleBtn(){
-    document.getElementById('modeToggleBtn').addEventListener('click', function(){
-      setMode(mode === 'register' ? 'login' : 'register');
+  // ── 3D tilt on mouse move ───────────────────────────────────────────────
+  var deck = document.getElementById('deck');
+  var tiltEl = document.getElementById('tilt');
+  var sheens = document.querySelectorAll('.sheen');
+  if(!reduce){
+    deck.addEventListener('pointermove', function(e){
+      var rect = deck.getBoundingClientRect();
+      var px = (e.clientX - rect.left) / rect.width;
+      var py = (e.clientY - rect.top) / rect.height;
+      var rx = (0.5 - py) * 14;
+      var ry = (px - 0.5) * 18;
+      tiltEl.style.transform = 'rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
+      sheens.forEach(function(s){
+        s.style.setProperty('--sx', (px*100).toFixed(1) + '%');
+        s.style.setProperty('--sy', (py*100).toFixed(1) + '%');
+      });
+    });
+    deck.addEventListener('pointerleave', function(){
+      tiltEl.style.transform = '';
     });
   }
 
-  function setMode(next){
-    mode = next;
-    var isRegister = mode === 'register';
-    nameField.style.display = isRegister ? '' : 'none';
-    passInput.setAttribute('autocomplete', isRegister ? 'new-password' : 'current-password');
-    ctaLabel.textContent = isRegister ? 'REQUEST ACCESS' : 'BOARD SYSTEM';
-    modeSwitch.innerHTML = isRegister
-      ? 'Already an operative? <button type="button" id="modeToggleBtn">Sign in</button>'
-      : 'New operative? <button type="button" id="modeToggleBtn">Create access</button>';
-    bindModeToggleBtn();
-    formMsg.textContent = '';
-  }
-  bindModeToggleBtn();
+  // ── face flip (sign in <-> sign up) ─────────────────────────────────────
+  var flipEl = document.getElementById('flip');
+  var tabSignIn = document.getElementById('tabSignIn');
+  var tabSignUp = document.getElementById('tabSignUp');
 
-  function showStamp(kind, text){
-    stamp.className = 'stamp show ' + kind;
-    stamp.textContent = text;
-    playStamp();
-    setTimeout(function(){ stamp.className = 'stamp'; }, 2400);
+  function setFace(face){
+    var isBack = face === 'signup';
+    flipEl.classList.toggle('flipped', isBack);
+    tabSignIn.setAttribute('aria-selected', String(!isBack));
+    tabSignUp.setAttribute('aria-selected', String(isBack));
+    playBeep(isBack ? 340 : 620, 0.05, 'triangle');
   }
+  tabSignUp.addEventListener('click', function(){ setFace('signup'); });
+  tabSignIn.addEventListener('click', function(){ setFace('signin'); });
 
-  function setFormDisabled(disabled){
-    ctaBtn.disabled = disabled;
-    userInput.disabled = disabled;
-    passInput.disabled = disabled;
-    nameInput.disabled = disabled;
-  }
-
-  function shakeFields(fields){
-    fields.forEach(function(f){ f.classList.add('shake'); });
-    setTimeout(function(){ fields.forEach(function(f){ f.classList.remove('shake'); }); }, 400);
-  }
-
-  function onDenied(message, fields){
-    setFormDisabled(false);
-    formMsg.textContent = message || 'Access denied.';
-    scrambleTo('STATUS: ACCESS DENIED', function(){
-      showStamp('denied', 'DENIED');
-      if(fields && fields.length) shakeFields(fields);
-      setTimeout(function(){ idleCycle(); }, 2600);
-    });
-  }
-
-  function onGranted(){
-    scrambleTo('STATUS: ACCESS GRANTED', function(){
-      showStamp('granted', 'GRANTED');
-      setTimeout(function(){ window.location.href = '/'; }, 900);
-    });
-  }
-
+  // ── shared auth plumbing ─────────────────────────────────────────────────
   function postJson(url, payload){
     return fetch(url, {
       method: 'POST',
@@ -641,83 +686,158 @@
       credentials: 'include',
       body: JSON.stringify(payload)
     }).then(function(res){
-      return res.json().catch(function(){ return {}; }).then(function(data){
-        return { ok: res.ok, data: data };
-      });
+      return res.json().catch(function(){ return {}; }).then(function(data){ return { ok: res.ok, data: data }; });
     }).catch(function(){
       return { ok: false, data: { message: 'Could not reach the server. Is it running?' } };
     });
   }
 
-  form.addEventListener('submit', function(e){
+  function shakeFields(fields){
+    fields.forEach(function(f){ f.classList.add('shake'); });
+    setTimeout(function(){ fields.forEach(function(f){ f.classList.remove('shake'); }); }, 400);
+  }
+
+  function showStamp(stampEl, kind, text){
+    stampEl.className = 'stamp show ' + kind;
+    stampEl.textContent = text;
+    playStamp();
+    setTimeout(function(){ stampEl.className = 'stamp'; }, 2400);
+  }
+
+  function makeStatusSetter(dotEl, textEl){
+    return function(state, label){
+      dotEl.className = 'status-dot' + (state ? ' ' + state : '');
+      textEl.textContent = label;
+    };
+  }
+  var setStatusFront = makeStatusSetter(document.getElementById('statusDotFront'), document.getElementById('statusTextFront'));
+  var setStatusBack = makeStatusSetter(document.getElementById('statusDotBack'), document.getElementById('statusTextBack'));
+
+  function onGranted(setStatus, stampEl){
+    setMarquee('STATUS: ACCESS GRANTED');
+    setStatus('granted', 'ACCESS GRANTED');
+    document.getElementById('scheduleStatus').textContent = 'BOARDING NOW';
+    showStamp(stampEl, 'granted', 'GRANTED');
+    setTimeout(function(){ window.location.href = '/'; }, 900);
+  }
+
+  function onDenied(setStatus, stampEl, message, fields){
+    setMarquee('STATUS: ACCESS DENIED');
+    setStatus('denied', message || 'ACCESS DENIED');
+    showStamp(stampEl, 'denied', 'DENIED');
+    if(fields && fields.length) shakeFields(fields);
+    setTimeout(function(){ setStatus('', 'AWAITING INPUT'); resumeMarqueeIdle(); }, 2600);
+  }
+
+  // ── sign in ───────────────────────────────────────────────────────────
+  var signinForm = document.getElementById('signinForm');
+  var signinEmailField = document.getElementById('signinEmailField');
+  var signinPassField = document.getElementById('signinPassField');
+  var signinEmail = document.getElementById('signinEmail');
+  var signinPass = document.getElementById('signinPass');
+  var signinCta = document.getElementById('signinCta');
+  var signinCtaLabel = document.getElementById('signinCtaLabel');
+  var signinMsg = document.getElementById('signinMsg');
+  var stampFront = document.getElementById('stampFront');
+
+  signinForm.addEventListener('submit', function(e){
     e.preventDefault();
-    if(statusCycleTimer) clearTimeout(statusCycleTimer);
-    formMsg.textContent = '';
+    signinMsg.textContent = '';
+    var email = signinEmail.value.trim();
+    var pass = signinPass.value;
 
-    var email = userInput.value.trim();
-    var pass = passInput.value;
-    var name = nameInput.value.trim();
+    if(!email){ return onDenied(setStatusFront, stampFront, 'Enter your email.', [signinEmailField]); }
+    if(!pass){ return onDenied(setStatusFront, stampFront, 'Enter your access code.', [signinPassField]); }
 
-    if(!email){ return onDenied('Enter your email.', [userField]); }
-    if(pass.length < (mode === 'register' ? 8 : 1)){
-      return onDenied('Access code must be at least 8 characters.', [passField]);
-    }
-    if(mode === 'register' && !name){ return onDenied('Enter a display name.', [nameField]); }
+    signinCta.disabled = true; signinEmail.disabled = true; signinPass.disabled = true;
+    signinCtaLabel.textContent = 'VERIFYING';
+    setMarquee('STATUS: VERIFYING CREDENTIALS');
+    setStatusFront('busy', 'VERIFYING');
 
-    setFormDisabled(true);
-    ctaLabel.textContent = 'VERIFYING';
+    postJson(API_ORIGIN + '/api/auth/login', { email: email, password: pass }).then(function(result){
+      signinCta.disabled = false; signinEmail.disabled = false; signinPass.disabled = false;
+      signinCtaLabel.textContent = 'BOARD SYSTEM';
+      if(result.ok){ onGranted(setStatusFront, stampFront); }
+      else {
+        signinMsg.textContent = (result.data && result.data.message) || 'Access denied.';
+        onDenied(setStatusFront, stampFront, null, [signinEmailField, signinPassField]);
+      }
+    });
+  });
 
-    var endpoint = API_ORIGIN + (mode === 'register' ? '/api/auth/register' : '/api/auth/login');
-    var payload = mode === 'register' ? { email: email, password: pass, name: name } : { email: email, password: pass };
+  // ── sign up ───────────────────────────────────────────────────────────
+  var signupForm = document.getElementById('signupForm');
+  var signupNameField = document.getElementById('signupNameField');
+  var signupEmailField = document.getElementById('signupEmailField');
+  var signupPassField = document.getElementById('signupPassField');
+  var signupName = document.getElementById('signupName');
+  var signupEmail = document.getElementById('signupEmail');
+  var signupPass = document.getElementById('signupPass');
+  var signupCta = document.getElementById('signupCta');
+  var signupCtaLabel = document.getElementById('signupCtaLabel');
+  var signupMsg = document.getElementById('signupMsg');
+  var stampBack = document.getElementById('stampBack');
 
-    scrambleTo('STATUS: VERIFYING CREDENTIALS', function(){
-      postJson(endpoint, payload).then(function(result){
-        if(result.ok){ onGranted(); }
-        else { onDenied(result.data && result.data.message, [userField, passField]); }
-      });
-    }, true);
+  signupForm.addEventListener('submit', function(e){
+    e.preventDefault();
+    signupMsg.textContent = '';
+    var name = signupName.value.trim();
+    var email = signupEmail.value.trim();
+    var pass = signupPass.value;
+
+    if(!name){ return onDenied(setStatusBack, stampBack, 'Enter a display name.', [signupNameField]); }
+    if(!email){ return onDenied(setStatusBack, stampBack, 'Enter your email.', [signupEmailField]); }
+    if(pass.length < 8){ return onDenied(setStatusBack, stampBack, 'Access code must be at least 8 characters.', [signupPassField]); }
+
+    signupCta.disabled = true; signupName.disabled = true; signupEmail.disabled = true; signupPass.disabled = true;
+    signupCtaLabel.textContent = 'PROCESSING';
+    setMarquee('STATUS: PROCESSING APPLICATION');
+    setStatusBack('busy', 'PROCESSING');
+
+    postJson(API_ORIGIN + '/api/auth/register', { email: email, password: pass, name: name }).then(function(result){
+      signupCta.disabled = false; signupName.disabled = false; signupEmail.disabled = false; signupPass.disabled = false;
+      signupCtaLabel.textContent = 'REQUEST ACCESS';
+      if(result.ok){ onGranted(setStatusBack, stampBack); }
+      else {
+        signupMsg.textContent = (result.data && result.data.message) || 'Could not create account.';
+        onDenied(setStatusBack, stampBack, null, [signupEmailField, signupPassField]);
+      }
+    });
   });
 
   // ── Sign in with Google ──────────────────────────────────────────────────
-  // Client ID comes from the server so this static file never has to be
-  // hand-edited when it changes; the button hides itself if unconfigured.
   window.addEventListener('load', function(){
-    var slot = document.getElementById('googleSlot');
-    var divider = document.getElementById('orDivider');
+    var slotFront = document.getElementById('googleSlotFront');
+    var slotBack = document.getElementById('googleSlotBack');
+    var dividerFront = document.getElementById('orDividerFront');
+    var dividerBack = document.getElementById('orDividerBack');
 
     function handleGoogleCredential(response){
-      formMsg.textContent = '';
-      if(statusCycleTimer) clearTimeout(statusCycleTimer);
-      scrambleTo('STATUS: VERIFYING CREDENTIALS', function(){
-        postJson(API_ORIGIN + '/api/auth/google', { credential: response.credential }).then(function(result){
-          if(result.ok){ onGranted(); }
-          else { onDenied(result.data && result.data.message); }
-        });
-      }, true);
+      setMarquee('STATUS: VERIFYING CREDENTIALS');
+      var isBack = flipEl.classList.contains('flipped');
+      var setStatus = isBack ? setStatusBack : setStatusFront;
+      var stampEl = isBack ? stampBack : stampFront;
+      setStatus('busy', 'VERIFYING');
+      postJson(API_ORIGIN + '/api/auth/google', { credential: response.credential }).then(function(result){
+        if(result.ok){ onGranted(setStatus, stampEl); }
+        else { onDenied(setStatus, stampEl, (result.data && result.data.message) || 'Google sign-in failed.'); }
+      });
     }
 
     fetch(API_ORIGIN + '/api/auth/config').then(function(res){ return res.json(); }).then(function(cfg){
       if(!cfg || !cfg.googleClientId || !window.google || !window.google.accounts) return;
-      window.google.accounts.id.initialize({
-        client_id: cfg.googleClientId,
-        callback: handleGoogleCredential
-      });
-      window.google.accounts.id.renderButton(slot, { theme: 'outline', size: 'large', width: 260 });
-      slot.style.display = 'flex';
-      divider.style.display = 'flex';
-    }).catch(function(){ /* backend unreachable — form-only login still works */ });
+      window.google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: handleGoogleCredential });
+      window.google.accounts.id.renderButton(slotFront, { theme: 'outline', size: 'large', width: 240 });
+      window.google.accounts.id.renderButton(slotBack, { theme: 'outline', size: 'large', width: 240 });
+      slotFront.style.display = 'flex'; dividerFront.style.display = 'flex';
+      slotBack.style.display = 'flex'; dividerBack.style.display = 'flex';
+    }).catch(function(){ /* backend unreachable — form-only auth still works */ });
   });
 
-  var swatch = document.getElementById('swatch');
-  var fileInput = document.getElementById('fileInput');
-  var dropLabel = document.getElementById('dropLabel');
-  var clearBtn = document.getElementById('clearPhoto');
+  // ── photo dropzone (dithered mugshot), wired for both faces ─────────────
+  var BAYER = [[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
 
-  var BAYER = [
-    [0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]
-  ];
-
-  function processImage(file){
+  function processImage(file, swatch, dropLabel, clearBtn){
     if(!file || !file.type.match(/^image\//)) return;
     var reader = new FileReader();
     reader.onload = function(ev){
@@ -727,11 +847,9 @@
         var canvas = document.createElement('canvas');
         canvas.width = size; canvas.height = size;
         var cctx = canvas.getContext('2d');
-
         var ratio = Math.max(size/img.width, size/img.height);
         var w = img.width*ratio, h = img.height*ratio;
         cctx.drawImage(img, (size-w)/2, (size-h)/2, w, h);
-
         var imgData = cctx.getImageData(0,0,size,size);
         var d = imgData.data;
         for(var py=0; py<size; py++){
@@ -740,21 +858,13 @@
             var gray = 0.3*d[idx] + 0.59*d[idx+1] + 0.11*d[idx+2];
             var threshold = (BAYER[py%4][px%4] / 16) * 255;
             var on = gray > threshold;
-            var r = on ? 200 : 13;
-            var g = on ? 255 : 14;
-            var b = on ? 77 : 12;
-            d[idx]=r; d[idx+1]=g; d[idx+2]=b;
+            d[idx] = on ? 22 : 200; d[idx+1] = on ? 20 : 255; d[idx+2] = on ? 9 : 77;
           }
         }
         cctx.putImageData(imgData, 0, 0);
-
         swatch.querySelectorAll('canvas').forEach(function(c){ c.remove(); });
-        canvas.style.width = '100%';
-        canvas.style.height = '100%';
-        canvas.style.display = 'block';
-        canvas.style.imageRendering = 'pixelated';
+        canvas.style.width = '100%'; canvas.style.height = '100%'; canvas.style.display = 'block'; canvas.style.imageRendering = 'pixelated';
         swatch.insertBefore(canvas, swatch.firstChild);
-        swatch.classList.add('has-photo');
         dropLabel.style.display = 'none';
         clearBtn.style.display = 'flex';
         playBeep(900, 0.04, 'square');
@@ -764,28 +874,44 @@
     reader.readAsDataURL(file);
   }
 
-  swatch.addEventListener('click', function(e){
-    if(e.target === clearBtn) return;
-    fileInput.click();
-  });
-  fileInput.addEventListener('change', function(){
-    if(fileInput.files && fileInput.files[0]) processImage(fileInput.files[0]);
-  });
-  swatch.addEventListener('dragover', function(e){ e.preventDefault(); swatch.classList.add('dragging'); });
-  swatch.addEventListener('dragleave', function(){ swatch.classList.remove('dragging'); });
-  swatch.addEventListener('drop', function(e){
-    e.preventDefault();
-    swatch.classList.remove('dragging');
-    if(e.dataTransfer.files && e.dataTransfer.files[0]) processImage(e.dataTransfer.files[0]);
-  });
-  clearBtn.addEventListener('click', function(e){
-    e.stopPropagation();
-    swatch.querySelectorAll('canvas').forEach(function(c){ c.remove(); });
-    swatch.classList.remove('has-photo');
-    dropLabel.style.display = 'flex';
-    clearBtn.style.display = 'none';
-    fileInput.value = '';
-  });
+  function wireDropzone(swatchId, fileInputId, dropLabelId, clearBtnId){
+    var swatch = document.getElementById(swatchId);
+    var fileInput = document.getElementById(fileInputId);
+    var dropLabel = document.getElementById(dropLabelId);
+    var clearBtn = document.getElementById(clearBtnId);
+
+    swatch.addEventListener('click', function(e){ if(e.target === clearBtn) return; fileInput.click(); });
+    fileInput.addEventListener('change', function(){
+      if(fileInput.files && fileInput.files[0]) processImage(fileInput.files[0], swatch, dropLabel, clearBtn);
+    });
+    swatch.addEventListener('dragover', function(e){ e.preventDefault(); swatch.classList.add('dragging'); });
+    swatch.addEventListener('dragleave', function(){ swatch.classList.remove('dragging'); });
+    swatch.addEventListener('drop', function(e){
+      e.preventDefault(); swatch.classList.remove('dragging');
+      if(e.dataTransfer.files && e.dataTransfer.files[0]) processImage(e.dataTransfer.files[0], swatch, dropLabel, clearBtn);
+    });
+    clearBtn.addEventListener('click', function(e){
+      e.stopPropagation();
+      swatch.querySelectorAll('canvas').forEach(function(c){ c.remove(); });
+      dropLabel.style.display = 'flex'; clearBtn.style.display = 'none'; fileInput.value = '';
+    });
+  }
+  wireDropzone('swatchFront', 'fileInputFront', 'dropLabelFront', 'clearPhotoFront');
+  wireDropzone('swatchBack', 'fileInputBack', 'dropLabelBack', 'clearPhotoBack');
+
+  // ── flight board countdown (purely decorative "gate closes in") ─────────
+  (function(){
+    var el = document.getElementById('scheduleTimer');
+    var full = 5*60, total = full;
+    function render(){
+      var m = Math.floor(total/60), s = total%60;
+      el.textContent = (m<10?'0':'')+m+':'+(s<10?'0':'')+s;
+      if(total <= 0){ total = full; return; }
+      total--;
+    }
+    render();
+    setInterval(render, 1000);
+  })();
 </script>
 
 </body>

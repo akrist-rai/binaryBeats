@@ -5,7 +5,7 @@ import React from "react";
 // any Codeforces user reads instantly. Rendered as bold colored mono text with
 // a status dot (not a bordered chip) so it reads correctly on both the paper
 // and terminal registers.
-function colorForRating(rating: number): string {
+export function colorForRating(rating: number): string {
   if (rating < 1200) return "#8C8371";
   if (rating < 1400) return "#3FA34D";
   if (rating < 1600) return "#1AA6A0";
@@ -13,6 +13,17 @@ function colorForRating(rating: number): string {
   if (rating < 2100) return "#8B3FD6";
   if (rating < 2400) return "#E0821A";
   return "#D6331E";
+}
+
+// Same seven bands as colorForRating, named the way Codeforces names them.
+export function tierForRating(rating: number): string {
+  if (rating < 1200) return "Newbie";
+  if (rating < 1400) return "Pupil";
+  if (rating < 1600) return "Specialist";
+  if (rating < 1900) return "Expert";
+  if (rating < 2100) return "Candidate Master";
+  if (rating < 2400) return "Master";
+  return "Grandmaster";
 }
 
 interface RatingBadgeProps {

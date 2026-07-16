@@ -7,16 +7,14 @@ import { LeaderboardView } from "./components/LeaderboardView";
 import { CommunityView } from "./components/CommunityView";
 import { synthSound } from "./utils/audio";
 import { useAuth } from "./hooks/useAuth";
+import { useCfHandle } from "./hooks/useCfHandle";
 
 type Theme = "light" | "dark";
 
 export default function App() {
   const { user, status: authStatus, logout } = useAuth();
+  const { user: cfUser } = useCfHandle();
   const [activeTab, setActiveTab] = useState("home");
-  const [xp, setXp] = useState(() => {
-    const saved = localStorage.getItem("bb_xp");
-    return saved ? parseInt(saved, 10) : 230;
-  });
   // No UI toggle for this anymore — sound just plays, same default as before.
   const [soundEnabled] = useState(() => {
     const saved = localStorage.getItem("bb_sound");
@@ -38,14 +36,6 @@ export default function App() {
       window.location.href = "/login.html";
     }
   }, [authStatus]);
-
-  const handleAddXp = (amount: number) => {
-    setXp((prev) => {
-      const next = prev + amount;
-      localStorage.setItem("bb_xp", String(next));
-      return next;
-    });
-  };
 
   const playSound = (type: "click" | "hover") => {
     if (!soundEnabled) return;
@@ -85,7 +75,7 @@ export default function App() {
 
       <Navbar
         activeTab={activeTab}
-        xp={xp}
+        rating={cfUser?.rating ?? null}
         username={username}
         onNavigate={handleTabChange}
         onLogout={() => { playSound("click"); logout(); }}
@@ -99,8 +89,6 @@ export default function App() {
           {activeTab === "home" && (
             <motion.div key="home" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
               <LeetCodeDashboard
-                xp={xp}
-                onAddXp={handleAddXp}
                 playSound={playSound}
                 onShareSolution={handleShareSolution}
                 onNavigateTab={handleTabChange}
@@ -109,7 +97,7 @@ export default function App() {
           )}
           {activeTab === "blitz" && (
             <motion.div key="blitz" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
-              <BlitzDuelView playSound={playSound} onAddXp={handleAddXp} />
+              <BlitzDuelView playSound={playSound} />
             </motion.div>
           )}
           {activeTab === "leaderboard" && (
@@ -119,7 +107,7 @@ export default function App() {
           )}
           {activeTab === "community" && (
             <motion.div key="community" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.18 }} className="flex-1 flex flex-col">
-              <CommunityView playSound={playSound} onAddXp={handleAddXp} sharedCode={sharedCode} onClearSharedCode={() => setSharedCode(null)} />
+              <CommunityView playSound={playSound} sharedCode={sharedCode} onClearSharedCode={() => setSharedCode(null)} />
             </motion.div>
           )}
         </AnimatePresence>

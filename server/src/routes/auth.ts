@@ -3,7 +3,7 @@ import Router from "@koa/router";
 import type { Context } from "koa";
 import { eq } from "drizzle-orm";
 import { OAuth2Client } from "google-auth-library";
-import { db } from "../db/index.js";
+import { authDb as db } from "../db/authDb.js";
 import { users } from "../db/schema.js";
 import {
   hashPassword,
@@ -30,12 +30,27 @@ function badRequest(ctx: Context, message: string) {
   ctx.body = { error: "BAD_REQUEST", message };
 }
 
+// `db` is null when AUTH_DATABASE_URL isn't set — every route that touches it
+// checks this first and 503s instead of throwing, so the rest of the API
+// keeps working while auth is still being set up.
+function authDbUnavailable(ctx: Context): boolean {
+  if (db) return false;
+  ctx.status = 503;
+  ctx.body = {
+    error: "AUTH_NOT_CONFIGURED",
+    message: "Auth isn't set up yet — set AUTH_DATABASE_URL in server/.env.",
+  };
+  return true;
+}
+
 async function findByEmail(email: string): Promise<UserRow | undefined> {
+  if (!db) return undefined;
   const rows = await db.select().from(users).where(eq(users.email, email)).limit(1);
   return rows[0];
 }
 
 async function findById(id: string): Promise<UserRow | undefined> {
+  if (!db) return undefined;
   const rows = await db.select().from(users).where(eq(users.id, id)).limit(1);
   return rows[0];
 }
@@ -50,6 +65,8 @@ router.get("/config", async (ctx) => {
 
 // POST /api/auth/register { email, password, name }
 router.post("/register", async (ctx) => {
+  if (!db) return void authDbUnavailable(ctx);
+
   const body = (ctx.request.body ?? {}) as Record<string, unknown>;
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
@@ -83,6 +100,8 @@ router.post("/register", async (ctx) => {
 
 // POST /api/auth/login { email, password }
 router.post("/login", async (ctx) => {
+  if (authDbUnavailable(ctx)) return;
+
   const body = (ctx.request.body ?? {}) as Record<string, unknown>;
   const email = typeof body.email === "string" ? body.email.trim().toLowerCase() : "";
   const password = typeof body.password === "string" ? body.password : "";
@@ -124,6 +143,7 @@ router.post("/google", async (ctx) => {
     };
     return;
   }
+  if (!db) return void authDbUnavailable(ctx);
 
   const body = (ctx.request.body ?? {}) as Record<string, unknown>;
   const credential = typeof body.credential === "string" ? body.credential : "";
@@ -185,6 +205,8 @@ router.post("/logout", async (ctx) => {
 
 // GET /api/auth/me
 router.get("/me", async (ctx) => {
+  if (authDbUnavailable(ctx)) return;
+
   const session = getSessionFromRequest(ctx);
   if (!session) {
     ctx.status = 401;

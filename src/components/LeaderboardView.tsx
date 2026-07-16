@@ -1,54 +1,40 @@
 import React, { useMemo, useState } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { colorForRating, tierForRating } from './blitz/RatingBadge';
 
 interface LeaderboardProps {
   playSound: (type: 'click' | 'hover') => void;
   currentUser: string;
 }
 
-type Period = 'allTime' | 'monthly' | 'daily';
-
 interface UserRank {
   username: string;
   avatar: string;
   rating: number;
   solved: number;
-  tier: 'Luminary' | 'Sentinel' | 'Elite' | 'Novice';
   streak: number;
-  accent: string;
-  dailyXp: number;
-  monthlyXp: number;
 }
-
-const PERIODS: { id: Period; label: string }[] = [
-  { id: 'allTime', label: 'All-Time' },
-  { id: 'monthly', label: 'Monthly' },
-  { id: 'daily', label: 'Daily' },
-];
 
 export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, currentUser }) => {
   const [search, setSearch] = useState('');
-  const [period, setPeriod] = useState<Period>('allTime');
 
   const users: UserRank[] = [
-    { username: 'byte_boss', avatar: 'BB', rating: 3120, solved: 492, tier: 'Luminary', streak: 42, accent: '#f43f5e', dailyXp: 180, monthlyXp: 4200 },
-    { username: 'compile_king', avatar: 'CK', rating: 2985, solved: 412, tier: 'Sentinel', streak: 28, accent: '#06b6d4', dailyXp: 220, monthlyXp: 3800 },
-    { username: 'syntax_scripter', avatar: 'SS', rating: 2840, solved: 389, tier: 'Sentinel', streak: 19, accent: '#22c55e', dailyXp: 90, monthlyXp: 5100 },
-    { username: 'cache_flow', avatar: 'CF', rating: 2790, solved: 356, tier: 'Elite', streak: 12, accent: '#eab308', dailyXp: 310, monthlyXp: 2900 },
-    { username: 'stack_trace', avatar: 'ST', rating: 2650, solved: 320, tier: 'Elite', streak: 9, accent: '#a855f7', dailyXp: 60, monthlyXp: 3400 },
-    { username: 'git_gud', avatar: 'GG', rating: 2510, solved: 290, tier: 'Elite', streak: 15, accent: '#ec4899', dailyXp: 150, monthlyXp: 2200 },
-    { username: 'binary_beats_fan', avatar: 'BF', rating: 2340, solved: 210, tier: 'Novice', streak: 5, accent: '#3b82f6', dailyXp: 400, monthlyXp: 1800 },
-    { username: 'akrist', avatar: 'AK', rating: 1420, solved: 121, tier: 'Novice', streak: 3, accent: '#7c5cfc', dailyXp: 80, monthlyXp: 900 },
+    { username: 'byte_boss', avatar: 'BB', rating: 3120, solved: 492, streak: 42 },
+    { username: 'compile_king', avatar: 'CK', rating: 2985, solved: 412, streak: 28 },
+    { username: 'syntax_scripter', avatar: 'SS', rating: 2840, solved: 389, streak: 19 },
+    { username: 'cache_flow', avatar: 'CF', rating: 2790, solved: 356, streak: 12 },
+    { username: 'stack_trace', avatar: 'ST', rating: 2650, solved: 320, streak: 9 },
+    { username: 'git_gud', avatar: 'GG', rating: 2510, solved: 290, streak: 15 },
+    { username: 'binary_beats_fan', avatar: 'BF', rating: 2340, solved: 210, streak: 5 },
+    { username: 'akrist', avatar: 'AK', rating: 1420, solved: 121, streak: 3 },
   ];
-
-  const metricFor = (u: UserRank) => (period === 'daily' ? u.dailyXp : period === 'monthly' ? u.monthlyXp : u.rating);
 
   const ranked = useMemo(() => {
     return [...users]
-      .sort((a, b) => metricFor(b) - metricFor(a))
+      .sort((a, b) => b.rating - a.rating)
       .map((u, i) => ({ ...u, rank: i + 1 }));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [period]);
+  }, []);
 
   const podium = [ranked[1], ranked[0], ranked[2]];
   const rest = ranked.filter((u) => u.rank > 3);
@@ -56,10 +42,19 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
   const visibleUsers = useMemo(() => {
     return rest.filter((u) => u.username.toLowerCase().includes(search.toLowerCase()));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search, period]);
+  }, [search]);
 
-  const metricLabel = period === 'daily' ? 'XP earned today' : period === 'monthly' ? 'XP earned this month' : 'rating';
   const myRank = ranked.find((u) => u.username === currentUser)?.rank;
+
+  const TIER_GUIDE = [
+    { tier: 'Grandmaster', range: '2400+', sample: 2400 },
+    { tier: 'Master', range: '2100–2399', sample: 2100 },
+    { tier: 'Candidate Master', range: '1900–2099', sample: 1900 },
+    { tier: 'Expert', range: '1600–1899', sample: 1600 },
+    { tier: 'Specialist', range: '1400–1599', sample: 1400 },
+    { tier: 'Pupil', range: '1200–1399', sample: 1200 },
+    { tier: 'Newbie', range: '< 1200', sample: 0 },
+  ];
 
   return (
     <div className="w-full min-h-[calc(100vh-56px)] text-bb-ink relative pb-12">
@@ -76,31 +71,10 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
             </span>
             <span className="eyebrow mb-2">/03 <span className="text-bb-ink-faint normal-case">·</span> Global Standings</span>
             <h2 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-bb-ink mb-1 mt-2">Leaderboard</h2>
-            <p className="text-xs font-mono text-bb-ink-faint">Ranked by {metricLabel}</p>
+            <p className="text-xs font-mono text-bb-ink-faint">Ranked by rating</p>
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
-            <div className="flex rounded-full overflow-hidden border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[10px]">
-              {PERIODS.map((p) => (
-                <button
-                  key={p.id}
-                  onClick={() => { playSound('click'); setPeriod(p.id); }}
-                  className={`px-3 h-8 rounded-full font-bold tracking-wider cursor-pointer uppercase transition-colors relative ${
-                    period === p.id ? 'text-bb-paper' : 'text-bb-ink-faint hover:text-bb-ink-soft'
-                  }`}
-                >
-                  {period === p.id && (
-                    <motion.span
-                      layoutId="leaderboardPeriodBg"
-                      className="absolute inset-0 bg-bb-ink rounded-full"
-                      transition={{ type: 'spring', stiffness: 350, damping: 28 }}
-                    />
-                  )}
-                  <span className="relative z-10">{p.label}</span>
-                </button>
-              ))}
-            </div>
-
             <div className="relative flex-1 md:w-56 md:flex-none">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-bb-ink-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
@@ -120,6 +94,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
           {podium.map((u) => {
             const isFirst = u.rank === 1;
             const isMe = u.username === currentUser;
+            const color = colorForRating(u.rating);
             return (
               <motion.div
                 key={u.username}
@@ -146,13 +121,12 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                 <span className={`font-semibold truncate max-w-full ${isFirst ? 'text-bb-ink text-sm' : 'text-bb-ink-soft text-xs'}`}>
                   {u.username}{isMe && <span className="text-bb-orange"> (you)</span>}
                 </span>
-                <span className={`mt-0.5 ${u.tier === 'Luminary' ? 'editorial text-sm text-bb-lime' : 'text-[9px] font-mono text-bb-ink-faint'}`}>
-                  {u.tier}
+                <span className="mt-0.5 text-[9px] font-mono font-bold uppercase tracking-wider" style={{ color }}>
+                  {tierForRating(u.rating)}
                 </span>
                 <span className={`stat-num mt-2 ${isFirst ? 'text-2xl text-bb-orange' : 'text-base text-bb-ink'}`}>
-                  {period === 'allTime' ? u.rating : `+${metricFor(u)}`}
+                  {u.rating}
                 </span>
-                {period !== 'allTime' && <span className="text-[9px] font-mono text-bb-ink-faint mt-0.5">rating {u.rating}</span>}
               </motion.div>
             );
           })}
@@ -165,7 +139,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
             <div className="grid grid-cols-[60px_1fr_90px_80px_70px] items-center h-10 px-6 label-caps border-b border-bb-line select-none">
               <span>Rank</span>
               <span>Developer</span>
-              <span className="text-right">{period === 'allTime' ? 'Rating' : 'XP'}</span>
+              <span className="text-right">Rating</span>
               <span className="text-right">Solved</span>
               <span className="text-right">Streak</span>
             </div>
@@ -202,12 +176,14 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                             <span className={`text-sm font-semibold font-sans ${isMe ? 'text-bb-ink' : 'text-bb-ink-soft'}`}>
                               {u.username} {isMe && <span className="text-[10px] font-mono tracking-wider uppercase text-bb-orange ml-2 font-bold">(you)</span>}
                             </span>
-                            <span className="text-[10px] font-mono text-bb-ink-faint">{u.tier}</span>
+                            <span className="text-[10px] font-mono font-bold" style={{ color: colorForRating(u.rating) }}>
+                              {tierForRating(u.rating)}
+                            </span>
                           </div>
                         </div>
 
                         <div className="text-right stat-num text-sm text-bb-ink">
-                          {period === 'allTime' ? u.rating : `+${metricFor(u)}`}
+                          {u.rating}
                         </div>
                         <div className="text-right text-xs font-mono text-bb-ink-soft">{u.solved}</div>
                         <div className="text-right text-xs font-mono text-bb-ink-soft">🔥{u.streak}d</div>
@@ -229,7 +205,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
               <div className="flex flex-col gap-4">
                 <div>
                   <span className="label-caps block mb-1">
-                    {PERIODS.find((p) => p.id === period)?.label} Standing
+                    Global Standing
                   </span>
                   <div className="flex items-baseline gap-2">
                     <span className="stat-num text-3xl text-bb-orange">
@@ -251,40 +227,20 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
 
             <motion.div initial={{ opacity: 0, x: 15 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 }}
               className="spec-card p-5">
-              {period === 'allTime' ? (
-                <>
-                  <h4 className="label-caps mb-3 border-b border-bb-line pb-2">
-                    Tier Guide
-                  </h4>
-                  <div className="flex flex-col gap-3 text-xs font-mono">
-                    {[
-                      { tier: 'Luminary', rating: '3000+', color: '#8FB537' },
-                      { tier: 'Sentinel', rating: '2800–3000', color: '#57503F' },
-                      { tier: 'Elite', rating: '2400–2799', color: '#8C8371' },
-                      { tier: 'Novice', rating: '< 2400', color: 'rgba(140,131,113,0.5)' }
-                    ].map(t => (
-                      <div key={t.tier} className="flex justify-between items-center">
-                        <div className="flex items-center gap-2">
-                          <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: t.color }} />
-                          <span className="text-bb-ink-soft font-bold">{t.tier}</span>
-                        </div>
-                        <span className="text-bb-ink-faint text-[10px]">{t.rating}</span>
-                      </div>
-                    ))}
+              <h4 className="label-caps mb-3 border-b border-bb-line pb-2">
+                Tier Guide
+              </h4>
+              <div className="flex flex-col gap-3 text-xs font-mono">
+                {TIER_GUIDE.map(t => (
+                  <div key={t.tier} className="flex justify-between items-center">
+                    <div className="flex items-center gap-2">
+                      <span className="w-1.5 h-1.5 rounded-full" style={{ backgroundColor: colorForRating(t.sample) }} />
+                      <span className="text-bb-ink-soft font-bold">{t.tier}</span>
+                    </div>
+                    <span className="text-bb-ink-faint text-[10px]">{t.range}</span>
                   </div>
-                </>
-              ) : (
-                <>
-                  <h4 className="label-caps mb-3 border-b border-bb-line pb-2">
-                    How this is ranked
-                  </h4>
-                  <p className="text-xs font-mono text-bb-ink-faint leading-relaxed">
-                    {period === 'daily'
-                      ? 'Ranked by XP earned in the last 24 hours. Resets daily — rating stays the same, only the order changes.'
-                      : 'Ranked by XP earned so far this month. Resets on the 1st — rating stays the same, only the order changes.'}
-                  </p>
-                </>
-              )}
+                ))}
+              </div>
             </motion.div>
           </div>
         </div>

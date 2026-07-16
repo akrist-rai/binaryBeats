@@ -1,17 +1,14 @@
 import { useState, useEffect, useMemo, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { useProblems } from '../hooks/useProblems';
-import { useProblemStatement } from '../hooks/useProblemStatement';
-import { CodeWorkspace } from './blitz/CodeWorkspace';
-import { ProblemStatement } from './blitz/ProblemStatement';
 import { RatingBadge } from './blitz/RatingBadge';
 import { HeroSection } from './HeroSection';
 import { ProblemOrbit } from './ProblemOrbit';
+import { SolveWorkspace } from './solve/SolveWorkspace';
+import { practiceProblemToSolvable } from './solve/adapters';
 import { logSolve } from '../lib/activityLog';
 
 interface Props {
-  xp: number;
-  onAddXp: (n: number) => void;
   playSound: (t: 'click' | 'hover') => void;
   onShareSolution: (d: { problemTitle: string; code: string }) => void;
   onNavigateTab: (tab: string) => void;
@@ -34,13 +31,14 @@ const SORT_OPTIONS = [
   { id: 'title', label: 'Title A–Z' },
 ] as const;
 
-export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onNavigateTab }: Props) => {
+export const LeetCodeDashboard = ({ playSound, onShareSolution, onNavigateTab }: Props) => {
   const [search, setSearch] = useState('');
   const [difficulty, setDifficulty] = useState<''|'easy'|'medium'|'hard'>('');
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [page, setPage] = useState(1);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [solvedKeys, setSolvedKeys] = useState<string[]>([]);
+  const [solveTick, setSolveTick] = useState(0);
   const [viewMode, setViewMode] = useState<'list' | 'orbit'>('list');
   const [statusFilter, setStatusFilter] = useState<'all' | 'solved' | 'unsolved'>('all');
   const [sortBy, setSortBy] = useState<typeof SORT_OPTIONS[number]['id']>('default');
@@ -53,7 +51,6 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
     page, pageSize: 50,
   });
 
-  const { statement } = useProblemStatement(activeKey ?? '');
   const activeProblem = activeKey ? problems.find(p => p.key === activeKey) ?? null : null;
 
   useEffect(() => { setPage(1); }, [search, difficulty, selectedTag]);
@@ -68,7 +65,7 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
         setSolvedKeys(keys);
       }
     } catch {}
-  }, [xp]);
+  }, [solveTick]);
 
   // "/" focuses search, like most fast problem trackers
   useEffect(() => {
@@ -129,76 +126,32 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
         <AnimatePresence mode="wait">
 
           {/* ── WORKSPACE VIEW ── */}
-          {activeKey ? (
-            <motion.div key="workspace" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex-1 flex flex-col gap-6">
-              <div className="flex items-center justify-between pb-6 border-b border-bb-line">
-                <div className="flex items-center gap-4">
-                  <button onClick={back} className="btn-outline h-9 px-3.5 cursor-pointer text-xs font-bold font-mono uppercase tracking-wider">
-                    ← Problems
-                  </button>
-                  <div className="flex items-center gap-2 text-xs font-mono text-bb-ink-soft min-w-0">
-                    {activeProblem && <><span className="text-bb-ink font-semibold text-sm truncate">{activeProblem.contestId}{activeProblem.index}. {activeProblem.title ?? activeKey}</span><RatingBadge rating={activeProblem.rating} /></>}
-                  </div>
-                </div>
-                <div className="flex items-center gap-2 shrink-0">
-                  {solvedKeys.includes(activeKey) && (
-                    <div className="pill flex items-center gap-1.5 h-8 px-3 border border-bb-lime/40 bg-bb-lime/10 font-mono text-[11px] font-bold uppercase text-bb-lime">
-                      ✓ Solved
-                    </div>
-                  )}
-                  <div className="pill flex items-center gap-1.5 h-8 px-3 border border-bb-lime/40 bg-bb-lime/10 font-mono text-[11px] font-bold uppercase text-bb-lime">
-                    <span className="w-1.5 h-1.5 rounded-full bg-bb-lime" /> C++17
-                  </div>
-                  {activeProblem && (
-                    <a href={`https://codeforces.com/contest/${activeProblem.contestId}/problem/${activeProblem.index}`}
-                      target="_blank" rel="noopener noreferrer"
-                      className="btn-outline h-8 px-3 text-[10px] font-mono uppercase tracking-wider flex items-center">
-                      Open ↗
-                    </a>
-                  )}
-                </div>
-              </div>
-
-              <div className="flex-1 grid grid-cols-1 lg:grid-cols-2 gap-6 min-h-0" style={{minHeight:'520px'}}>
-                <div className="overflow-y-auto custom-scrollbar spec-card corner-marks">
-                  {statement
-                    ? <ProblemStatement statement={statement} playSound={playSound} />
-                    : <div className="p-6 animate-pulse flex flex-col gap-3">
-                        <div className="h-4 w-32 rounded bg-bb-ink/[0.06]" />
-                        <div className="h-6 w-2/3 rounded bg-bb-ink/[0.08]" />
-                        <div className="h-3 w-full rounded bg-bb-ink/[0.04]" />
-                        <div className="h-3 w-5/6 rounded bg-bb-ink/[0.04]" />
-                        {!activeProblem?.judgeable && activeKey && <p className="text-xs text-bb-ink-faint mt-4">Statement loading… or open on Codeforces directly.</p>}
-                      </div>
-                  }
-                </div>
-                <CodeWorkspace
-                  key={activeKey}
-                  problemKey={activeKey}
-                  judgeable={activeProblem?.judgeable ?? false}
-                  examples={statement?.examples ?? []}
-                  playSound={playSound}
-                  onAccepted={() => {
-                    playSound('click');
-                    onAddXp(50);
-                    if (activeProblem) {
-                      logSolve({
-                        source: 'leetcode',
-                        key: activeKey,
-                        title: activeProblem.title ?? activeKey,
-                        meta: activeProblem.rating ? String(activeProblem.rating) : 'Unrated',
-                        solvedAtSeconds: Math.floor(Date.now() / 1000),
-                      });
-                    }
-                  }}
-                />
-              </div>
+          {activeKey && activeProblem ? (
+            <motion.div key="workspace" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex-1 flex flex-col">
+              <SolveWorkspace
+                mode="practice"
+                problem={practiceProblemToSolvable(activeProblem)}
+                solved={solvedKeys.includes(activeKey)}
+                onBack={back}
+                onAccepted={() => {
+                  playSound('click');
+                  setSolveTick(t => t + 1);
+                  logSolve({
+                    source: 'leetcode',
+                    key: activeKey,
+                    title: activeProblem.title ?? activeKey,
+                    meta: activeProblem.rating ? String(activeProblem.rating) : 'Unrated',
+                    solvedAtSeconds: Math.floor(Date.now() / 1000),
+                  });
+                }}
+                playSound={playSound}
+              />
             </motion.div>
 
           ) : (
             /* ── PROBLEMS LIST ── */
             <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex flex-col gap-0">
-              <HeroSection xp={xp} total={total} playSound={playSound} onNavigateTab={onNavigateTab} />
+              <HeroSection total={total} playSound={playSound} onNavigateTab={onNavigateTab} />
 
               {/* Snapshot strip — quick read on progress before scanning the list */}
               <div className="grid grid-cols-3 gap-3 mb-8">

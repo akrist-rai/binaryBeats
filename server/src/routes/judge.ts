@@ -51,34 +51,38 @@ router.post("/runs", async (ctx) => {
   if (kind === "submit") {
     sessionId = body.sessionId;
     key = body.problemKey?.toUpperCase();
-    if (!sessionId || !key) {
+    if (!key) {
       ctx.status = 400;
-      ctx.body = { error: "BAD_REQUEST", message: "sessionId and problemKey are required for submit." };
+      ctx.body = { error: "BAD_REQUEST", message: "problemKey is required for submit." };
       return;
     }
 
-    const session = await getSession(sessionId);
-    if (!session) {
-      ctx.status = 404;
-      ctx.body = { error: "NOT_FOUND", message: "Session not found (it may have expired)." };
-      return;
-    }
-    if (session.status !== "active") {
-      ctx.status = 409;
-      ctx.body = { error: "SESSION_FINISHED", message: "This session has already finished." };
-      return;
-    }
-    if (!session.problems.some((p) => problemKey(p) === key)) {
-      ctx.status = 404;
-      ctx.body = { error: "NOT_FOUND", message: "That problem isn't part of this session." };
-      return;
-    }
+    // sessionId is optional — practice-mode submits judge against the full suite
+    // the same way, they just have no session/handle to record a solve into.
+    if (sessionId) {
+      const session = await getSession(sessionId);
+      if (!session) {
+        ctx.status = 404;
+        ctx.body = { error: "NOT_FOUND", message: "Session not found (it may have expired)." };
+        return;
+      }
+      if (session.status !== "active") {
+        ctx.status = 409;
+        ctx.body = { error: "SESSION_FINISHED", message: "This session has already finished." };
+        return;
+      }
+      if (!session.problems.some((p) => problemKey(p) === key)) {
+        ctx.status = 404;
+        ctx.body = { error: "NOT_FOUND", message: "That problem isn't part of this session." };
+        return;
+      }
 
-    handle = (body.handle ?? session.handles[0]).toLowerCase();
-    if (!session.handles.includes(handle)) {
-      ctx.status = 400;
-      ctx.body = { error: "BAD_REQUEST", message: "handle isn't part of this session." };
-      return;
+      handle = (body.handle ?? session.handles[0]).toLowerCase();
+      if (!session.handles.includes(handle)) {
+        ctx.status = 400;
+        ctx.body = { error: "BAD_REQUEST", message: "handle isn't part of this session." };
+        return;
+      }
     }
 
     if (!(await isJudgeable(key))) {

@@ -3,7 +3,6 @@ import { motion, AnimatePresence } from 'motion/react';
 
 interface CommunityViewProps {
   playSound: (type: 'click' | 'hover') => void;
-  onAddXp: (amount: number) => void;
   sharedCode: { problemTitle: string; code: string } | null;
   onClearSharedCode: () => void;
 }
@@ -39,7 +38,7 @@ interface Clan {
   name: string;
   tag: string;
   members: number;
-  weeklyXp: number;
+  weeklySolves: number;
   desc: string;
 }
 
@@ -55,7 +54,6 @@ const TAG_ACCENT: Record<ForumThread['tag'], string> = {
 
 export const CommunityView: React.FC<CommunityViewProps> = ({
   playSound,
-  onAddXp,
   sharedCode,
   onClearSharedCode,
 }) => {
@@ -67,17 +65,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
   });
 
   const initialClans: Clan[] = [
-    { id: 'c1', name: 'Bit Shifters', tag: 'BITS', members: 24, weeklyXp: 14850, desc: 'Optimizing O(1) algorithms and byte alignment.' },
-    { id: 'c2', name: 'Kernel Panic', tag: 'PANIC', members: 18, weeklyXp: 12400, desc: 'Systems programming enthusiasts and assembly hackers.' },
-    { id: 'c3', name: 'Null Pointers', tag: 'NULL', members: 15, weeklyXp: 9920, desc: 'Dereferencing the void. We operate in safe spaces.' },
-    { id: 'c4', name: 'Stack Overflowers', tag: 'OVER', members: 9, weeklyXp: 6800, desc: 'Recursion limits are just suggestions. Keep pushing!' }
+    { id: 'c1', name: 'Bit Shifters', tag: 'BITS', members: 24, weeklySolves: 312, desc: 'Optimizing O(1) algorithms and byte alignment.' },
+    { id: 'c2', name: 'Kernel Panic', tag: 'PANIC', members: 18, weeklySolves: 268, desc: 'Systems programming enthusiasts and assembly hackers.' },
+    { id: 'c3', name: 'Null Pointers', tag: 'NULL', members: 15, weeklySolves: 201, desc: 'Dereferencing the void. We operate in safe spaces.' },
+    { id: 'c4', name: 'Stack Overflowers', tag: 'OVER', members: 9, weeklySolves: 137, desc: 'Recursion limits are just suggestions. Keep pushing!' }
   ];
 
   const [clans, setClans] = useState<Clan[]>(initialClans);
 
   // Activity Feed State
   const [activities, setActivities] = useState<ActivityEvent[]>([
-    { id: 'a1', message: 'compile_king solved Valid Parentheses (+150 XP)', time: 'Just now', icon: '⚡' },
+    { id: 'a1', message: 'compile_king solved Valid Parentheses', time: 'Just now', icon: '⚡' },
     { id: 'a2', message: 'syntax_scripter unlocked badge "Night Owl"', time: '2m ago', icon: '🏆' },
     { id: 'a3', message: 'byte_boss upvoted a solution to Merge K Sorted Lists', time: '5m ago', icon: '👍' },
     { id: 'a4', message: 'git_gud joined clan Bit Shifters', time: '12m ago', icon: '🛡️' },
@@ -183,8 +181,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       switch (randType) {
         case 0:
           const prob = problems[Math.floor(Math.random() * problems.length)];
-          const xpGained = Math.random() > 0.7 ? 300 : Math.random() > 0.4 ? 150 : 80;
-          message = `${user} solved ${prob} (+${xpGained} XP)`;
+          message = `${user} solved ${prob}`;
           icon = '✓';
           break;
         case 1:
@@ -256,7 +253,6 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
       }));
       setUserClan(targetClan.name);
       localStorage.setItem('bb_user_clan', targetClan.name);
-      onAddXp(25); // Reward XP for joining clan
     }
   };
 
@@ -293,7 +289,6 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     } : null);
 
     setCommentInput('');
-    onAddXp(5); // comment XP reward
   };
 
   // Create Thread Logic
@@ -318,7 +313,6 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     setIsCreatorOpen(false);
     setNewTitle('');
     setNewContent('');
-    onAddXp(15); // reward 15 XP for sharing/creating discussion
   };
 
   // Highest-upvoted thread — surfaced as a "Next Up"-style featured card in
@@ -772,8 +766,8 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                       <div className="flex items-center gap-6 self-end sm:self-center">
                         <div className="text-right">
-                          <span className="text-[9px] text-bb-ink-faint block">WEEKLY XP</span>
-                          <span className="text-xs font-bold text-bb-ink-soft">{clan.weeklyXp.toLocaleString()} XP</span>
+                          <span className="text-[9px] text-bb-ink-faint block">WEEKLY SOLVES</span>
+                          <span className="text-xs font-bold text-bb-ink-soft">{clan.weeklySolves.toLocaleString()}</span>
                         </div>
                         <div className="text-right">
                           <span className="text-[9px] text-bb-ink-faint block">CODERS</span>
@@ -815,10 +809,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     </div>
                     <div>
                       <span className="text-[9px] text-bb-ink-faint uppercase block mb-1">Weekly contribution</span>
-                      <span className="text-xs font-bold text-bb-lime">+230 XP contributed</span>
+                      <span className="text-xs font-bold text-bb-lime">7 problems solved</span>
                     </div>
                     <div className="p-3 bg-bb-paper border border-bb-line rounded-lg text-[9px] text-bb-ink-faint leading-relaxed font-sans font-light">
-                      Your scores add to the clan leaderboard weekly. Secure double-XP matches to rank up your guild!
+                      Your solves add to the clan leaderboard weekly. Keep solving to rank up your guild!
                     </div>
                   </div>
                 ) : (
@@ -914,7 +908,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       onClick={handleCreateThread}
                       className="btn-primary px-5 h-9 font-bold uppercase tracking-wider cursor-pointer text-xs"
                     >
-                      Deploy Thread (+15 XP)
+                      Deploy Thread
                     </button>
                   </div>
                 </div>

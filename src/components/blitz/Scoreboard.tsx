@@ -4,10 +4,9 @@ import { scores, type BlitzSession } from "../../lib/blitzSession";
 
 interface ScoreboardProps {
   session: BlitzSession;
-  xpEarned: number;
 }
 
-export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => {
+export const Scoreboard: React.FC<ScoreboardProps> = ({ session }) => {
   const s = scores(session);
   const me = session.handles[0];
   const total = session.problems.length;
@@ -33,10 +32,6 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => 
               transition={{ delay: i * 0.04 }}
             />
           ))}
-        </div>
-        <div className="mt-4 pt-4 border-t border-bb-line flex items-center justify-between">
-          <span className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint">XP earned</span>
-          <span className="text-sm font-mono font-bold text-bb-lime">+{xpEarned}</span>
         </div>
       </div>
     );
@@ -68,10 +63,6 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => 
             <span className="stat-num text-lg text-bb-ink tabular-nums">{s[handle] ?? 0}</span>
           </motion.div>
         ))}
-      </div>
-      <div className="mt-4 pt-4 border-t border-bb-line flex items-center justify-between">
-        <span className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint">XP earned</span>
-        <span className="text-sm font-mono font-bold text-bb-lime">+{xpEarned}</span>
       </div>
     </div>
   );

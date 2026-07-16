@@ -38,7 +38,7 @@ export function scheduleRun(run: JudgeRun, code: string, stdin?: string, example
   enqueueExecution(async () => {
     switch (run.kind) {
       case "submit":
-        await executeSubmit(run.id, run.sessionId!, run.problemKey!, run.handle!, code);
+        await executeSubmit(run.id, run.sessionId, run.problemKey!, run.handle, code);
         break;
       case "samples":
         await executeSamples(run.id, run.problemKey!, code, examples ?? []);
@@ -50,7 +50,15 @@ export function scheduleRun(run: JudgeRun, code: string, stdin?: string, example
   });
 }
 
-async function executeSubmit(runId: string, sessionId: string, key: string, handle: string, code: string): Promise<void> {
+/** sessionId/handle are absent for practice-mode submits — those still judge
+ *  against the full suite, they just have nothing to record a solve into. */
+async function executeSubmit(
+  runId: string,
+  sessionId: string | undefined,
+  key: string,
+  handle: string | undefined,
+  code: string
+): Promise<void> {
   const info = await getJudgeInfo(key);
   if (!info) {
     updateRun(runId, {
@@ -141,7 +149,7 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
       updateRun(runId, { progress: { done: i + 1, total: info.testCount } });
     }
 
-    const solveRecorded = await recordLocalSolve(sessionId, handle, key);
+    const solveRecorded = sessionId && handle ? await recordLocalSolve(sessionId, handle, key) : false;
     const verdict: Verdict = {
       status: "AC",
       passedCount: info.testCount,

@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { AnimatePresence, motion } from "motion/react";
 import { Navbar } from "./components/Navbar";
 import { LeetCodeDashboard } from "./components/LeetCodeDashboard";
@@ -19,13 +19,6 @@ export default function App() {
     return saved !== "false";
   });
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string } | null>(null);
-
-  useEffect(() => {
-    document.documentElement.style.setProperty("--mg-acc", "#c3f73a");
-    document.documentElement.style.setProperty("--mg-acc2", "#35e8ff");
-    document.documentElement.style.setProperty("--mg-bg", "#08080b");
-    document.documentElement.style.setProperty("--mg-surface", "#111116");
-  }, []);
 
   const handleAddXp = (amount: number) => {
     setXp((prev) => {
@@ -60,12 +53,10 @@ export default function App() {
   };
 
   return (
-    <div className="w-full min-h-screen bg-[#08080b] text-zinc-200 flex flex-col font-sans noise-bg relative overflow-x-hidden">
-      {/* Shared ambient background — aurora blobs + blueprint grid, sits behind every tab */}
+    <div className="w-full min-h-screen bg-bb-paper text-bb-ink flex flex-col font-sans noise-bg relative overflow-x-hidden">
+      {/* Shared ambient background — faint blueprint grid, sits behind every tab */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="aurora-blob aurora-blob-acc w-[560px] h-[560px] -top-40 -left-32" />
-        <div className="aurora-blob aurora-blob-acc2 w-[480px] h-[480px] top-1/3 -right-40" />
-        <div className="absolute inset-0 grid-texture" />
+        <div className="absolute inset-0 grid-paper" />
       </div>
 
       <Navbar

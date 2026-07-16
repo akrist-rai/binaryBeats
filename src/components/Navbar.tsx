@@ -16,16 +16,16 @@ export const Navbar: React.FC<NavbarProps> = ({
   activeTab, xp, username, onNavigate, onLogout, onHoverSound, soundEnabled, onToggleSound,
 }) => {
   const tabs = [
-    { id: 'home', label: 'Problems' },
-    { id: 'blitz', label: 'Blitz & Duel' },
-    { id: 'leaderboard', label: 'Ranking' },
-    { id: 'community', label: 'Community' },
+    { id: 'home', n: '01', label: 'Problems' },
+    { id: 'blitz', n: '02', label: 'Blitz & Duel' },
+    { id: 'leaderboard', n: '03', label: 'Ranking' },
+    { id: 'community', n: '04', label: 'Community' },
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-white/[0.06] bg-[#08080b]/85 backdrop-blur-xl">
-      <div className="max-w-[1400px] mx-auto flex items-center justify-between h-14 px-6 lg:px-8">
-        {/* Logo — terminal-flavored, C++-only identity */}
+    <nav className="sticky top-0 z-50 w-full border-b border-bb-line bg-bb-paper/90 backdrop-blur-xl">
+      <div className="max-w-[1400px] mx-auto flex items-center justify-between h-16 px-6 lg:px-8">
+        {/* Logo — terminal-flavored mark inside an otherwise paper identity */}
         <div
           className="flex items-center gap-2.5 cursor-pointer group select-none"
           onClick={() => onNavigate('home')}
@@ -33,17 +33,19 @@ export const Navbar: React.FC<NavbarProps> = ({
           role="link" tabIndex={0}
           onKeyDown={e => { if (e.key === 'Enter') onNavigate('home'); }}
         >
-          <span className="font-mono text-[13px] text-[#c3f73a]/70 group-hover:text-[#c3f73a] transition-colors">{'>_'}</span>
-          <span className="text-[17px] font-bold text-white tracking-tight font-heading">
+          <span className="w-7 h-7 rounded-md bg-bb-ink text-bb-term-acc flex items-center justify-center font-mono text-[13px] font-bold group-hover:bg-bb-orange group-hover:text-bb-ink transition-colors">
+            {'>_'}
+          </span>
+          <span className="text-[17px] font-bold text-bb-ink tracking-tight font-heading">
             Binary Beats
           </span>
-          <span className="hidden sm:inline text-[9px] font-mono uppercase tracking-widest text-zinc-600 border border-white/[0.08] rounded px-1.5 py-0.5 ml-0.5">
-            C++
+          <span className="hidden sm:inline text-[9px] font-mono font-bold uppercase tracking-widest text-bb-ink-faint border border-bb-line-strong rounded-full px-2 py-0.5 ml-0.5">
+            C++17
           </span>
         </div>
 
         {/* Center: tab nav */}
-        <div className="hidden md:flex items-center gap-8">
+        <div className="hidden md:flex items-center gap-1">
           {tabs.map(t => {
             const isActive = activeTab === t.id;
             return (
@@ -51,18 +53,19 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={t.id}
                 onClick={() => onNavigate(t.id)}
                 onMouseEnter={onHoverSound}
-                className={`relative py-1 text-[13px] font-medium cursor-pointer transition-colors duration-150 ${
-                  isActive ? 'text-white' : 'text-zinc-500 hover:text-zinc-300'
+                className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium font-mono cursor-pointer transition-colors duration-150 ${
+                  isActive ? 'text-bb-paper' : 'text-bb-ink-soft hover:text-bb-ink'
                 }`}
               >
-                {t.label}
                 {isActive && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute -bottom-[19px] left-0 right-0 h-[1.5px] bg-gradient-to-r from-[#c3f73a] to-[#35e8ff]"
+                    className="absolute inset-0 rounded-full bg-bb-ink"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}
+                <span className={`relative z-10 text-[9px] ${isActive ? 'text-bb-term-acc' : 'text-bb-ink-faint'}`}>{t.n}</span>
+                <span className="relative z-10">{t.label}</span>
               </button>
             );
           })}
@@ -89,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
                 }, 50);
               }
             }}
-            className="w-8 h-8 rounded-lg flex items-center justify-center text-zinc-500 hover:text-white hover:bg-white/[0.04] transition-all cursor-pointer"
+            className="w-8 h-8 rounded-full flex items-center justify-center text-bb-ink-faint hover:text-bb-ink hover:bg-bb-ink/[0.05] transition-all cursor-pointer"
           >
             {soundEnabled ? (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -103,13 +106,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* XP counter */}
-          <div className="flex items-center gap-1.5 text-[13px]">
-            <span className="text-[#c3f73a] font-bold font-mono text-glow">{xp}</span>
-            <span className="text-zinc-600 text-[11px] font-medium">XP</span>
+          <div className="flex items-center gap-1.5 text-[13px] pill border border-bb-line-strong px-2.5 py-1">
+            <span className="text-bb-orange font-bold font-mono stat-num">{xp}</span>
+            <span className="text-bb-ink-faint text-[10px] font-bold uppercase tracking-wider">XP</span>
           </div>
 
           {/* Divider */}
-          <div className="w-px h-4 bg-white/[0.06]" />
+          <div className="hidden sm:block w-px h-5 bg-bb-line" />
 
           {/* User */}
           <div
@@ -117,10 +120,10 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onLogout}
             onMouseEnter={onHoverSound}
           >
-            <div className="w-7 h-7 rounded-lg bg-gradient-to-br from-[#c3f73a]/20 to-[#35e8ff]/20 border border-white/[0.08] flex items-center justify-center text-[11px] font-bold text-zinc-200">
+            <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[11px] font-bold font-mono">
               {username[0].toUpperCase()}
             </div>
-            <span className="text-[13px] font-medium text-zinc-400 hidden sm:inline">{username}</span>
+            <span className="text-[13px] font-medium text-bb-ink-soft hidden sm:inline">{username}</span>
           </div>
         </div>
       </div>

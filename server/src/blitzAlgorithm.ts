@@ -66,6 +66,10 @@ export interface SessionProblem {
   name: string;
   rating: number;
   tags: string[];
+  /** Statement + examples available from the local dataset DB. */
+  covered?: boolean;
+  /** Complete official test suite available — in-app Submit works. */
+  judgeable?: boolean;
 }
 
 const WIDEN_STEPS = [0, 100, 200, 300, 400];
@@ -73,25 +77,38 @@ const WIDEN_STEPS = [0, 100, 200, 300, 400];
 /**
  * Picks one unsolved problem per target rating from the catalog, widening the
  * search window around a target if nothing matches exactly.
+ *
+ * When `preferredKeys` is given (problems with a complete local test suite),
+ * the whole widening search runs against preferred problems first, and only
+ * falls back to the full catalog when no preferred problem exists anywhere
+ * near the target — a strong preference that can never make selection fail.
  */
 export function selectProblems(
   catalog: OptimizedProblem[],
   targets: number[],
-  solvedKeys: Set<string>
+  solvedKeys: Set<string>,
+  preferredKeys?: Set<string>
 ): SessionProblem[] {
   const picked: SessionProblem[] = [];
   const pickedKeys = new Set<string>();
 
-  for (const target of targets) {
-    let candidates: OptimizedProblem[] = [];
-
+  const search = (target: number, pool: OptimizedProblem[]): OptimizedProblem[] => {
     for (const widen of WIDEN_STEPS) {
-      candidates = catalog.filter((p) => {
+      const inWindow = pool.filter((p) => {
         const key = problemKey(p);
         return Math.abs(p.rating - target) <= widen && !solvedKeys.has(key) && !pickedKeys.has(key);
       });
-      if (candidates.length > 0) break;
+      if (inWindow.length > 0) return inWindow;
     }
+    return [];
+  };
+
+  const preferredPool =
+    preferredKeys && preferredKeys.size > 0 ? catalog.filter((p) => preferredKeys.has(problemKey(p))) : [];
+
+  for (const target of targets) {
+    let candidates = preferredPool.length > 0 ? search(target, preferredPool) : [];
+    if (candidates.length === 0) candidates = search(target, catalog);
 
     if (candidates.length === 0) {
       throw new NoProblemsError(target);

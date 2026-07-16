@@ -6,6 +6,7 @@ export type ActivitySource = "leetcode" | "codeforces";
 
 export interface ActivityEntry {
   source: ActivitySource;
+  key?: string;
   title: string;
   meta: string;
   solvedAtSeconds: number;

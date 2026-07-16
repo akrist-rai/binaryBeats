@@ -12,6 +12,9 @@ dist
 dist-ssr
 *.local
 
+# local problem dataset + judge artifacts (multi-GB, machine-local)
+server/data/
+
 # Editor directories and files
 .vscode/*
 !.vscode/extensions.json

@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { BlitzApiError, getSession } from "../lib/blitzApi";
 import type { BlitzSession } from "../lib/blitzSession";
 
@@ -12,6 +12,8 @@ export interface UseSessionPollingResult {
   pollState: PollState;
   /** True once the server reports the session no longer exists (expired/swept). */
   notFound: boolean;
+  /** Fetch the session immediately (e.g. right after an in-app AC) instead of waiting for the next poll. */
+  refetch: () => Promise<void>;
 }
 
 /**
@@ -24,6 +26,17 @@ export function useSessionPolling(sessionId: string | null): UseSessionPollingRe
   const [session, setSession] = useState<BlitzSession | null>(null);
   const [pollState, setPollState] = useState<PollState>("live");
   const [notFound, setNotFound] = useState(false);
+
+  const refetch = useCallback(async () => {
+    if (!sessionId) return;
+    try {
+      const fresh = await getSession(sessionId);
+      setSession(fresh);
+    } catch (e) {
+      if (e instanceof BlitzApiError && e.kind === "NOT_FOUND") setNotFound(true);
+      // other errors: the regular poll loop will retry on its own cadence
+    }
+  }, [sessionId]);
 
   useEffect(() => {
     setSession(null);
@@ -89,5 +102,5 @@ export function useSessionPolling(sessionId: string | null): UseSessionPollingRe
     };
   }, [sessionId]);
 
-  return { session, pollState, notFound };
+  return { session, pollState, notFound, refetch };
 }

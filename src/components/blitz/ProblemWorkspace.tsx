@@ -2,8 +2,10 @@ import React, { useEffect, useState } from "react";
 import { claimedBy, type BlitzSession, type SessionProblem } from "../../lib/blitzSession";
 import { problemKey, problemUrl } from "../../lib/codeforces";
 import type { PollState } from "../../hooks/useSessionPolling";
+import { useProblemStatement } from "../../hooks/useProblemStatement";
 import { RatingBadge } from "./RatingBadge";
 import { CodeWorkspace } from "./CodeWorkspace";
+import { ProblemStatement } from "./ProblemStatement";
 
 interface ProblemWorkspaceProps {
   session: BlitzSession;
@@ -13,6 +15,8 @@ interface ProblemWorkspaceProps {
   playSound: (type: "click" | "hover") => void;
   onBack: () => void;
   onSelectProblem: (index: number) => void;
+  /** Called after an in-app AC is recorded — refreshes the session immediately. */
+  onAccepted: () => void;
 }
 
 const LETTERS = "ABCDEFGH";
@@ -25,6 +29,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
   playSound,
   onBack,
   onSelectProblem,
+  onAccepted,
 }) => {
   const me = session.handles[0];
   const isDuel = session.mode === "duel";
@@ -37,6 +42,8 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
   useEffect(() => {
     setWorkspaceTab("problem");
   }, [key]);
+
+  const { statement, loading: statementLoading, notCovered } = useProblemStatement(key);
 
   return (
     <div className="flex-1 flex flex-col gap-6">
@@ -179,74 +186,83 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
           </div>
 
           {workspaceTab === "problem" ? (
-            <div className="flex-1 min-h-[460px] rounded-xl border border-white/[0.08] bg-[#0c0c11] p-6 overflow-y-auto custom-scrollbar">
-              <div className="flex items-start justify-between gap-4 flex-wrap mb-5 pb-5 border-b border-white/[0.06]">
-                <div>
-                  <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
-                    {problem.contestId}
-                    {problem.index}
-                  </span>
-                  <h3 className="text-2xl font-heading font-extrabold text-white mt-1">{problem.name}</h3>
+            statement ? (
+              <ProblemStatement statement={statement} playSound={playSound} />
+            ) : statementLoading ? (
+              <div className="flex-1 min-h-[460px] rounded-xl border border-white/[0.08] bg-[#0c0c11] p-6">
+                <div className="animate-pulse flex flex-col gap-4">
+                  <div className="h-4 w-24 rounded bg-white/[0.04]" />
+                  <div className="h-8 w-2/3 rounded bg-white/[0.06]" />
+                  <div className="h-3 w-full rounded bg-white/[0.04]" />
+                  <div className="h-3 w-full rounded bg-white/[0.04]" />
+                  <div className="h-3 w-5/6 rounded bg-white/[0.04]" />
+                  <div className="h-32 w-full rounded-xl bg-white/[0.03] mt-4" />
                 </div>
-                <RatingBadge rating={problem.rating} />
               </div>
-
-              {problem.tags.length > 0 && (
-                <div className="mb-6">
-                  <span className="text-xs text-zinc-500 font-semibold tracking-wider uppercase block mb-2">
-                    Tags
-                  </span>
-                  <div className="flex flex-wrap gap-1.5">
-                    {problem.tags.map((tag) => (
-                      <span
-                        key={tag}
-                        className="text-[10px] font-mono px-2 py-1 rounded border border-white/[0.08] bg-white/[0.02] text-zinc-400"
-                      >
-                        {tag}
-                      </span>
-                    ))}
+            ) : (
+              <div className="flex-1 min-h-[460px] rounded-xl border border-white/[0.08] bg-[#0c0c11] p-6 overflow-y-auto custom-scrollbar">
+                <div className="flex items-start justify-between gap-4 flex-wrap mb-5 pb-5 border-b border-white/[0.06]">
+                  <div>
+                    <span className="text-[10px] font-mono text-zinc-500 uppercase tracking-wider">
+                      {problem.contestId}
+                      {problem.index}
+                    </span>
+                    <h3 className="text-2xl font-heading font-extrabold text-white mt-1">{problem.name}</h3>
                   </div>
+                  <RatingBadge rating={problem.rating} />
                 </div>
-              )}
 
-              <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-5 mb-6">
-                <p className="text-sm text-zinc-400 leading-relaxed">
-                  The full statement, examples, and the judge's test cases live on Codeforces — we mirror the
-                  rating, tags, and contest metadata here to match problems to your rating and detect your solve
-                  automatically. Read it there, then come back to the{" "}
-                  <span className="text-white font-semibold">solution.cpp</span> tab to write your code.
-                </p>
+                {problem.tags.length > 0 && (
+                  <div className="mb-6">
+                    <span className="text-xs text-zinc-500 font-semibold tracking-wider uppercase block mb-2">
+                      Tags
+                    </span>
+                    <div className="flex flex-wrap gap-1.5">
+                      {problem.tags.map((tag) => (
+                        <span
+                          key={tag}
+                          className="text-[10px] font-mono px-2 py-1 rounded border border-white/[0.08] bg-white/[0.02] text-zinc-400"
+                        >
+                          {tag}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                <div className="rounded-xl border border-white/[0.08] bg-white/[0.02] p-5 mb-6">
+                  <p className="text-sm text-zinc-400 leading-relaxed">
+                    {notCovered
+                      ? "This problem isn't in the local statement dataset (it covers problems up to ~2025), so the full statement lives on Codeforces. Solve it there — we detect your accepted verdict automatically within ~15s."
+                      : "The statement couldn't be loaded right now — the full problem is always available on Codeforces. Solve it there and we'll detect your accepted verdict automatically within ~15s."}
+                  </p>
+                </div>
+
+                <a
+                  href={problemUrl(problem)}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  onClick={() => playSound("click")}
+                  className="inline-flex items-center justify-center gap-2 h-12 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all px-8"
+                >
+                  Open Full Problem on Codeforces ↗
+                </a>
               </div>
-
-              <div className="rounded-xl border border-[#35e8ff]/15 bg-[#35e8ff]/[0.03] p-5">
-                <span className="text-xs text-[#35e8ff] font-semibold tracking-wider uppercase block mb-2">
-                  How verification works
-                </span>
-                <p className="text-sm text-zinc-400 leading-relaxed">
-                  Nothing here checks correctness — <span className="text-zinc-200">Run</span> just compiles and
-                  executes against whatever input you type, so you can sanity-check logic. The only real judge is
-                  Codeforces: submit your solution on{" "}
-                  <span className="text-zinc-200 font-semibold">codeforces.com</span>, and once it comes back
-                  Accepted, we detect that from your public submission history within ~15s and mark it solved here.
-                </p>
-              </div>
-
-              <a
-                href={problemUrl(problem)}
-                target="_blank"
-                rel="noopener noreferrer"
-                onClick={() => playSound("click")}
-                className="inline-flex items-center justify-center gap-2 h-12 rounded-lg bg-[#c3f73a] hover:bg-[#b0e230] text-black font-bold font-mono text-xs uppercase tracking-wider transition-all px-8"
-              >
-                Open Full Problem on Codeforces ↗
-              </a>
-            </div>
+            )
           ) : (
             // key forces a full remount on problem switch — CodeWorkspace's draft
             // state is loaded once via a lazy useState initializer, so it must
             // actually remount (not just re-render) to pick up the new problem's
             // draft instead of carrying over the previous problem's editor state.
-            <CodeWorkspace key={key} problemKey={key} />
+            <CodeWorkspace
+              key={key}
+              problemKey={key}
+              sessionId={session.id}
+              judgeable={problem.judgeable === true && !solved}
+              examples={statement?.examples ?? []}
+              playSound={playSound}
+              onAccepted={onAccepted}
+            />
           )}
         </div>
       </div>

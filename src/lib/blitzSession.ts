@@ -8,6 +8,10 @@ export interface SessionProblem {
   name: string;
   rating: number;
   tags: string[];
+  /** Statement + examples available from the server's local dataset DB. */
+  covered?: boolean;
+  /** Complete official test suite available server-side — in-app Submit works. */
+  judgeable?: boolean;
 }
 
 /** Mirrors server/src/blitzSession.ts's BlitzSession — the server is the sole
@@ -26,6 +30,8 @@ export interface BlitzSession {
   problems: SessionProblem[];
   /** handle -> problemKey -> accepted-at (epoch seconds) */
   results: Record<string, Record<string, number>>;
+  /** handle -> problemKey -> where the accepted verdict came from. */
+  solveSources?: Record<string, Record<string, "codeforces" | "local">>;
   status: "active" | "finished";
   finishedAtSeconds?: number;
 }

@@ -5,15 +5,13 @@ import { getSession, listActiveSessions, saveSession, sweepStaleSessions } from 
 const POLL_INTERVAL_MS = 12_000;
 
 async function pollSession(sessionId: string): Promise<void> {
-  const initial = getSession(sessionId);
+  const initial = await getSession(sessionId);
   if (!initial || initial.status !== "active") return;
 
   const problemKeys = new Set(initial.problems.map((p) => problemKey(p)));
 
   for (const handle of initial.handles) {
-    // Re-read before each handle in case a prior handle in this same tick already
-    // mutated the session (recordSolve returns a new object, doesn't mutate in place).
-    const current = getSession(sessionId);
+    const current = await getSession(sessionId);
     if (!current || current.status !== "active") return;
 
     try {
@@ -29,15 +27,15 @@ async function pollSession(sessionId: string): Promise<void> {
         updated = recordSolve(updated, handle, key, sub.creationTimeSeconds);
       }
 
-      if (updated !== current) saveSession(updated);
+      if (updated !== current) await saveSession(updated);
     } catch (e) {
       console.error(`[poller] session ${sessionId} handle ${handle}:`, e instanceof Error ? e.message : e);
     }
   }
 
-  const finalState = getSession(sessionId);
+  const finalState = await getSession(sessionId);
   if (finalState && finalState.status === "active" && isComplete(finalState)) {
-    saveSession(finishSession(finalState));
+    await saveSession(finishSession(finalState));
   }
 }
 
@@ -47,8 +45,8 @@ async function tick(): Promise<void> {
   if (pollInProgress) return;
   pollInProgress = true;
   try {
-    sweepStaleSessions();
-    for (const session of listActiveSessions()) {
+    await sweepStaleSessions();
+    for (const session of await listActiveSessions()) {
       await pollSession(session.id);
     }
   } finally {
@@ -56,9 +54,6 @@ async function tick(): Promise<void> {
   }
 }
 
-/** Starts the background loop that keeps checking Codeforces for active sessions'
- *  solves — this is what lets a session keep progressing even while every
- *  browser tab that cares about it is closed. */
 export function startSessionPoller(): void {
   setInterval(() => {
     void tick();

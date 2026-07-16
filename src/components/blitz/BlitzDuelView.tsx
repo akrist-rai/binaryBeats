@@ -51,7 +51,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
   const [copied, setCopied] = useState(false);
   const [openProblemIndex, setOpenProblemIndex] = useState<number | null>(null);
 
-  const { session, pollState, notFound } = useSessionPolling(sessionId);
+  const { session, pollState, notFound, refetch } = useSessionPolling(sessionId);
 
   // A fresh session (or leaving one) always starts back at the problem list.
   useEffect(() => {
@@ -82,6 +82,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
         onAddXp(xpForRating(p.rating));
         logSolve({
           source: "codeforces",
+          key,
           title: p.name,
           meta: String(p.rating),
           solvedAtSeconds: session.results[me]?.[key] ?? Math.floor(Date.now() / 1000),
@@ -310,6 +311,7 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                       playSound={playSound}
                       onBack={() => setOpenProblemIndex(null)}
                       onSelectProblem={setOpenProblemIndex}
+                      onAccepted={() => void refetch()}
                     />
                   </motion.div>
                 )}

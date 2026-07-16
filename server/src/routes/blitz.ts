@@ -5,6 +5,7 @@ import { getProblemset } from "../problemCache.js";
 import { NoProblemsError, buildDuelTargets, buildSoloTargets, effectiveRating, selectProblems } from "../blitzAlgorithm.js";
 import { createSession, type BlitzMode } from "../blitzSession.js";
 import { deleteSession, getSession, saveSession } from "../sessionStore.js";
+import { getJudgeableKeys, hasStatement } from "../problemDb.js";
 
 const router = new Router({ prefix: "/api/blitz" });
 
@@ -30,9 +31,6 @@ interface CreateSessionBody {
   rivalHandle?: string;
 }
 
-// POST /api/blitz/sessions — fetches ratings + solved history, draws a problem
-// set, and creates a server-tracked session. Everything the frontend used to
-// orchestrate itself now happens here in one call.
 router.post("/sessions", async (ctx) => {
   const body = ctx.request.body as CreateSessionBody | undefined;
   const mode = body?.mode;
@@ -94,9 +92,24 @@ router.post("/sessions", async (ctx) => {
       targets = buildSoloTargets(effectiveRating({ rating: meInfo.rating }));
     }
 
-    const problems = selectProblems(catalog, targets, solvedKeys);
-    const session = createSession(mode, handles, ratings, baselineSubmissionId, problems);
-    saveSession(session);
+    const judgeableKeys = await getJudgeableKeys();
+    const problems = selectProblems(catalog, targets, solvedKeys, judgeableKeys).map((p) => {
+      const key = problemKey(p);
+      return {
+        ...p,
+        covered: hasStatement(key), // sync check via cached set — OK to call without await here
+        judgeable: judgeableKeys.has(key),
+      };
+    });
+
+    // hasStatement needs to be awaited per problem — batch it
+    const coveredFlags = await Promise.all(
+      problems.map((p) => hasStatement(problemKey(p)))
+    );
+    const problemsWithCoverage = problems.map((p, i) => ({ ...p, covered: coveredFlags[i] }));
+
+    const session = createSession(mode, handles, ratings, baselineSubmissionId, problemsWithCoverage);
+    await saveSession(session);
 
     ctx.body = { session };
   } catch (e) {
@@ -104,9 +117,8 @@ router.post("/sessions", async (ctx) => {
   }
 });
 
-// GET /api/blitz/sessions/:id — the frontend polls this instead of Codeforces directly.
 router.get("/sessions/:id", async (ctx) => {
-  const session = getSession(ctx.params.id);
+  const session = await getSession(ctx.params.id);
   if (!session) {
     ctx.status = 404;
     ctx.body = { error: "NOT_FOUND", message: "Session not found (it may have expired)." };
@@ -116,13 +128,13 @@ router.get("/sessions/:id", async (ctx) => {
 });
 
 router.post("/sessions/:id/end", async (ctx) => {
-  const session = getSession(ctx.params.id);
+  const session = await getSession(ctx.params.id);
   if (!session) {
     ctx.status = 404;
     ctx.body = { error: "NOT_FOUND", message: "Session not found." };
     return;
   }
-  deleteSession(ctx.params.id);
+  await deleteSession(ctx.params.id);
   ctx.status = 204;
 });
 

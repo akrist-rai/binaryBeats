@@ -4,6 +4,8 @@ import type { SessionProblem } from "./blitzAlgorithm.js";
 
 export type BlitzMode = "blitz" | "duel";
 
+export type SolveSource = "codeforces" | "local";
+
 export interface BlitzSession {
   id: string;
   mode: BlitzMode;
@@ -19,6 +21,8 @@ export interface BlitzSession {
   problems: SessionProblem[];
   /** handle -> problemKey -> accepted-at (epoch seconds) */
   results: Record<string, Record<string, number>>;
+  /** handle -> problemKey -> where the accepted verdict came from. */
+  solveSources?: Record<string, Record<string, SolveSource>>;
   status: "active" | "finished";
   finishedAtSeconds?: number;
 }
@@ -45,7 +49,13 @@ export function createSession(
   };
 }
 
-export function recordSolve(session: BlitzSession, handle: string, key: string, acTimeSeconds: number): BlitzSession {
+export function recordSolve(
+  session: BlitzSession,
+  handle: string,
+  key: string,
+  acTimeSeconds: number,
+  source: SolveSource = "codeforces"
+): BlitzSession {
   const h = handle.toLowerCase();
   const existing = session.results[h]?.[key];
   if (existing !== undefined && existing <= acTimeSeconds) return session;
@@ -55,6 +65,10 @@ export function recordSolve(session: BlitzSession, handle: string, key: string, 
     results: {
       ...session.results,
       [h]: { ...session.results[h], [key]: acTimeSeconds },
+    },
+    solveSources: {
+      ...session.solveSources,
+      [h]: { ...session.solveSources?.[h], [key]: source },
     },
   };
 }

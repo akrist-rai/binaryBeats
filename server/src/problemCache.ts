@@ -28,7 +28,14 @@ export async function getProblemset(): Promise<OptimizedProblem[]> {
     try {
       const raw = await fetchProblemset();
       const trimmed: OptimizedProblem[] = raw
-        .filter((p): p is typeof p & { rating: number } => p.type === "PROGRAMMING" && typeof p.rating === "number")
+        .filter(
+          (p): p is typeof p & { rating: number } =>
+            p.type === "PROGRAMMING" &&
+            typeof p.rating === "number" &&
+            // Interactive problems are a dead end here: no in-app judging is
+            // possible and their samples aren't real transcripts.
+            !p.tags.includes("interactive")
+        )
         .map((p) => ({ contestId: p.contestId, index: p.index, name: p.name, rating: p.rating, tags: p.tags }));
 
       cache = { fetchedAt: Date.now(), problems: trimmed };

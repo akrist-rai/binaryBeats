@@ -242,6 +242,18 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   // loose constellation rather than a single spoke.
   useEffect(() => {
     if (!problems) return;
+
+    // Group base angles by first tag
+    const tagAngles = new Map<string, number>();
+    for (const p of problems) {
+      const tag = p.tags[0] ?? "misc";
+      if (!tagAngles.has(tag)) {
+        const baseAngle = (hashStr(tag) % 3600) / 3600 * Math.PI * 2;
+        tagAngles.set(tag, baseAngle);
+      }
+    }
+    sectorLabelsRef.current = Array.from(tagAngles.entries()).map(([tag, angle]) => ({ tag, angle }));
+
     nodesRef.current = problems.map((p) => {
       const ringIdx = ringIndexForRating(p.rating);
       const ring = ORBIT_RINGS[ringIdx];

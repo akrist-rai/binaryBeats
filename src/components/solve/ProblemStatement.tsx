@@ -4,7 +4,6 @@ import "katex/dist/katex.min.css";
 import { splitMathSegments } from "../../lib/mathText";
 import { problemUrl } from "../../lib/codeforces";
 import type { ProblemStatementData } from "../../lib/problemsApi";
-import { RatingBadge } from "../blitz/RatingBadge";
 
 interface ProblemStatementProps {
   statement: ProblemStatementData;
@@ -43,9 +42,9 @@ const MathText: React.FC<{ text: string }> = ({ text }) => {
 };
 
 const Section: React.FC<{ title: string; children: React.ReactNode }> = ({ title, children }) => (
-  <div className="mb-6">
-    <span className="label-caps block mb-2">{title}</span>
-    <div className="text-sm text-bb-ink-soft">{children}</div>
+  <div className="mb-5">
+    <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-bb-term-text/35 block mb-1.5">{title}</span>
+    <div className="text-[13px] text-bb-term-text/70">{children}</div>
   </div>
 );
 
@@ -62,7 +61,7 @@ const CopyButton: React.FC<{ text: string }> = ({ text }) => {
           // clipboard unavailable — no-op
         }
       }}
-      className="text-[9px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer shrink-0"
+      className="text-[9px] font-mono uppercase tracking-wider text-bb-term-text/35 hover:text-bb-term-acc transition-colors cursor-pointer shrink-0"
     >
       {copied ? "copied ✓" : "copy"}
     </button>
@@ -76,48 +75,42 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
     hasFigure(statement.description) || hasFigure(statement.inputFormat) || hasFigure(statement.outputFormat) || hasFigure(statement.note);
 
   return (
-    <div className="flex-1 min-h-[460px] spec-card p-0 overflow-y-auto custom-scrollbar">
+    <div className="flex-1 min-h-0 overflow-y-auto custom-scrollbar-dark bg-bb-term-surface [&_.katex]:text-current">
       {/* Sticky meta rail — constraints stay visible while the body scrolls beneath */}
-      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 flex-wrap px-6 pt-6 pb-5 border-b border-bb-line bg-bb-paper-raised/95 backdrop-blur-sm">
+      <div className="sticky top-0 z-10 flex items-start justify-between gap-4 flex-wrap px-5 pt-4 pb-3.5 border-b border-bb-term-line bg-bb-term-surface/95 backdrop-blur-sm">
         <div>
-          <span className="label-caps">
+          <span className="text-[10px] font-mono uppercase tracking-wider text-bb-term-text/35 tabular-nums">
             {statement.contestId}
             {statement.index}
           </span>
-          <h3 className="text-2xl font-heading font-extrabold text-bb-ink mt-1">{statement.title ?? "Untitled"}</h3>
+          <h3 className="text-lg font-heading font-bold text-bb-term-text mt-1">{statement.title ?? "Untitled"}</h3>
         </div>
-        <div className="flex items-center gap-2 flex-wrap">
+        <div className="flex items-center gap-1.5 flex-wrap">
           {statement.timeLimitMs !== null && (
-            <span className="pill text-[10px] font-mono px-2 py-1 border border-bb-line bg-bb-paper text-bb-ink-soft">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
               {statement.timeLimitMs / 1000}s
             </span>
           )}
           {statement.memoryLimitMb !== null && (
-            <span className="pill text-[10px] font-mono px-2 py-1 border border-bb-line bg-bb-paper text-bb-ink-soft">
+            <span className="text-[10px] font-mono px-1.5 py-0.5 rounded border border-bb-term-line text-bb-term-text/50">
               {statement.memoryLimitMb}MB
             </span>
           )}
-          <RatingBadge rating={statement.rating} />
         </div>
       </div>
 
-      <div className="p-6">
+      <div className="p-5">
         {figureOmitted && (
-          <div className="mb-5 rounded-lg border border-amber-500/30 bg-amber-500/10 px-3.5 py-2.5 text-xs font-mono text-amber-800">
+          <div className="mb-4 rounded border border-amber-400/25 bg-amber-400/10 px-3.5 py-2.5 text-xs font-mono text-amber-300">
             This statement references a figure that can't be shown here —{" "}
-            <a
-              href={problemUrl(statement)}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="underline hover:text-amber-950"
-            >
+            <a href={problemUrl(statement)} target="_blank" rel="noopener noreferrer" className="underline hover:text-amber-200">
               view it on Codeforces ↗
             </a>
           </div>
         )}
 
         {statement.description && (
-          <div className="mb-6 text-sm text-bb-ink-soft">
+          <div className="mb-5 text-[13px] text-bb-term-text/70">
             <MathText text={statement.description} />
           </div>
         )}
@@ -136,19 +129,19 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
 
         {statement.examples.length > 0 && (
           <Section title="Examples">
-            <div className="flex flex-col gap-4">
+            <div className="flex flex-col gap-3">
               {statement.examples.map((ex, i) => (
-                <div key={i} className="rounded-lg border border-bb-line bg-bb-paper overflow-hidden font-mono text-xs">
-                  <div className="flex items-center justify-between px-4 py-2 border-b border-bb-line bg-bb-paper-raised">
-                    <span className="text-[10px] uppercase tracking-wider text-bb-ink-faint">Input {i + 1}</span>
+                <div key={i} className="rounded border border-bb-term-line bg-bb-term-bg/40 overflow-hidden font-mono text-xs">
+                  <div className="flex items-center justify-between px-3 py-1.5 border-b border-bb-term-line bg-bb-term-bg/60">
+                    <span className="text-[9px] uppercase tracking-wider text-bb-term-text/35">Input {i + 1}</span>
                     <CopyButton text={ex.input} />
                   </div>
-                  <pre className="px-4 py-3 text-bb-ink-soft whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.input}</pre>
-                  <div className="flex items-center justify-between px-4 py-2 border-y border-bb-line bg-bb-paper-raised">
-                    <span className="text-[10px] uppercase tracking-wider text-bb-ink-faint">Output {i + 1}</span>
+                  <pre className="px-3 py-2.5 text-bb-term-text/80 whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar-dark">{ex.input}</pre>
+                  <div className="flex items-center justify-between px-3 py-1.5 border-y border-bb-term-line bg-bb-term-bg/60">
+                    <span className="text-[9px] uppercase tracking-wider text-bb-term-text/35">Output {i + 1}</span>
                     <CopyButton text={ex.output} />
                   </div>
-                  <pre className="px-4 py-3 text-bb-ink-soft whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar">{ex.output}</pre>
+                  <pre className="px-3 py-2.5 text-bb-term-text/80 whitespace-pre-wrap max-h-56 overflow-y-auto custom-scrollbar-dark">{ex.output}</pre>
                 </div>
               ))}
             </div>
@@ -162,14 +155,14 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
         )}
 
         {/* Attribution — required by the dataset's ODC-By 4.0 license */}
-        <div className="mt-8 pt-4 border-t border-bb-line text-[10px] font-mono text-bb-ink-faint leading-relaxed">
+        <div className="mt-6 pt-3.5 border-t border-bb-term-line text-[10px] font-mono text-bb-term-text/35 leading-relaxed">
           Problem ©{" "}
           <a
             href={problemUrl(statement)}
             target="_blank"
             rel="noopener noreferrer"
             onClick={() => playSound("click")}
-            className="underline hover:text-bb-orange transition-colors"
+            className="underline hover:text-bb-term-acc2 transition-colors"
           >
             Codeforces
           </a>{" "}
@@ -178,7 +171,7 @@ export const ProblemStatement: React.FC<ProblemStatementProps> = ({ statement, p
             href="https://huggingface.co/datasets/open-r1/codeforces"
             target="_blank"
             rel="noopener noreferrer"
-            className="underline hover:text-bb-orange transition-colors"
+            className="underline hover:text-bb-term-acc2 transition-colors"
           >
             open-r1/codeforces
           </a>{" "}

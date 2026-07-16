@@ -1,10 +1,7 @@
 import React from "react";
-import { problemUrl } from "../../lib/codeforces";
-import { RatingBadge } from "../blitz/RatingBadge";
-import type { SolvableProblem, SolveClaim, SolveSidebarProblem } from "./types";
+import type { SolveClaim, SolveSidebarProblem } from "./types";
 
 interface SolveSidebarProps {
-  problem: SolvableProblem;
   items: SolveSidebarProblem[];
   orderIndex: number;
   progress: { solved: number; total: number };
@@ -13,87 +10,77 @@ interface SolveSidebarProps {
   playSound: (type: "click" | "hover") => void;
 }
 
-export const SolveSidebar: React.FC<SolveSidebarProps> = ({ problem, items, orderIndex, progress, claim, onSelectProblem, playSound }) => {
-  return (
-    <div className="flex flex-col gap-6 spec-card p-5">
-      <div className="flex items-center justify-between gap-2">
-        <RatingBadge rating={problem.rating} />
-        <a
-          href={problemUrl(problem)}
-          target="_blank"
-          rel="noopener noreferrer"
-          onClick={() => playSound("click")}
-          className="btn-outline inline-flex items-center gap-1 px-2.5 py-1 text-[9px] font-mono uppercase tracking-wider"
-        >
-          Open ↗
-        </a>
-      </div>
+function tierDot(rating: number | null): string {
+  if (rating == null) return "bg-bb-term-text/25";
+  if (rating <= 1300) return "bg-bb-term-acc";
+  if (rating <= 1900) return "bg-amber-400";
+  return "bg-[#ff5c5c]";
+}
 
-      <div>
-        <div className="flex items-center justify-between mb-1.5">
-          <span className="label-caps">Session Progress</span>
-          <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
+export const SolveSidebar: React.FC<SolveSidebarProps> = ({ items, orderIndex, progress, claim, onSelectProblem, playSound }) => {
+  return (
+    <div className="w-56 shrink-0 flex flex-col border-r border-bb-term-line bg-bb-term-surface min-h-0">
+      <div className="px-3 pt-3 pb-2.5 border-b border-bb-term-line/70 shrink-0">
+        <div className="flex items-center justify-between mb-2">
+          <span className="text-[10px] font-mono font-bold uppercase tracking-wider text-bb-term-text/35">Problems</span>
+          <span className="text-[10px] font-mono text-bb-term-text/35 tabular-nums">
             {progress.solved}/{progress.total}
           </span>
         </div>
-        <div className="flex gap-1 mb-5">
+        <div className="h-[3px] rounded-full bg-bb-term-text/10 overflow-hidden flex gap-px">
           {items.map((item) => (
             <span
               key={item.key}
-              className={`flex-1 h-1.5 rounded-full ${
-                item.solvedByMe ? "bg-bb-lime" : item.solved ? "bg-bb-ink-soft" : "bg-bb-ink/[0.08]"
-              }`}
+              className={`flex-1 rounded-full ${item.solvedByMe ? "bg-bb-term-acc" : item.solved ? "bg-bb-term-text/35" : "bg-transparent"}`}
             />
           ))}
         </div>
+      </div>
 
-        <h4 className="label-caps mb-3 select-none">Problems in This Session</h4>
-        <div className="flex flex-col gap-1.5">
-          {items.map((item, i) => {
-            const isCurrent = i === orderIndex;
-            const diffBar = (item.rating ?? 0) <= 1300 ? "bg-bb-lime" : (item.rating ?? 0) <= 1900 ? "bg-bb-orange" : "bg-bb-red";
-            return (
-              <div
-                key={item.key}
-                onClick={() => {
-                  if (!isCurrent) {
-                    playSound("click");
-                    onSelectProblem(i);
-                  }
-                }}
-                className={`relative overflow-hidden group flex items-center justify-between py-2 pl-3.5 pr-3 rounded-md cursor-pointer transition-all font-mono ${
-                  isCurrent ? "bg-bb-ink/[0.04] border border-bb-line-strong text-bb-ink" : "text-bb-ink-soft hover:text-bb-ink hover:bg-bb-ink/[0.02]"
-                }`}
-              >
-                <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${diffBar}`} />
-                <div className="flex items-center gap-2 truncate">
-                  <span className="text-[10px] font-bold text-bb-ink-faint shrink-0">{item.letter}</span>
-                  <span className="text-xs font-medium truncate">{item.title}</span>
-                </div>
-                {item.solved && (
-                  <span
-                    className={`text-[9px] px-1 py-0.5 rounded shrink-0 ${
-                      item.solvedByMe ? "text-bb-lime bg-bb-lime/10" : "text-bb-ink-soft bg-bb-ink/[0.05]"
-                    }`}
-                  >
-                    ✓
-                  </span>
-                )}
-              </div>
-            );
-          })}
-        </div>
+      <div className="flex-1 overflow-y-auto custom-scrollbar-dark py-1">
+        {items.map((item, i) => {
+          const isCurrent = i === orderIndex;
+          return (
+            <div
+              key={item.key}
+              onClick={() => {
+                if (!isCurrent) {
+                  playSound("click");
+                  onSelectProblem(i);
+                }
+              }}
+              onMouseEnter={() => !isCurrent && playSound("hover")}
+              className={`relative flex items-center gap-2 h-8 pl-3 pr-2.5 cursor-pointer font-mono text-[11.5px] transition-colors ${
+                isCurrent ? "bg-bb-term-text/[0.07] text-bb-term-text" : "text-bb-term-text/55 hover:bg-bb-term-text/[0.04] hover:text-bb-term-text/85"
+              }`}
+            >
+              {isCurrent && <span className="absolute left-0 top-0 bottom-0 w-[2px] bg-bb-orange" />}
+              <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${tierDot(item.rating)}`} />
+              <span className="text-bb-term-text/35 shrink-0 w-3 text-right">{item.letter}</span>
+              <span className="flex-1 truncate">{item.title}</span>
+              {item.solved && (
+                <svg
+                  className={`w-3 h-3 shrink-0 ${item.solvedByMe ? "text-bb-term-acc" : "text-bb-term-text/30"}`}
+                  fill="none"
+                  stroke="currentColor"
+                  strokeWidth="3"
+                  viewBox="0 0 24 24"
+                >
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+                </svg>
+              )}
+            </div>
+          );
+        })}
       </div>
 
       {claim && (
-        <div className="mt-auto pt-4 border-t border-bb-line text-[10px] font-mono">
-          <div
-            className={`flex items-center justify-center gap-1.5 py-2 rounded-lg border ${
-              claim.mine ? "border-bb-lime/40 bg-bb-lime/10 text-bb-lime" : "border-bb-line bg-bb-paper text-bb-ink-soft"
-            }`}
-          >
-            {claim.mine ? "Solved ✓" : `Claimed by ${claim.label}`}
-          </div>
+        <div
+          className={`shrink-0 px-3 py-2 border-t font-mono text-[10px] uppercase tracking-wider text-center ${
+            claim.mine ? "border-bb-term-acc/25 bg-bb-term-acc/[0.06] text-bb-term-acc" : "border-bb-term-line text-bb-term-text/45"
+          }`}
+        >
+          {claim.mine ? "Solved ✓" : `Claimed by ${claim.label}`}
         </div>
       )}
     </div>

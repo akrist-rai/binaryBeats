@@ -67,7 +67,7 @@ export const DiffViewer: React.FC<DiffViewerProps> = ({ expected, actual, classN
   const { expectedLine, actualLine } = useMemo(() => firstMismatch(expected, actual), [expected, actual]);
   return (
     <div
-      className={`rounded-lg border border-bb-term-line bg-bb-term-surface overflow-hidden grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bb-term-line ${className}`}
+      className={`rounded border border-bb-term-line bg-bb-term-surface overflow-hidden grid grid-cols-1 sm:grid-cols-2 divide-y sm:divide-y-0 sm:divide-x divide-bb-term-line ${className}`}
     >
       <LineBlock label="Expected Output" text={expected} highlightLine={expectedLine} />
       <LineBlock label="Your Output" text={actual || "(empty)"} highlightLine={actualLine} />

@@ -87,14 +87,14 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
 
   if (!isDesktop) {
     return (
-      <div className="flex-1 flex flex-col gap-4 min-h-0">
-        <div className="flex items-center gap-1 h-10 border-b border-bb-line select-none shrink-0">
+      <div className="flex-1 flex flex-col min-h-0">
+        <div className="flex items-center gap-1 h-9 border-b border-bb-term-line select-none shrink-0 bg-bb-term-surface px-1">
           {(["left", "right"] as const).map((id) => (
             <button
               key={id}
               onClick={() => setTab(id)}
-              className={`h-full px-4 text-xs font-bold cursor-pointer border-b-2 flex items-center transition-all font-mono ${
-                tab === id ? "border-b-bb-orange text-bb-ink" : "border-transparent text-bb-ink-faint hover:text-bb-ink-soft"
+              className={`h-full px-3.5 text-[11px] font-bold cursor-pointer border-b-2 flex items-center transition-all font-mono ${
+                tab === id ? "border-b-bb-term-acc text-bb-term-text" : "border-transparent text-bb-term-text/40 hover:text-bb-term-text/70"
               }`}
             >
               {id === "left" ? leftLabel : rightLabel}
@@ -112,7 +112,7 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
       className="flex-1 flex min-h-0 relative"
       style={{ cursor: dragging ? "col-resize" : undefined, userSelect: dragging ? "none" : undefined }}
     >
-      <div className="flex flex-col min-h-0 overflow-hidden" style={{ width: `calc(${ratio * 100}% - 3px)` }}>
+      <div className="flex flex-col min-h-0 overflow-hidden" style={{ width: `calc(${ratio * 100}% - 1px)` }}>
         {left}
       </div>
       <div
@@ -122,11 +122,11 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
         }}
         role="separator"
         aria-orientation="vertical"
-        className={`w-[6px] shrink-0 cursor-col-resize relative group/divider rounded-full transition-colors ${
-          dragging ? "bg-bb-orange/40" : "bg-transparent hover:bg-bb-line-strong"
+        className={`w-[2px] shrink-0 cursor-col-resize relative group/divider transition-colors ${
+          dragging ? "bg-bb-orange" : "bg-bb-term-line hover:bg-bb-term-text/25"
         }`}
       >
-        <div className="absolute inset-y-0 left-1/2 -translate-x-1/2 w-px bg-bb-line group-hover/divider:bg-bb-line-strong" />
+        <div className="absolute inset-y-0 -left-1 -right-1" />
       </div>
       <div className="flex flex-col min-h-0 overflow-hidden flex-1">{right}</div>
     </div>

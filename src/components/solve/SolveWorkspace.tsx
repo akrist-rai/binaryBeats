@@ -8,14 +8,13 @@ import { SplitPane } from "./SplitPane";
 import { StatementPane } from "./StatementPane";
 import type { SolveWorkspaceProps } from "./types";
 
-const LETTERS = "ABCDEFGH";
-
 /**
  * The single "solve a problem" experience — statement + editor + judge console
  * + the shell around them. Used by both Blitz/Duel sessions (mode="session")
- * and Home practice mode (mode="practice"); the two used to be independent,
- * drifted implementations (ProblemWorkspace.tsx and an inline block in
- * LeetCodeDashboard.tsx).
+ * and Home practice mode (mode="practice"). Presented as one contiguous dark
+ * IDE "window" (its own bordered surface, independent of the app's light/dark
+ * theme — same rationale as the editor's terminal register being theme-constant)
+ * rather than a stack of separately-carded panels.
  */
 export const SolveWorkspace: React.FC<SolveWorkspaceProps> = (props) => {
   const { problem, onBack, onAccepted, playSound } = props;
@@ -27,72 +26,85 @@ export const SolveWorkspace: React.FC<SolveWorkspaceProps> = (props) => {
   const judgeableNow = problem.judgeable && (props.mode === "practice" || !solved);
 
   return (
-    <div className="flex-1 flex flex-col gap-6">
-      {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between pb-6 border-b border-bb-line select-none gap-4">
-        <div className="flex items-center gap-4 min-w-0">
+    <div
+      className="flex-1 flex flex-col min-h-0 rounded-lg border border-bb-term-line bg-bb-term-bg overflow-hidden shadow-2xl shadow-black/20"
+      style={{ minHeight: 640 }}
+    >
+      {/* Title bar */}
+      <div className="h-11 shrink-0 flex items-center justify-between gap-3 pl-2 pr-3 border-b border-bb-term-line bg-bb-term-surface select-none">
+        <div className="flex items-center gap-1 min-w-0">
           <button
             onClick={() => {
               playSound("click");
               onBack();
             }}
             onMouseEnter={() => playSound("hover")}
-            className="btn-outline h-9 px-3.5 cursor-pointer text-xs font-bold font-mono uppercase tracking-wider shrink-0"
+            title={props.mode === "session" ? "Back to session" : "Back to problems"}
+            className="w-7 h-7 shrink-0 rounded flex items-center justify-center text-bb-term-text/50 hover:text-bb-term-text hover:bg-bb-term-text/10 transition-colors cursor-pointer"
           >
-            ← {props.mode === "session" ? "Session" : "Problems"}
+            <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M15 19l-7-7 7-7" />
+            </svg>
           </button>
 
-          <div className="flex items-center gap-2 text-xs font-mono text-bb-ink-faint min-w-0">
-            {props.mode === "session" ? (
+          <div className="flex items-center gap-1.5 min-w-0 font-mono text-xs pl-1">
+            <span className="text-bb-term-text/35 shrink-0">{props.mode === "session" ? "session" : "problems"}</span>
+            <span className="text-bb-term-text/25 shrink-0">›</span>
+            {props.mode === "session" && (
               <>
-                <span className="shrink-0">{LETTERS[props.orderIndex] ?? props.orderIndex + 1}</span>
-                <span className="shrink-0">/</span>
+                <span className="text-bb-term-text/50 shrink-0">{props.orderIndex + 1}</span>
+                <span className="text-bb-term-text/25 shrink-0">›</span>
               </>
-            ) : (
-              <span className="shrink-0 tabular-nums">
+            )}
+            {props.mode === "practice" && (
+              <span className="text-bb-term-text/50 shrink-0 tabular-nums">
                 {problem.contestId}
-                {problem.index}.
+                {problem.index}
               </span>
             )}
-            <span className="text-bb-ink font-semibold font-sans text-sm truncate">{problem.title}</span>
-            <RatingBadge rating={problem.rating} />
+            <span className="text-bb-term-text font-semibold truncate">{problem.title}</span>
+            <RatingBadge rating={problem.rating} className="shrink-0" />
           </div>
         </div>
 
         <div className="flex items-center gap-3 shrink-0">
-          {props.mode === "practice" && solved && (
-            <div className="pill flex items-center gap-1.5 h-8 px-3 border border-bb-lime/40 bg-bb-lime/10 font-mono text-[11px] font-bold uppercase text-bb-lime">
-              ✓ Solved
-            </div>
+          {solved && (
+            <span className="flex items-center gap-1 text-[10px] font-mono font-bold uppercase tracking-wider text-bb-term-acc">
+              <svg className="w-3 h-3" fill="none" stroke="currentColor" strokeWidth="3" viewBox="0 0 24 24">
+                <path strokeLinecap="round" strokeLinejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+              Solved
+            </span>
           )}
-          <div className="pill flex items-center gap-1.5 h-8 px-3 border border-bb-lime/40 bg-bb-lime/10 font-mono text-[11px] font-bold uppercase tracking-wider text-bb-lime">
-            <span className="w-1.5 h-1.5 rounded-full bg-bb-lime" />
+          <span className="hidden sm:flex items-center gap-1.5 text-[10px] font-mono text-bb-term-acc/70">
+            <span className="w-1.5 h-1.5 rounded-full bg-bb-term-acc/70" />
             C++17
-          </div>
+          </span>
           {props.mode === "session" ? (
-            <div className="flex items-center gap-1.5 text-[10px] font-mono text-bb-ink-faint">
-              <span className={`w-1.5 h-1.5 rounded-full ${props.pollState === "live" ? "bg-bb-blue animate-pulse" : "bg-bb-ink-faint"}`} />
-              {props.pollState === "live" ? "watching" : props.pollState === "paused" ? "paused" : "retrying"}
-            </div>
-          ) : (
-            <a
-              href={problemUrl(problem)}
-              target="_blank"
-              rel="noopener noreferrer"
-              onClick={() => playSound("click")}
-              className="btn-outline h-8 px-3 text-[10px] font-mono uppercase tracking-wider flex items-center"
-            >
-              Open ↗
-            </a>
-          )}
+            <span className="flex items-center gap-1.5 text-[10px] font-mono text-bb-term-text/40">
+              <span className={`w-1.5 h-1.5 rounded-full ${props.pollState === "live" ? "bg-bb-term-acc2 animate-pulse" : "bg-bb-term-text/30"}`} />
+              <span className="hidden md:inline">{props.pollState === "live" ? "watching" : props.pollState === "paused" ? "paused" : "retrying"}</span>
+            </span>
+          ) : null}
+          <a
+            href={problemUrl(problem)}
+            target="_blank"
+            rel="noopener noreferrer"
+            onClick={() => playSound("click")}
+            title="Open on Codeforces"
+            className="w-7 h-7 rounded flex items-center justify-center text-bb-term-text/40 hover:text-bb-term-text hover:bg-bb-term-text/10 transition-colors"
+          >
+            <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M13.5 6H18m0 0v4.5M18 6l-7.5 7.5M6 10.5V18h7.5" />
+            </svg>
+          </a>
         </div>
       </div>
 
-      {/* Body: optional session sidebar + resizable statement|editor split */}
-      <div className={`flex-1 grid grid-cols-1 ${props.mode === "session" ? "lg:grid-cols-[280px_1fr]" : ""} gap-8 items-stretch min-h-0`}>
+      {/* Body */}
+      <div className="flex-1 flex min-h-0">
         {props.mode === "session" && (
           <SolveSidebar
-            problem={problem}
             items={props.sidebarItems}
             orderIndex={props.orderIndex}
             progress={props.progress}
@@ -104,8 +116,8 @@ export const SolveWorkspace: React.FC<SolveWorkspaceProps> = (props) => {
 
         <SplitPane
           storageKey="bb_solve_split_v1"
-          leftLabel="📄 problem.md"
-          rightLabel="⌨ solution.cpp"
+          leftLabel="Problem"
+          rightLabel="solution.cpp"
           left={
             <StatementPane
               problem={problem}

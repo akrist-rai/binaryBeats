@@ -6,6 +6,7 @@ import { CodeWorkspace } from './blitz/CodeWorkspace';
 import { ProblemStatement } from './blitz/ProblemStatement';
 import { RatingBadge } from './blitz/RatingBadge';
 import { HeroSection } from './HeroSection';
+import { ProblemOrbit } from './ProblemOrbit';
 import { logSolve } from '../lib/activityLog';
 
 interface Props {
@@ -33,6 +34,7 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
   const [page, setPage] = useState(1);
   const [activeKey, setActiveKey] = useState<string | null>(null);
   const [solvedKeys, setSolvedKeys] = useState<string[]>([]);
+  const [viewMode, setViewMode] = useState<'list' | 'orbit'>('list');
 
   const { problems, total, pages, loading, error } = useProblems({
     search: search || undefined,
@@ -135,6 +137,22 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
             <motion.div key="dashboard" initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="flex flex-col gap-0">
               <HeroSection xp={xp} total={total} playSound={playSound} onNavigateTab={onNavigateTab} />
 
+              {/* View switcher — Orbit is the circular roadmap slated to replace the list */}
+              <div className="flex items-center justify-between mb-6 flex-wrap gap-3">
+                <div className="label-caps">Browse</div>
+                <div className="flex rounded-full border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[11px] gap-0.5">
+                  {([{ id: 'list' as const, label: 'List' }, { id: 'orbit' as const, label: '◎ Orbit' }]).map(v => (
+                    <button key={v.id} onClick={() => { playSound('click'); setViewMode(v.id); }}
+                      className={`px-4 h-7 rounded-full font-bold cursor-pointer transition-colors ${viewMode===v.id?'bg-bb-ink text-bb-paper':'text-bb-ink-faint hover:text-bb-ink-soft'}`}>
+                      {v.label}
+                    </button>
+                  ))}
+                </div>
+              </div>
+
+              {viewMode === 'orbit' ? (
+                <ProblemOrbit solvedKeys={solvedKeys} onOpen={open} playSound={playSound} />
+              ) : (
               <div className="grid grid-cols-1 lg:grid-cols-[1fr_280px] gap-8 items-start">
                 {/* LEFT: Problem list */}
                 <div className="flex flex-col gap-4">
@@ -313,6 +331,7 @@ export const LeetCodeDashboard = ({ xp, onAddXp, playSound, onShareSolution, onN
                   </div>
                 </div>
               </div>
+              )}
             </motion.div>
           )}
 

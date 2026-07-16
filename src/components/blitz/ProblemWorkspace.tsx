@@ -101,6 +101,33 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
           </div>
 
           <div>
+            <div className="flex items-center justify-between mb-1.5">
+              <span className="label-caps">Session Progress</span>
+              <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
+                {
+                  session.problems.filter((p) => {
+                    const pKey = problemKey(p);
+                    return (isDuel ? claimedBy(session, pKey) : session.results[me]?.[pKey] !== undefined ? me : null) !== null;
+                  }).length
+                }
+                /{session.problems.length}
+              </span>
+            </div>
+            <div className="flex gap-1 mb-5">
+              {session.problems.map((p) => {
+                const pKey = problemKey(p);
+                const pWinner = isDuel ? claimedBy(session, pKey) : session.results[me]?.[pKey] !== undefined ? me : null;
+                return (
+                  <span
+                    key={pKey}
+                    className={`flex-1 h-1.5 rounded-full ${
+                      pWinner === me ? "bg-bb-lime" : pWinner ? "bg-bb-ink-soft" : "bg-bb-ink/[0.08]"
+                    }`}
+                  />
+                );
+              })}
+            </div>
+
             <h4 className="label-caps mb-3 select-none">
               Problems in This Session
             </h4>
@@ -110,6 +137,7 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
                 const isCurrent = i === orderIndex;
                 const pWinner = isDuel ? claimedBy(session, pKey) : session.results[me]?.[pKey] !== undefined ? me : null;
                 const pSolved = pWinner !== null;
+                const pDiffBar = p.rating <= 1300 ? "bg-bb-lime" : p.rating <= 1900 ? "bg-bb-orange" : "bg-bb-red";
                 return (
                   <div
                     key={pKey}
@@ -119,12 +147,13 @@ export const ProblemWorkspace: React.FC<ProblemWorkspaceProps> = ({
                         onSelectProblem(i);
                       }
                     }}
-                    className={`group flex items-center justify-between py-2 px-3 rounded-md cursor-pointer transition-all font-mono ${
+                    className={`relative overflow-hidden group flex items-center justify-between py-2 pl-3.5 pr-3 rounded-md cursor-pointer transition-all font-mono ${
                       isCurrent
                         ? "bg-bb-ink/[0.04] border border-bb-line-strong text-bb-ink"
                         : "text-bb-ink-soft hover:text-bb-ink hover:bg-bb-ink/[0.02]"
                     }`}
                   >
+                    <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${pDiffBar}`} />
                     <div className="flex items-center gap-2 truncate">
                       <span className="text-[10px] font-bold text-bb-ink-faint shrink-0">{LETTERS[i] ?? i + 1}</span>
                       <span className="text-xs font-medium truncate">{p.name}</span>

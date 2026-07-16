@@ -38,13 +38,20 @@ export const HandleLinkCard: React.FC<HandleLinkCardProps> = ({ validating, erro
         rating-matched problems and detect when you solve them.
       </p>
 
-      <div className="grid grid-cols-3 gap-3 max-w-lg mx-auto mb-8">
-        {STEPS.map((s) => (
-          <div key={s.n} className="rounded-lg border border-bb-line bg-bb-paper p-3">
-            <span className="text-[9px] font-mono text-bb-ink-faint">{s.n}</span>
-            <div className="text-xs font-bold text-bb-ink mt-1">{s.label}</div>
-            <div className="text-[9px] font-mono text-bb-ink-faint mt-1 leading-relaxed">{s.desc}</div>
-          </div>
+      <div className="flex items-stretch justify-center gap-1.5 sm:gap-2.5 max-w-lg mx-auto mb-8">
+        {STEPS.map((s, i) => (
+          <React.Fragment key={s.n}>
+            <div className="flex-1 rounded-lg border border-bb-line bg-bb-paper p-3 text-left">
+              <span className="text-[9px] font-mono font-bold text-bb-orange">{s.n}</span>
+              <div className="text-xs font-bold text-bb-ink mt-1">{s.label}</div>
+              <div className="text-[9px] font-mono text-bb-ink-faint mt-1 leading-relaxed">{s.desc}</div>
+            </div>
+            {i < STEPS.length - 1 && (
+              <div aria-hidden="true" className="flex items-center shrink-0 text-bb-ink-faint/40 text-xs select-none">
+                →
+              </div>
+            )}
+          </React.Fragment>
         ))}
       </div>
 

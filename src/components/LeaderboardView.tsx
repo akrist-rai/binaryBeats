@@ -67,7 +67,13 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
 
         {/* Header */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
+          <div className="relative">
+            <span
+              aria-hidden
+              className="pointer-events-none select-none absolute -top-9 -left-1 -z-10 text-[120px] font-heading font-black text-bb-ink/[0.045] leading-none"
+            >
+              03
+            </span>
             <span className="eyebrow mb-2">/03 <span className="text-bb-ink-faint normal-case">·</span> Global Standings</span>
             <h2 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-bb-ink mb-1 mt-2">Leaderboard</h2>
             <p className="text-xs font-mono text-bb-ink-faint">Ranked by {metricLabel}</p>
@@ -123,7 +129,7 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
                 transition={{ delay: isFirst ? 0 : 0.1, type: 'spring', stiffness: 200, damping: 20 }}
                 className={`relative flex flex-col items-center rounded-lg border p-5 transition-colors ${
                   isFirst
-                    ? 'border-bb-orange/40 bg-bb-orange/[0.06] pb-8 order-2 corner-marks'
+                    ? 'border-bb-orange/40 bg-bb-orange/[0.06] pb-8 order-2 corner-marks -translate-y-4 md:-translate-y-7 z-10'
                     : `border-bb-line bg-bb-paper-raised hover:border-bb-line-strong pb-6 ${u.rank === 2 ? 'order-1' : 'order-3'}`
                 }`}
               >

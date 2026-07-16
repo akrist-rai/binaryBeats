@@ -154,21 +154,47 @@ export const SessionSetup: React.FC<SessionSetupProps> = ({
                     Your rival doesn't need an account here — any public Codeforces handle works.
                   </p>
                   {rival ? (
-                    <div className="flex items-center justify-between spec-card px-3.5 py-2.5">
-                      <span className="text-xs font-mono text-bb-ink">{rival.handle}</span>
-                      <div className="flex items-center gap-2">
-                        <RatingBadge rating={rival.rating ?? null} />
-                        <button
-                          onClick={() => {
-                            setRival(null);
-                            setRivalInput("");
-                          }}
-                          className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-ink transition-colors cursor-pointer"
-                        >
-                          change
-                        </button>
+                    <motion.div
+                      initial={{ opacity: 0, scale: 0.97 }}
+                      animate={{ opacity: 1, scale: 1 }}
+                      className="relative spec-card p-5"
+                    >
+                      <button
+                        onClick={() => {
+                          setRival(null);
+                          setRivalInput("");
+                        }}
+                        className="absolute top-3 right-3 text-[9px] font-mono uppercase tracking-wider text-bb-ink-faint hover:text-bb-orange transition-colors cursor-pointer"
+                      >
+                        change
+                      </button>
+
+                      <div className="grid grid-cols-[1fr_auto_1fr] items-center gap-2 sm:gap-6">
+                        {/* Me */}
+                        <div className="flex flex-col items-center text-center gap-2 min-w-0">
+                          <div className="w-12 h-12 rounded-full bg-bb-ink text-bb-term-acc flex items-center justify-center text-base font-bold font-mono shrink-0">
+                            {meHandle[0].toUpperCase()}
+                          </div>
+                          <span className="text-xs font-bold text-bb-ink truncate max-w-full">{meHandle}</span>
+                          <RatingBadge rating={meRating} />
+                        </div>
+
+                        {/* VS */}
+                        <div className="flex flex-col items-center gap-1 px-1">
+                          <span className="editorial text-2xl sm:text-3xl text-bb-orange leading-none">VS</span>
+                          <span className="label-caps">Duel</span>
+                        </div>
+
+                        {/* Rival */}
+                        <div className="flex flex-col items-center text-center gap-2 min-w-0">
+                          <div className="w-12 h-12 rounded-full bg-bb-ink text-bb-orange-soft flex items-center justify-center text-base font-bold font-mono shrink-0">
+                            {rival.handle[0].toUpperCase()}
+                          </div>
+                          <span className="text-xs font-bold text-bb-ink truncate max-w-full">{rival.handle}</span>
+                          <RatingBadge rating={rival.rating ?? null} />
+                        </div>
                       </div>
-                    </div>
+                    </motion.div>
                   ) : (
                     <div className="flex items-center gap-2">
                       <input

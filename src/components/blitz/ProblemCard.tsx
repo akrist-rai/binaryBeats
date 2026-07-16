@@ -23,6 +23,12 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
   const winner = isDuel ? claimedBy(session, key) : solvedByMe ? me : null;
   const solved = winner !== null;
 
+  // Difficulty-colored accent bar — same rating-tier convention as the
+  // LeetCodeDashboard problem list, for visual consistency between the app's
+  // two problem-list surfaces.
+  const diffLevel = problem.rating <= 1300 ? "Easy" : problem.rating <= 1900 ? "Medium" : "Hard";
+  const accentBar = diffLevel === "Easy" ? "bg-bb-lime" : diffLevel === "Medium" ? "bg-bb-orange" : "bg-bb-red";
+
   return (
     <motion.div
       layout
@@ -31,10 +37,11 @@ export const ProblemCard: React.FC<ProblemCardProps> = ({ session, problem, orde
         onOpen();
       }}
       onMouseEnter={() => playSound("hover")}
-      className={`relative flex items-center gap-4 px-5 py-4 cursor-pointer transition-colors border-l-2 group ${
-        solved ? "border-l-bb-lime bg-bb-ink/[0.02]" : "border-l-transparent hover:bg-bb-ink/[0.02] hover:border-l-bb-line-strong"
+      className={`relative flex items-center gap-4 pl-6 pr-5 py-4 cursor-pointer transition-colors group ${
+        solved ? (winner === me ? "bg-bb-lime/[0.04]" : "bg-bb-ink/[0.02]") : "hover:bg-bb-ink/[0.02]"
       }`}
     >
+      <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${accentBar}`} />
       <span className="link-chip">↗</span>
       <span className="text-sm font-mono font-bold text-bb-ink-faint w-5 shrink-0">{LETTERS[orderIndex] ?? orderIndex + 1}</span>
 

@@ -43,6 +43,16 @@ interface Clan {
   desc: string;
 }
 
+// Per-channel accent color — same left-accent-bar convention as the problem
+// lists (LeetCodeDashboard / ProblemCard), applied here to forum tags so the
+// two list surfaces in the app read consistently.
+const TAG_ACCENT: Record<ForumThread['tag'], string> = {
+  Solutions: 'bg-bb-lime',
+  Contest: 'bg-bb-orange',
+  General: 'bg-bb-blue',
+  Bugs: 'bg-bb-red',
+};
+
 export const CommunityView: React.FC<CommunityViewProps> = ({
   playSound,
   onAddXp,
@@ -311,6 +321,13 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
     onAddXp(15); // reward 15 XP for sharing/creating discussion
   };
 
+  // Highest-upvoted thread — surfaced as a "Next Up"-style featured card in
+  // the sidebar, a practical shortcut to whatever's currently resonating.
+  const trendingThread = useMemo(() => {
+    if (threads.length === 0) return null;
+    return [...threads].sort((a, b) => b.upvotes - a.upvotes)[0];
+  }, [threads]);
+
   // Filter threads
   const filteredThreads = useMemo(() => {
     return threads.filter(t => {
@@ -527,8 +544,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             playSound('click');
                             setSelectedThread(t);
                           }}
-                          className="relative spec-card p-5 cursor-pointer flex gap-4 items-start group"
+                          className="relative spec-card p-5 pl-6 cursor-pointer flex gap-4 items-start group overflow-hidden"
                         >
+                          <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${TAG_ACCENT[t.tag]}`} />
                           <span className="link-chip">↗</span>
                           {/* Left avatar column */}
                           <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
@@ -579,6 +597,30 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             {/* Right side: Categories filtering panel */}
             <div className="flex flex-col gap-6 font-mono">
+              {/* Trending thread — a practical shortcut to whatever's resonating right now */}
+              {trendingThread && (
+                <div className="spec-card corner-marks p-5 relative overflow-hidden">
+                  <div className="eyebrow mb-3">Trending</div>
+                  <div className="flex items-center gap-2 mb-2 flex-wrap">
+                    <span className={`w-2 h-2 rounded-full shrink-0 ${TAG_ACCENT[trendingThread.tag]}`} />
+                    <span className="text-[9px] uppercase tracking-wider text-bb-ink-faint">{trendingThread.tag}</span>
+                    <span className="text-[9px] text-bb-ink-faint ml-auto">👍 {trendingThread.upvotes}</span>
+                  </div>
+                  <div className="text-sm font-heading font-bold text-bb-ink mb-4 leading-snug line-clamp-2">
+                    {trendingThread.title}
+                  </div>
+                  <button
+                    onClick={() => {
+                      playSound('click');
+                      setSelectedThread(trendingThread);
+                    }}
+                    className="btn-primary w-full h-9 text-[11px] font-bold uppercase tracking-wider cursor-pointer"
+                  >
+                    Read Thread →
+                  </button>
+                </div>
+              )}
+
               <div className="spec-card p-5">
                 <h4 className="label-caps mb-3.5 border-b border-bb-line pb-2">
                   Topic Filter
@@ -600,7 +642,10 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             : 'border-transparent text-bb-ink-faint hover:text-bb-ink-soft hover:bg-bb-ink/[0.03]'
                         }`}
                       >
-                        <span>{tag === 'All' ? 'All Channels' : `# ${tag}`}</span>
+                        <span className="flex items-center gap-2">
+                          {tag !== 'All' && <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${TAG_ACCENT[tag]}`} />}
+                          {tag === 'All' ? 'All Channels' : `# ${tag}`}
+                        </span>
                         {tag !== 'All' && (
                           <span className={`pill text-[9px] border px-1.5 py-0.5 ${
                             isSelected

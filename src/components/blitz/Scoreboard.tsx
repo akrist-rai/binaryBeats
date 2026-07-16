@@ -23,12 +23,16 @@ export const Scoreboard: React.FC<ScoreboardProps> = ({ session, xpEarned }) => 
           <span className="stat-num text-2xl text-bb-ink">{String(solved).padStart(2, '0')}</span>
           <span className="text-sm font-mono text-bb-ink-faint">/ {String(total).padStart(2, '0')} solved</span>
         </div>
-        <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
-          <motion.div
-            className="h-full bg-bb-lime"
-            animate={{ width: `${total ? (solved / total) * 100 : 0}%` }}
-            transition={{ type: "spring", stiffness: 200, damping: 30 }}
-          />
+        <div className="flex gap-1">
+          {Array.from({ length: total }).map((_, i) => (
+            <motion.div
+              key={i}
+              className={`flex-1 h-1.5 rounded-full ${i < solved ? "bg-bb-lime" : "bg-bb-ink/[0.08]"}`}
+              initial={{ opacity: 0, scaleY: 0.3 }}
+              animate={{ opacity: 1, scaleY: 1 }}
+              transition={{ delay: i * 0.04 }}
+            />
+          ))}
         </div>
         <div className="mt-4 pt-4 border-t border-bb-line flex items-center justify-between">
           <span className="text-[10px] font-mono uppercase tracking-wider text-bb-ink-faint">XP earned</span>

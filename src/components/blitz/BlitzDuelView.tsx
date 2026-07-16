@@ -41,6 +41,32 @@ function writeAwarded(sessionId: string, keys: Set<string>) {
   }
 }
 
+// Decorative deterministic "barcode" of the session id — the same spec-sheet/
+// shipping-label motif as CodeWorkspace's problem-key barcode, reimplemented
+// locally here since this view stays in the paper register. Purely visual;
+// no data is actually encoded.
+const SessionBarcode: React.FC<{ value: string; className?: string }> = ({ value, className }) => {
+  const bars = useMemo(() => {
+    let seed = 0;
+    for (let i = 0; i < value.length; i++) seed = (seed * 31 + value.charCodeAt(i)) >>> 0;
+    return Array.from({ length: 16 }, () => {
+      seed = (seed * 1103515245 + 12345) >>> 0;
+      return (seed >>> 16) % 3 === 0 ? 2 : 1;
+    });
+  }, [value]);
+  const width = bars.reduce((a, b) => a + b + 1, 0);
+  let x = 0;
+  return (
+    <svg width={width} height={11} viewBox={`0 0 ${width} 11`} className={className} aria-hidden="true">
+      {bars.map((w, i) => {
+        const rect = <rect key={i} x={x} y={0} width={w} height={11} fill="currentColor" />;
+        x += w + 1;
+        return rect;
+      })}
+    </svg>
+  );
+};
+
 export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp }) => {
   const { handle, user, status, error, linkHandle, unlinkHandle } = useCfHandle();
 
@@ -189,8 +215,14 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
     <div className="w-full min-h-[calc(100vh-56px)] text-bb-ink relative pb-12">
       <div className="w-full max-w-7xl mx-auto px-6 lg:px-10 py-8 flex flex-col gap-8 relative z-10">
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-          <div>
-            <span className="eyebrow">Codeforces Arena</span>
+          <div className="relative">
+            <span
+              aria-hidden
+              className="pointer-events-none select-none absolute -top-8 -left-1 -z-10 text-[110px] font-heading font-black text-bb-ink/[0.045] leading-none"
+            >
+              02
+            </span>
+            <span className="eyebrow">/02 <span className="text-bb-ink-faint normal-case">·</span> Codeforces Arena</span>
             <h2 className="text-2xl md:text-3xl font-heading font-extrabold text-bb-ink mt-2 tracking-tight">
               Blitz &amp; Duel
             </h2>
@@ -244,11 +276,19 @@ export const BlitzDuelView: React.FC<BlitzDuelViewProps> = ({ playSound, onAddXp
                     className="grid grid-cols-1 lg:grid-cols-3 gap-8"
                   >
                     <div className="lg:col-span-2 spec-card corner-marks overflow-hidden">
-                      <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line">
-                        <h3 className="label-caps">
-                          Problem Set
-                        </h3>
-                        <div className="flex items-center gap-1.5">
+                      <div className="flex items-center justify-between px-6 py-4 border-b border-bb-line gap-3">
+                        <div className="flex items-center gap-3 min-w-0">
+                          <h3 className="label-caps shrink-0">
+                            Problem Set
+                          </h3>
+                          <span className="hidden sm:flex items-center gap-2 min-w-0 text-bb-ink-faint/50">
+                            <SessionBarcode value={session.id} className="shrink-0" />
+                            <span className="text-[9px] font-mono tracking-wider truncate">
+                              #{session.id.slice(0, 8).toUpperCase()}
+                            </span>
+                          </span>
+                        </div>
+                        <div className="flex items-center gap-1.5 shrink-0">
                           <span
                             className={`w-1.5 h-1.5 rounded-full ${
                               pollState === "live" ? "bg-bb-lime animate-pulse" : "bg-bb-ink-faint"

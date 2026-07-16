@@ -9,9 +9,13 @@ export interface Verdict {
   totalCount: number;
   /** Slowest passing test's wall time. */
   timeMs: number;
+  /** Peak resident memory across tests run so far, in MB. Undefined off Linux. */
+  peakMemoryMb?: number;
   failedTestIndex?: number;
   /** True when the AC was recorded into the session. */
   solveRecorded?: boolean;
+  /** The one test that failed — size-capped. Only ever this single test, never the rest of the suite. */
+  failedTest?: { input: string; expected: string; actual: string };
 }
 
 export interface SampleResult {
@@ -21,6 +25,7 @@ export interface SampleResult {
   expected: string;
   actual: string;
   timeMs: number;
+  peakMemoryMb?: number;
   outcome: "ok" | "tle" | "re";
 }
 
@@ -28,6 +33,7 @@ export interface CustomOutput {
   stdout: string;
   stderr: string;
   timeMs: number;
+  peakMemoryMb?: number;
   exitCode: number | null;
   timedOut: boolean;
 }

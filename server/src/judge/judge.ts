@@ -23,6 +23,16 @@ import {
 const SAMPLE_FALLBACK_LIMIT_MS = 5000;
 const CUSTOM_LIMIT_MS = 10_000;
 const CUSTOM_MEMORY_MB = 512;
+/** Cap per-field size when surfacing a failing test's I/O for the WA diff viewer. */
+const FAILED_TEST_FIELD_CAP_BYTES = 16 * 1024;
+
+function capText(s: string, capBytes = FAILED_TEST_FIELD_CAP_BYTES): string {
+  return Buffer.byteLength(s, "utf8") > capBytes ? s.slice(0, capBytes) + "\n…(truncated)" : s;
+}
+
+function toMb(kb: number | undefined): number | undefined {
+  return kb === undefined ? undefined : Math.round((kb / 1024) * 10) / 10;
+}
 
 export function scheduleRun(run: JudgeRun, code: string, stdin?: string, examples?: { input: string; output: string }[]): void {
   enqueueExecution(async () => {
@@ -65,13 +75,21 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
   try {
     updateRun(runId, { state: "running", progress: { done: 0, total: info.testCount } });
     let maxTimeMs = 0;
+    let maxMemoryKb = 0;
 
     for (let i = 0; i < info.testCount; i++) {
       const test = await getTest(key, i);
       if (!test) {
         updateRun(runId, {
           state: "done",
-          verdict: { status: "RE", passedCount: i, totalCount: info.testCount, timeMs: maxTimeMs, failedTestIndex: i + 1 },
+          verdict: {
+            status: "RE",
+            passedCount: i,
+            totalCount: info.testCount,
+            timeMs: maxTimeMs,
+            peakMemoryMb: toMb(maxMemoryKb || undefined),
+            failedTestIndex: i + 1,
+          },
         });
         return;
       }
@@ -80,6 +98,7 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
         timeLimitMs: info.timeLimitMs,
         memoryLimitMb: info.memoryLimitMb,
       });
+      if (result.peakMemoryKb) maxMemoryKb = Math.max(maxMemoryKb, result.peakMemoryKb);
 
       if (result.outcome !== "ok") {
         updateRun(runId, {
@@ -89,6 +108,7 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
             passedCount: i,
             totalCount: info.testCount,
             timeMs: maxTimeMs,
+            peakMemoryMb: toMb(maxMemoryKb || undefined),
             failedTestIndex: i + 1,
           },
         });
@@ -97,6 +117,7 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
 
       const pass = await compareTokenStreams(result.stdoutPath, test.output);
       if (!pass) {
+        const actual = await readRunOutput(result.stdoutPath, FAILED_TEST_FIELD_CAP_BYTES);
         updateRun(runId, {
           state: "done",
           verdict: {
@@ -104,7 +125,13 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
             passedCount: i,
             totalCount: info.testCount,
             timeMs: maxTimeMs,
+            peakMemoryMb: toMb(maxMemoryKb || undefined),
             failedTestIndex: i + 1,
+            failedTest: {
+              input: capText(test.input),
+              expected: capText(test.output),
+              actual: capText(actual),
+            },
           },
         });
         return;
@@ -120,6 +147,7 @@ async function executeSubmit(runId: string, sessionId: string, key: string, hand
       passedCount: info.testCount,
       totalCount: info.testCount,
       timeMs: maxTimeMs,
+      peakMemoryMb: toMb(maxMemoryKb || undefined),
       solveRecorded,
     };
     updateRun(runId, { state: "done", verdict });
@@ -176,6 +204,7 @@ async function executeSamples(
         expected: ex.output,
         actual: result.outcome === "tle" ? "(time limit exceeded)" : result.outcome === "re" ? `(runtime error)\n${result.stderrSnippet}` : actual,
         timeMs: result.timeMs,
+        peakMemoryMb: toMb(result.peakMemoryKb),
         outcome: result.outcome,
       });
       updateRun(runId, { progress: { done: i + 1, total: examples.length } });
@@ -206,6 +235,7 @@ async function executeCustom(runId: string, code: string, stdin: string): Promis
         stdout: result.outcome === "ok" || result.outcome === "re" ? await readRunOutput(result.stdoutPath) : "",
         stderr: result.stderrSnippet,
         timeMs: result.timeMs,
+        peakMemoryMb: toMb(result.peakMemoryKb),
         exitCode: result.exitCode,
         timedOut: result.outcome === "tle",
       },

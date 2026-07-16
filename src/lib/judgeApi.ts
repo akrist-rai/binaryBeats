@@ -12,8 +12,11 @@ export interface Verdict {
   passedCount: number;
   totalCount: number;
   timeMs: number;
+  peakMemoryMb?: number;
   failedTestIndex?: number;
   solveRecorded?: boolean;
+  /** The one failing test — size-capped, never the rest of the suite. */
+  failedTest?: { input: string; expected: string; actual: string };
 }
 
 export interface SampleResult {
@@ -23,6 +26,7 @@ export interface SampleResult {
   expected: string;
   actual: string;
   timeMs: number;
+  peakMemoryMb?: number;
   outcome: "ok" | "tle" | "re";
 }
 
@@ -30,6 +34,7 @@ export interface CustomOutput {
   stdout: string;
   stderr: string;
   timeMs: number;
+  peakMemoryMb?: number;
   exitCode: number | null;
   timedOut: boolean;
 }

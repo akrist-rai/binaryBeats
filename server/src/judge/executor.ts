@@ -5,7 +5,7 @@
  * argument-vector exec (never a shell) are for robustness, not sandboxing.
  */
 import { execFile, spawn } from "node:child_process";
-import { closeSync, mkdtempSync, openSync, readdirSync, rmSync, statSync, writeFileSync } from "node:fs";
+import { closeSync, mkdtempSync, openSync, readdirSync, readFileSync, rmSync, statSync, writeFileSync } from "node:fs";
 import { readFile, writeFile } from "node:fs/promises";
 import os from "node:os";
 import path from "node:path";
@@ -67,6 +67,37 @@ export interface RunOutcome {
   exitCode: number | null;
   stdoutPath: string;
   stderrSnippet: string;
+  /** Peak resident set size, in KB. Undefined off Linux (no /proc). */
+  peakMemoryKb?: number;
+}
+
+/**
+ * Polls /proc/<pid>/status for VmHWM (peak RSS) while a child runs. Safe to
+ * use with `prlimit -- binPath`: prlimit execve's into the target, keeping
+ * the PID but resetting VmHWM to reflect only the target binary's growth
+ * (verified empirically — prlimit's own footprint never pollutes the read).
+ */
+function trackPeakRssKb(pid: number, intervalMs = 25): { stop(): number | undefined } {
+  if (process.platform !== "linux") return { stop: () => undefined };
+  let peakKb = 0;
+  const sample = () => {
+    try {
+      const status = readFileSync(`/proc/${pid}/status`, "utf8");
+      const m = /VmHWM:\s+(\d+)\s+kB/.exec(status);
+      if (m) peakKb = Math.max(peakKb, Number(m[1]));
+    } catch {
+      // process may have already exited between spawn and first sample
+    }
+  };
+  sample();
+  const timer = setInterval(sample, intervalMs);
+  return {
+    stop() {
+      clearInterval(timer);
+      sample();
+      return peakKb > 0 ? peakKb : undefined;
+    },
+  };
 }
 
 export async function runOnInput(
@@ -91,35 +122,38 @@ export async function runOnInput(
   const started = Date.now();
   // stdin/stdout are wired to file descriptors so multi-MB test data streams
   // through the kernel, never through Node buffers.
-  const result = await new Promise<{ exitCode: number | null; timedOut: boolean; stderr: string }>((resolve) => {
-    const child = spawn(cmd, args, { stdio: [inFd, outFd, "pipe"] });
-    let stderr = "";
-    let timedOut = false;
+  const result = await new Promise<{ exitCode: number | null; timedOut: boolean; stderr: string; peakMemoryKb?: number }>(
+    (resolve) => {
+      const child = spawn(cmd, args, { stdio: [inFd, outFd, "pipe"] });
+      let stderr = "";
+      let timedOut = false;
+      const memTracker = child.pid ? trackPeakRssKb(child.pid) : null;
 
-    const timer = setTimeout(() => {
-      timedOut = true;
-      child.kill("SIGKILL");
-    }, timeoutMs);
+      const timer = setTimeout(() => {
+        timedOut = true;
+        child.kill("SIGKILL");
+      }, timeoutMs);
 
-    child.stderr?.on("data", (d: Buffer) => {
-      if (stderr.length < 8192) stderr += d.toString("utf8");
-    });
-    child.on("error", () => {
-      clearTimeout(timer);
-      resolve({ exitCode: null, timedOut, stderr });
-    });
-    child.on("close", (code) => {
-      clearTimeout(timer);
-      resolve({ exitCode: code, timedOut, stderr });
-    });
-  });
+      child.stderr?.on("data", (d: Buffer) => {
+        if (stderr.length < 8192) stderr += d.toString("utf8");
+      });
+      child.on("error", () => {
+        clearTimeout(timer);
+        resolve({ exitCode: null, timedOut, stderr, peakMemoryKb: memTracker?.stop() });
+      });
+      child.on("close", (code) => {
+        clearTimeout(timer);
+        resolve({ exitCode: code, timedOut, stderr, peakMemoryKb: memTracker?.stop() });
+      });
+    }
+  );
   const timeMs = Date.now() - started;
 
   closeSync(inFd);
   closeSync(outFd);
 
   if (result.timedOut) {
-    return { outcome: "tle", timeMs, exitCode: null, stdoutPath: outPath, stderrSnippet: "" };
+    return { outcome: "tle", timeMs, exitCode: null, stdoutPath: outPath, stderrSnippet: "", peakMemoryKb: result.peakMemoryKb };
   }
   if (result.exitCode !== 0) {
     return {
@@ -128,9 +162,17 @@ export async function runOnInput(
       exitCode: result.exitCode,
       stdoutPath: outPath,
       stderrSnippet: result.stderr.slice(0, 4096),
+      peakMemoryKb: result.peakMemoryKb,
     };
   }
-  return { outcome: "ok", timeMs, exitCode: 0, stdoutPath: outPath, stderrSnippet: result.stderr.slice(0, 4096) };
+  return {
+    outcome: "ok",
+    timeMs,
+    exitCode: 0,
+    stdoutPath: outPath,
+    stderrSnippet: result.stderr.slice(0, 4096),
+    peakMemoryKb: result.peakMemoryKb,
+  };
 }
 
 /** Whitespace-tolerant token comparison — Codeforces semantics for problems without a special checker. */

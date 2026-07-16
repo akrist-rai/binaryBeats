@@ -135,12 +135,27 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   const matchedKeysRef = useRef<Set<string>>(new Set());
   const anyFilterActiveRef = useRef(false);
   const ringStatsRef = useRef<{ solved: number; total: number }[]>([]);
+  const sectorLabelsRef = useRef<{ tag: string; angle: number }[]>([]);
 
   const [problems, setProblems] = useState<Problem[] | null>(null);
   const [hovered, setHovered] = useState<Problem | null>(null);
+  const [selectedProblem, setSelectedProblem] = useState<Problem | null>(null);
   const [search, setSearch] = useState("");
   const [selectedTag, setSelectedTag] = useState<string | null>(null);
   const [diffFilter, setDiffFilter] = useState<"" | "easy" | "medium" | "hard">("");
+
+  const selectedKeyRef = useRef<string | null>(null);
+  useEffect(() => {
+    selectedKeyRef.current = selectedProblem?.key ?? null;
+  }, [selectedProblem]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === "Escape") setSelectedProblem(null);
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => window.removeEventListener("keydown", handleKeyDown);
+  }, []);
 
   useEffect(() => {
     solvedSetRef.current = new Set(solvedKeys);

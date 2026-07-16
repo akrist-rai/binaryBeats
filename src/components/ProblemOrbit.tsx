@@ -349,7 +349,7 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         // lock, continuous idle floating means a static cursor loses the
         // node again within a couple hundred ms, which reads as "the graph
         // dodges every click." Everything else keeps drifting normally.
-        if (hoveredRef.current === n) {
+        if (hoveredRef.current === n || selectedKeyRef.current === n.problem.key) {
           n.vx = 0;
           n.vy = 0;
           continue;
@@ -385,31 +385,321 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
       ctx.scale(cam.zoom, cam.zoom);
 
       const pal = readPalette();
+      const maxR = ringRadius(ORBIT_RINGS.length - 1) + RING_WIDTH;
 
-      // Rings + labels (label carries live solved/mapped counts per band)
+      // 1. Dotted Blueprint Grid
+      ctx.save();
+      const gridSize = 40;
+      const tl = toWorld(0, 0);
+      const br = toWorld(w, h);
+      ctx.strokeStyle = pal.line;
+      ctx.lineWidth = 0.6 / cam.zoom;
+      ctx.setLineDash([1, 4]); // Dotted grid pattern
+      ctx.beginPath();
+      const startX = Math.floor(tl.x / gridSize) * gridSize;
+      const endX = Math.ceil(br.x / gridSize) * gridSize;
+      const startY = Math.floor(tl.y / gridSize) * gridSize;
+      const endY = Math.ceil(br.y / gridSize) * gridSize;
+      for (let x = startX; x <= endX; x += gridSize) {
+        ctx.moveTo(x, tl.y);
+        ctx.lineTo(x, br.y);
+      }
+      for (let y = startY; y <= endY; y += gridSize) {
+        ctx.moveTo(tl.x, y);
+        ctx.lineTo(br.x, y);
+      }
+      ctx.globalAlpha = 0.35;
+      ctx.stroke();
+      ctx.restore();
+
+      // 2. Coordinate Axes and Numeric Scale Ticks
+      ctx.save();
+      ctx.strokeStyle = pal.lineStrong;
+      ctx.lineWidth = 0.7 / cam.zoom;
+      ctx.globalAlpha = 0.22;
+      
+      // X-Axis
+      ctx.beginPath();
+      ctx.moveTo(-maxR - 20, 0);
+      ctx.lineTo(maxR + 20, 0);
+      ctx.stroke();
+      
+      // Y-Axis
+      ctx.beginPath();
+      ctx.moveTo(0, -maxR - 20);
+      ctx.lineTo(0, maxR + 20);
+      ctx.stroke();
+      
+      // Scale tick marks along axes
+      ctx.fillStyle = pal.inkFaint;
+      ctx.font = `600 ${7.5 / cam.zoom}px 'JetBrains Mono', monospace`;
+      ctx.textAlign = "center";
+      ctx.textBaseline = "middle";
+      
+      for (let d = -Math.floor(maxR); d <= Math.floor(maxR); d += 100) {
+        if (d === 0) continue;
+        // X-axis ticks
+        ctx.beginPath();
+        ctx.moveTo(d, -3 / cam.zoom);
+        ctx.lineTo(d, 3 / cam.zoom);
+        ctx.stroke();
+        ctx.fillText(`${d > 0 ? "+" : ""}${d}`, d, 8 / cam.zoom);
+        
+        // Y-axis ticks
+        ctx.beginPath();
+        ctx.moveTo(-3 / cam.zoom, d);
+        ctx.lineTo(3 / cam.zoom, d);
+        ctx.stroke();
+        ctx.fillText(`${d > 0 ? "+" : ""}${d}`, -13 / cam.zoom, d);
+      }
+      ctx.restore();
+
+      // 3. Concentric Difficulty Tier Rings
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (let i = 0; i < ORBIT_RINGS.length; i++) {
         const r = ringRadius(i) + RING_WIDTH;
+        ctx.save();
         ctx.beginPath();
-        ctx.setLineDash([2, 6]);
-        ctx.lineWidth = 1 / cam.zoom;
+        ctx.setLineDash([2, 5]);
+        ctx.lineWidth = 0.8 / cam.zoom;
         ctx.strokeStyle = pal.lineStrong;
         ctx.arc(0, 0, r, 0, Math.PI * 2);
         ctx.stroke();
-        ctx.setLineDash([]);
+        ctx.restore();
 
         const rs = ringStatsRef.current[i];
-        ctx.font = `700 ${11 / cam.zoom}px 'JetBrains Mono', monospace`;
+        ctx.save();
+        ctx.font = `700 ${10 / cam.zoom}px 'JetBrains Mono', monospace`;
         ctx.fillStyle = pal.inkFaint;
         ctx.fillText(
-          `${ORBIT_RINGS[i].label.toUpperCase()} · ${ORBIT_RINGS[i].min}–${ORBIT_RINGS[i].max}${rs ? ` · ${rs.solved}/${rs.total}` : ""}`,
+          `[${ORBIT_RINGS[i].label.toUpperCase()} · ${ORBIT_RINGS[i].min}–${ORBIT_RINGS[i].max}${rs ? ` · ${rs.solved}/${rs.total}` : ""}]`,
           0,
-          -r + 12 / cam.zoom
+          -r + 10 / cam.zoom
         );
+        ctx.restore();
       }
 
-      // Center "home" node
+      // 4. Compass Outer Perimeter & Angular Indicators
+      ctx.save();
+      ctx.strokeStyle = pal.lineStrong;
+      ctx.fillStyle = pal.inkFaint;
+      ctx.lineWidth = 0.8 / cam.zoom;
+      
+      const compassRadius = maxR + 10;
+      
+      ctx.beginPath();
+      ctx.arc(0, 0, compassRadius, 0, Math.PI * 2);
+      ctx.stroke();
+      
+      for (let angleDeg = 0; angleDeg < 360; angleDeg += 5) {
+        const angleRad = (angleDeg * Math.PI) / 180;
+        const cos = Math.cos(angleRad);
+        const sin = Math.sin(angleRad);
+        
+        let tickLength = 3 / cam.zoom;
+        let isMajor = false;
+        
+        if (angleDeg % 90 === 0) {
+          tickLength = 9 / cam.zoom;
+          isMajor = true;
+        } else if (angleDeg % 15 === 0) {
+          tickLength = 5 / cam.zoom;
+        }
+        
+        ctx.beginPath();
+        ctx.moveTo(cos * compassRadius, sin * compassRadius);
+        ctx.lineTo(cos * (compassRadius + tickLength), sin * (compassRadius + tickLength));
+        ctx.stroke();
+        
+        if (isMajor) {
+          const textR = compassRadius + 18 / cam.zoom;
+          let label = `${angleDeg.toString().padStart(3, "0")}°`;
+          if (angleDeg === 0) label = "000°/N";
+          if (angleDeg === 90) label = "090°/E";
+          if (angleDeg === 180) label = "180°/S";
+          if (angleDeg === 270) label = "270°/W";
+          
+          ctx.save();
+          ctx.font = `bold ${8 / cam.zoom}px 'JetBrains Mono', monospace`;
+          ctx.fillText(label, cos * textR, sin * textR);
+          ctx.restore();
+        }
+      }
+      ctx.restore();
+
+      // 5. Radial Sectors dividing tags
+      ctx.save();
+      const sectorLabels = sectorLabelsRef.current;
+      for (const sect of sectorLabels) {
+        const cos = Math.cos(sect.angle);
+        const sin = Math.sin(sect.angle);
+        
+        ctx.beginPath();
+        ctx.moveTo(cos * RING_INNER, sin * RING_INNER);
+        ctx.lineTo(cos * maxR, sin * maxR);
+        ctx.strokeStyle = pal.line;
+        ctx.lineWidth = 0.5 / cam.zoom;
+        ctx.setLineDash([4, 6]);
+        ctx.stroke();
+        
+        const textDist = maxR - 25;
+        ctx.save();
+        ctx.translate(cos * textDist, sin * textDist);
+        let rotAngle = sect.angle;
+        if (cos < 0) rotAngle += Math.PI;
+        ctx.rotate(rotAngle);
+        
+        ctx.font = `bold ${9 / cam.zoom}px 'JetBrains Mono', monospace`;
+        ctx.fillStyle = pal.inkFaint;
+        ctx.fillText(`// SEC_${sect.tag.toUpperCase()}`, 0, 0);
+        ctx.restore();
+      }
+      ctx.restore();
+
+      // 6. Continuous Fading Radar Scan Sweep
+      ctx.save();
+      const sweepPeriod = 14;
+      const sweepAngle = (t % sweepPeriod) / sweepPeriod * Math.PI * 2;
+      const cosSweep = Math.cos(sweepAngle);
+      const sinSweep = Math.sin(sweepAngle);
+      
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(cosSweep * compassRadius, sinSweep * compassRadius);
+      ctx.strokeStyle = pal.orange;
+      ctx.lineWidth = 0.9 / cam.zoom;
+      ctx.globalAlpha = 0.22;
+      ctx.stroke();
+      
+      ctx.beginPath();
+      const boxSize = 7 / cam.zoom;
+      const targetX = cosSweep * compassRadius;
+      const targetY = sinSweep * compassRadius;
+      ctx.rect(targetX - boxSize/2, targetY - boxSize/2, boxSize, boxSize);
+      ctx.strokeStyle = pal.orange;
+      ctx.lineWidth = 1 / cam.zoom;
+      ctx.globalAlpha = 0.55;
+      ctx.stroke();
+      ctx.restore();
+
+      // 7. Progression Pathway Roadmap
+      const filterActive = anyFilterActiveRef.current;
+      const matched = matchedKeysRef.current;
+      
+      if (filterActive) {
+        // Active search/tag filter: Connect matched nodes sequentially by rating difficulty
+        const matchingNodes = nodes.filter(n => matched.has(n.problem.key));
+        matchingNodes.sort((a, b) => (a.problem.rating ?? 0) - (b.problem.rating ?? 0));
+        
+        if (matchingNodes.length > 1) {
+          for (let i = 0; i < matchingNodes.length - 1; i++) {
+            const nA = matchingNodes[i];
+            const nB = matchingNodes[i + 1];
+            const solvedA = solvedSetRef.current.has(nA.problem.key);
+            const solvedB = solvedSetRef.current.has(nB.problem.key);
+            
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(nA.x, nA.y);
+            ctx.lineTo(nB.x, nB.y);
+            ctx.strokeStyle = solvedA && solvedB ? pal.lime : pal.orange;
+            ctx.lineWidth = 1.1 / cam.zoom;
+            if (!solvedA || !solvedB) {
+              ctx.setLineDash([3, 3]);
+            }
+            ctx.stroke();
+            ctx.restore();
+            
+            const dx = nB.x - nA.x;
+            const dy = nB.y - nA.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 16) {
+              const angle = Math.atan2(dy, dx);
+              const midX = nA.x + dx * 0.5;
+              const midY = nA.y + dy * 0.5;
+              
+              ctx.save();
+              ctx.translate(midX, midY);
+              ctx.rotate(angle);
+              ctx.beginPath();
+              ctx.moveTo(-4 / cam.zoom, -3 / cam.zoom);
+              ctx.lineTo(0, 0);
+              ctx.lineTo(-4 / cam.zoom, 3 / cam.zoom);
+              ctx.strokeStyle = solvedA && solvedB ? pal.lime : pal.orange;
+              ctx.lineWidth = 1.1 / cam.zoom;
+              ctx.stroke();
+              ctx.restore();
+              
+              const diffVal = (nB.problem.rating ?? 0) - (nA.problem.rating ?? 0);
+              if (diffVal > 0 && dist > 32) {
+                ctx.save();
+                ctx.font = `600 ${7.5 / cam.zoom}px 'JetBrains Mono', monospace`;
+                ctx.fillStyle = solvedA && solvedB ? pal.lime : pal.inkFaint;
+                ctx.textAlign = "center";
+                ctx.textBaseline = "bottom";
+                ctx.fillText(`+${diffVal}`, midX, midY - 3 / cam.zoom);
+                ctx.restore();
+              }
+            }
+          }
+        }
+      } else {
+        // Default View: Draw Chronological solved progression from center home, ending at Next Up
+        const solvedNodes = nodes.filter(n => solvedSetRef.current.has(n.problem.key));
+        solvedNodes.sort((a, b) => (a.problem.rating ?? 0) - (b.problem.rating ?? 0));
+        
+        let lastPt = { x: 0, y: 0 };
+        for (const n of solvedNodes) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(lastPt.x, lastPt.y);
+          ctx.lineTo(n.x, n.y);
+          ctx.strokeStyle = pal.lime;
+          ctx.lineWidth = 1 / cam.zoom;
+          ctx.stroke();
+          ctx.restore();
+          lastPt = { x: n.x, y: n.y };
+        }
+        
+        if (nextUpKey) {
+          const nextNode = nodes.find(n => n.problem.key === nextUpKey);
+          if (nextNode) {
+            ctx.save();
+            ctx.beginPath();
+            ctx.moveTo(lastPt.x, lastPt.y);
+            ctx.lineTo(nextNode.x, nextNode.y);
+            ctx.strokeStyle = pal.orange;
+            ctx.lineWidth = 1.1 / cam.zoom;
+            ctx.setLineDash([3, 3]);
+            ctx.stroke();
+            ctx.restore();
+            
+            const dx = nextNode.x - lastPt.x;
+            const dy = nextNode.y - lastPt.y;
+            const dist = Math.hypot(dx, dy);
+            if (dist > 18) {
+              const angle = Math.atan2(dy, dx);
+              const midX = lastPt.x + dx * 0.5;
+              const midY = lastPt.y + dy * 0.5;
+              
+              ctx.save();
+              ctx.translate(midX, midY);
+              ctx.rotate(angle);
+              ctx.beginPath();
+              ctx.moveTo(-4 / cam.zoom, -3 / cam.zoom);
+              ctx.lineTo(0, 0);
+              ctx.lineTo(-4 / cam.zoom, 3 / cam.zoom);
+              ctx.strokeStyle = pal.orange;
+              ctx.lineWidth = 1.1 / cam.zoom;
+              ctx.stroke();
+              ctx.restore();
+            }
+          }
+        }
+      }
+
+      // 8. Center "Home" Node
       ctx.beginPath();
       ctx.arc(0, 0, 9 / cam.zoom, 0, Math.PI * 2);
       ctx.fillStyle = pal.ink;
@@ -417,19 +707,19 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
       ctx.beginPath();
       ctx.arc(0, 0, 15 / cam.zoom, 0, Math.PI * 2);
       ctx.strokeStyle = pal.lineStrong;
-      ctx.lineWidth = 1 / cam.zoom;
+      ctx.lineWidth = 1.2 / cam.zoom;
       ctx.stroke();
 
-      // Nodes
+      // 9. Nodes loop
       let hoveredNode: OrbitNode | null = null;
       const hitThreshold = 10 / cam.zoom;
       let closestDist = Infinity;
-      const filterActive = anyFilterActiveRef.current;
-      const matched = matchedKeysRef.current;
 
       for (const n of nodes) {
         const solved = solvedSetRef.current.has(n.problem.key);
         const isNext = n.problem.key === nextUpKey;
+        const isSelected = selectedKeyRef.current === n.problem.key;
+        
         const dx = n.x - mouseWorld.x;
         const dy = n.y - mouseWorld.y;
         const d = Math.hypot(dx, dy);
@@ -439,44 +729,111 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
           hoveredNode = n;
         }
 
-        // A filter dims everything it doesn't match, so a search or tag
-        // click reads as "these light up" rather than a silent no-op list.
-        // Hover always wins over dimming — mousing over a faded star still
-        // reveals it, so filtering never hides information, only emphasis.
+        // Faded filter nodes
         if (filterActive && !matched.has(n.problem.key) && !isHover) {
+          ctx.save();
           ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r * 0.7, 0, Math.PI * 2);
+          ctx.arc(n.x, n.y, n.r * 0.75, 0, Math.PI * 2);
           ctx.fillStyle = pal.paper;
-          ctx.globalAlpha = 0.16;
+          ctx.globalAlpha = 0.15;
           ctx.fill();
-          ctx.lineWidth = 1 / cam.zoom;
+          ctx.lineWidth = 0.7 / cam.zoom;
           ctx.strokeStyle = pal.line;
-          ctx.globalAlpha = 0.22;
           ctx.stroke();
-          ctx.globalAlpha = 1;
+          ctx.restore();
           continue;
         }
 
-        const color = solved ? pal.lime : isNext ? pal.orange : tierColor(n.problem.rating, pal);
-        const radius = (isHover ? n.r * 1.9 : n.r) / 1;
+        const ratingColor = tierColor(n.problem.rating, pal);
+        const nodeColor = solved ? pal.lime : isNext ? pal.orange : ratingColor;
+        const radius = isHover ? n.r * 1.6 : n.r;
 
-        if (solved || isNext || isHover) {
-          ctx.save();
-          ctx.shadowColor = color;
-          ctx.shadowBlur = (isNext ? 16 : 10) / cam.zoom;
-        }
-
+        // Draw flat shape
+        ctx.save();
         ctx.beginPath();
         ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = solved ? color : isNext ? color : pal.paper;
-        ctx.globalAlpha = solved || isNext || isHover ? 1 : 0.85;
-        ctx.fill();
-        ctx.lineWidth = (isHover ? 2 : 1.3) / cam.zoom;
-        ctx.strokeStyle = color;
-        ctx.globalAlpha = 1;
+        
+        if (solved) {
+          ctx.fillStyle = pal.lime;
+          ctx.fill();
+        } else if (isNext) {
+          ctx.fillStyle = pal.orange;
+          ctx.fill();
+        } else {
+          ctx.fillStyle = pal.paper;
+          ctx.fill();
+        }
+        
+        ctx.lineWidth = (isHover || isSelected ? 2 : 1.3) / cam.zoom;
+        ctx.strokeStyle = nodeColor;
         ctx.stroke();
+        ctx.restore();
 
-        if (solved || isNext || isHover) ctx.restore();
+        // Extra dashed circle for Recommended Next Up node
+        if (isNext) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.arc(n.x, n.y, radius * 1.8, 0, Math.PI * 2);
+          ctx.strokeStyle = pal.orange;
+          ctx.lineWidth = 0.9 / cam.zoom;
+          ctx.setLineDash([2, 2]);
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // CAD crosshair line cursor on hover
+        if (isHover) {
+          ctx.save();
+          ctx.beginPath();
+          ctx.moveTo(n.x - 12 / cam.zoom, n.y);
+          ctx.lineTo(n.x + 12 / cam.zoom, n.y);
+          ctx.moveTo(n.x, n.y - 12 / cam.zoom);
+          ctx.lineTo(n.x, n.y + 12 / cam.zoom);
+          ctx.strokeStyle = pal.orange;
+          ctx.lineWidth = 0.8 / cam.zoom;
+          ctx.stroke();
+          ctx.restore();
+        }
+
+        // L-brackets target crop marks around Selected Node
+        if (isSelected) {
+          ctx.save();
+          const b = radius + 3 / cam.zoom;
+          const l = 4 / cam.zoom;
+          ctx.strokeStyle = pal.orange;
+          ctx.lineWidth = 1.3 / cam.zoom;
+          ctx.beginPath();
+          
+          // Top-left
+          ctx.moveTo(n.x - b, n.y - b + l);
+          ctx.lineTo(n.x - b, n.y - b);
+          ctx.lineTo(n.x - b + l, n.y - b);
+          
+          // Top-right
+          ctx.moveTo(n.x + b, n.y - b + l);
+          ctx.lineTo(n.x + b, n.y - b);
+          ctx.lineTo(n.x + b - l, n.y - b);
+          
+          // Bottom-left
+          ctx.moveTo(n.x - b, n.y + b - l);
+          ctx.lineTo(n.x - b, n.y + b);
+          ctx.lineTo(n.x - b + l, n.y + b);
+          
+          // Bottom-right
+          ctx.moveTo(n.x + b, n.y + b - l);
+          ctx.lineTo(n.x + b, n.y + b);
+          ctx.lineTo(n.x + b - l, n.y + b);
+          
+          ctx.stroke();
+          
+          // Tiny coordinate tag next to selected node
+          ctx.font = `600 ${6.5 / cam.zoom}px 'JetBrains Mono', monospace`;
+          ctx.fillStyle = pal.orange;
+          ctx.textAlign = "left";
+          ctx.textBaseline = "middle";
+          ctx.fillText(`[LOC: ${n.x.toFixed(0)}, ${n.y.toFixed(0)}]`, n.x + b + 3 / cam.zoom, n.y);
+          ctx.restore();
+        }
       }
 
       // Pulse — a brief expanding ring that marks where a search/focus jump
@@ -653,9 +1010,19 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
     const wasDragging = dragRef.current.dragging;
     dragRef.current.down = false;
     dragRef.current.dragging = false;
-    if (!wasDragging && hoveredRef.current) {
-      playSound("click");
-      onOpen(hoveredRef.current.problem.key);
+    if (!wasDragging) {
+      if (hoveredRef.current) {
+        playSound("click");
+        const node = hoveredRef.current;
+        if (selectedKeyRef.current === node.problem.key) {
+          onOpen(node.problem.key);
+        } else {
+          setSelectedProblem(node.problem);
+          focusWorldPoint(node.x, node.y, 1.4);
+        }
+      } else {
+        setSelectedProblem(null);
+      }
     }
   };
 
@@ -834,77 +1201,193 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
             back to where you left off, and ring shortcuts that fly the
             camera instead of leaving navigation to blind drag/scroll. ── */}
         <div className="flex flex-col gap-3">
-          <div className="spec-card corner-marks p-4">
-            <div className="eyebrow mb-2">Progress</div>
-            <div className="flex items-baseline gap-1.5 mb-2">
-              <span className="stat-num text-2xl text-bb-ink">{totalSolved}</span>
-              <span className="text-xs font-mono text-bb-ink-faint">/ {problems?.length ?? 0} mapped</span>
-            </div>
-            <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
-              <div
-                className="h-full bg-bb-lime rounded-full transition-all duration-500"
-                style={{ width: `${problems?.length ? (totalSolved / problems.length) * 100 : 0}%` }}
-              />
-            </div>
-          </div>
+          {selectedProblem ? (
+            <div className="spec-card corner-marks p-4">
+              <div className="flex items-center justify-between mb-3">
+                <span className="eyebrow">// DETECTED_SECTOR</span>
+                <button
+                  onClick={() => {
+                    playSound("click");
+                    setSelectedProblem(null);
+                  }}
+                  className="text-xs font-mono font-bold text-bb-ink-faint hover:text-bb-orange uppercase tracking-wider cursor-pointer bg-transparent border-none"
+                >
+                  Close ×
+                </button>
+              </div>
 
-          {nextUpProblem && (
-            <div className="spec-card p-4">
-              <div className="flex items-center justify-between mb-2">
-                <span className="eyebrow">Next Up</span>
-                <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
-                  {nextUpProblem.contestId}{nextUpProblem.index}
-                </span>
+              <div className="text-sm font-heading font-bold text-bb-ink leading-snug mb-1">
+                {selectedProblem.title ?? selectedProblem.key}
               </div>
-              <div className="text-sm font-heading font-bold text-bb-ink mb-2 leading-snug">
-                {nextUpProblem.title ?? nextUpProblem.key}
+              <div className="text-[9px] font-mono text-bb-ink-faint mb-3.5 uppercase tracking-wider">
+                CONTEST {selectedProblem.contestId} / INDEX {selectedProblem.index}
               </div>
-              <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint tabular-nums">
-                  {nextUpProblem.rating ?? "—"}
-                </span>
-                {nextUpProblem.tags[0] && (
-                  <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
-                    {nextUpProblem.tags[0]}
-                  </span>
+
+              <div className="border border-bb-line bg-bb-paper-raised/40 rounded p-2.5 font-mono text-[9px] text-bb-ink-soft mb-3.5 flex flex-col gap-1.5">
+                <div className="flex justify-between border-b border-bb-line pb-1">
+                  <span className="text-bb-ink-faint">VERDICT RATING:</span>
+                  <span className="font-bold tabular-nums text-bb-ink">{selectedProblem.rating ?? "—"}</span>
+                </div>
+                <div className="flex justify-between border-b border-bb-line pb-1">
+                  <span className="text-bb-ink-faint">TIME LIMIT:</span>
+                  <span className="font-bold text-bb-ink">1000 ms</span>
+                </div>
+                <div className="flex justify-between border-b border-bb-line pb-1">
+                  <span className="text-bb-ink-faint">MEMORY LIMIT:</span>
+                  <span className="font-bold text-bb-ink">256 MB</span>
+                </div>
+                <div className="flex justify-between border-b border-bb-line pb-1">
+                  <span className="text-bb-ink-faint">EVALUATION:</span>
+                  <span className="font-bold text-bb-lime">LOCAL JUDGE</span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-bb-ink-faint">DATA SOURCE:</span>
+                  <span className="font-bold text-bb-ink">CODEFORCES</span>
+                </div>
+              </div>
+
+              <div className="label-caps mb-2">Topic Tags</div>
+              <div className="flex flex-wrap gap-1 mb-4">
+                {selectedProblem.tags.length > 0 ? (
+                  selectedProblem.tags.map((tag) => {
+                    const isCurrentlyFiltered = selectedTag === tag;
+                    return (
+                      <button
+                        key={tag}
+                        onClick={() => {
+                          playSound("click");
+                          if (isCurrentlyFiltered) {
+                            setSelectedTag(null);
+                          } else {
+                            setSelectedTag(tag);
+                          }
+                        }}
+                        className={`pill px-1.5 py-0.5 text-[8.5px] uppercase tracking-wide border cursor-pointer transition-colors ${
+                          isCurrentlyFiltered
+                            ? "bg-bb-orange text-bb-paper border-bb-orange"
+                            : "bg-transparent text-bb-ink-faint border-bb-line hover:border-bb-ink-soft hover:text-bb-ink"
+                        }`}
+                      >
+                        {tag} {isCurrentlyFiltered ? "⊙" : "○"}
+                      </button>
+                    );
+                  })
+                ) : (
+                  <span className="text-[10px] font-mono text-bb-ink-faint">No tags associated</span>
                 )}
               </div>
+
+              <button
+                onClick={() => {
+                  playSound("click");
+                  onOpen(selectedProblem.key);
+                }}
+                className="w-full btn-primary h-9 text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer mb-2 flex items-center justify-center gap-1.5"
+              >
+                Solve Challenge →
+              </button>
+
               <div className="flex gap-2">
-                <button onClick={focusNextUp} className="btn-outline flex-1 h-8 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
-                  Locate ◎
-                </button>
-                <button
-                  onClick={() => { playSound("click"); onOpen(nextUpProblem.key); }}
-                  className="btn-primary flex-1 h-8 text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer"
+                <a
+                  href={`https://codeforces.com/problemset/problem/${selectedProblem.contestId}/${selectedProblem.index}`}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="btn-outline flex-1 h-8 text-[9px] font-mono uppercase tracking-wider flex items-center justify-center cursor-pointer decoration-none border border-bb-line-strong hover:border-bb-ink text-bb-ink"
                 >
-                  Solve →
+                  Source ↗
+                </a>
+                <button
+                  onClick={() => {
+                    playSound("click");
+                    const firstTag = selectedProblem.tags[0] ?? null;
+                    setSelectedTag(selectedTag === firstTag ? null : firstTag);
+                  }}
+                  className={`btn-outline flex-1 h-8 text-[9px] font-mono uppercase tracking-wider cursor-pointer transition-colors border border-bb-line-strong hover:border-bb-ink text-bb-ink ${
+                    selectedProblem.tags[0] && selectedTag === selectedProblem.tags[0]
+                      ? "border-bb-orange! text-bb-orange!"
+                      : ""
+                  }`}
+                  disabled={selectedProblem.tags.length === 0}
+                >
+                  Similar ⊙
                 </button>
               </div>
             </div>
-          )}
+          ) : (
+            <>
+              <div className="spec-card corner-marks p-4">
+                <div className="eyebrow mb-2">Progress</div>
+                <div className="flex items-baseline gap-1.5 mb-2">
+                  <span className="stat-num text-2xl text-bb-ink">{totalSolved}</span>
+                  <span className="text-xs font-mono text-bb-ink-faint">/ {problems?.length ?? 0} mapped</span>
+                </div>
+                <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
+                  <div
+                    className="h-full bg-bb-lime rounded-full transition-all duration-500"
+                    style={{ width: `${problems?.length ? (totalSolved / problems.length) * 100 : 0}%` }}
+                  />
+                </div>
+              </div>
 
-          <div className="spec-card p-4">
-            <h4 className="label-caps mb-3">Rings</h4>
-            <div className="flex flex-col gap-2.5">
-              {ORBIT_RINGS.map((ring, i) => {
-                const rs = ringStats[i] ?? { solved: 0, total: 0 };
-                const pct = rs.total ? (rs.solved / rs.total) * 100 : 0;
-                return (
-                  <button key={ring.label} onClick={() => focusRing(i)} className="w-full text-left cursor-pointer group">
-                    <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-mono font-bold text-bb-ink-soft group-hover:text-bb-orange transition-colors uppercase tracking-wide">
-                        {ring.label}
+              {nextUpProblem && (
+                <div className="spec-card p-4">
+                  <div className="flex items-center justify-between mb-2">
+                    <span className="eyebrow">Next Up</span>
+                    <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
+                      {nextUpProblem.contestId}{nextUpProblem.index}
+                    </span>
+                  </div>
+                  <div className="text-sm font-heading font-bold text-bb-ink mb-2 leading-snug">
+                    {nextUpProblem.title ?? nextUpProblem.key}
+                  </div>
+                  <div className="flex items-center gap-1.5 mb-3 flex-wrap">
+                    <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint tabular-nums">
+                      {nextUpProblem.rating ?? "—"}
+                    </span>
+                    {nextUpProblem.tags[0] && (
+                      <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
+                        {nextUpProblem.tags[0]}
                       </span>
-                      <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">{rs.solved}/{rs.total}</span>
-                    </div>
-                    <div className="h-1 rounded-full bg-bb-ink/[0.08] overflow-hidden">
-                      <div className="h-full bg-bb-orange rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
-                    </div>
-                  </button>
-                );
-              })}
-            </div>
-          </div>
+                    )}
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={focusNextUp} className="btn-outline flex-1 h-8 text-[10px] font-mono uppercase tracking-wider cursor-pointer animate-none">
+                      Locate ◎
+                    </button>
+                    <button
+                      onClick={() => { playSound("click"); onOpen(nextUpProblem.key); }}
+                      className="btn-primary flex-1 h-8 text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer"
+                    >
+                      Solve →
+                    </button>
+                  </div>
+                </div>
+              )}
+
+              <div className="spec-card p-4">
+                <h4 className="label-caps mb-3">Rings</h4>
+                <div className="flex flex-col gap-2.5">
+                  {ORBIT_RINGS.map((ring, i) => {
+                    const rs = ringStats[i] ?? { solved: 0, total: 0 };
+                    const pct = rs.total ? (rs.solved / rs.total) * 100 : 0;
+                    return (
+                      <button key={ring.label} onClick={() => focusRing(i)} className="w-full text-left cursor-pointer group bg-transparent border-none">
+                        <div className="flex items-center justify-between mb-1">
+                          <span className="text-[10px] font-mono font-bold text-bb-ink-soft group-hover:text-bb-orange transition-colors uppercase tracking-wide">
+                            {ring.label}
+                          </span>
+                          <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">{rs.solved}/{rs.total}</span>
+                        </div>
+                        <div className="h-1 rounded-full bg-bb-ink/[0.08] overflow-hidden">
+                          <div className="h-full bg-bb-orange rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
+              </div>
+            </>
+          )}
         </div>
       </div>
     </div>

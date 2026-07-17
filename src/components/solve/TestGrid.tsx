@@ -1,17 +1,9 @@
 import React from "react";
 import { motion } from "motion/react";
 import type { Verdict } from "../../lib/judgeApi";
+import { tileTitle, tileToneClass } from "../../lib/verdictTone";
 
 export type TestTileState = "pass" | "wa" | "tle" | "re" | "pending" | "running";
-
-const TILE_CLASS: Record<TestTileState, string> = {
-  pass: "bg-bb-term-acc",
-  wa: "bg-[#ff5c5c]",
-  tle: "bg-amber-400",
-  re: "bg-[#ff5c5c]",
-  pending: "bg-bb-term-line",
-  running: "bg-bb-term-acc animate-pulse-lime",
-};
 
 /** Live progress (no verdict yet) → tile states. Purely derived, no new backend data needed. */
 export function tilesFromProgress(progress: { done: number; total: number }): TestTileState[] {
@@ -41,15 +33,6 @@ interface TestGridProps {
   className?: string;
 }
 
-const TILE_TITLE: Record<TestTileState, string> = {
-  pass: "Passed",
-  wa: "Wrong answer — click to view diff",
-  tle: "Time limit exceeded",
-  re: "Runtime error",
-  pending: "Not run",
-  running: "Running…",
-};
-
 export const TestGrid: React.FC<TestGridProps> = ({ tiles, failedIndex, onSelectFailed, className = "" }) => {
   if (tiles.length === 0) return null;
   return (
@@ -61,11 +44,11 @@ export const TestGrid: React.FC<TestGridProps> = ({ tiles, failedIndex, onSelect
             key={i}
             type="button"
             role="listitem"
-            title={TILE_TITLE[state]}
+            title={tileTitle(state)}
             disabled={!clickable}
             onClick={clickable ? onSelectFailed : undefined}
             whileHover={clickable ? { scale: 1.25 } : undefined}
-            className={`w-2.5 h-2.5 rounded-[2px] ${TILE_CLASS[state]} ${clickable ? "cursor-pointer ring-1 ring-offset-1 ring-offset-bb-term-surface ring-current" : "cursor-default"}`}
+            className={`w-2.5 h-2.5 rounded-[2px] ${tileToneClass(state)} ${clickable ? "cursor-pointer ring-1 ring-offset-1 ring-offset-bb-surface ring-current" : "cursor-default"}`}
           />
         );
       })}

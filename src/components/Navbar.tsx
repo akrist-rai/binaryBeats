@@ -1,6 +1,7 @@
 import React from 'react';
 import { motion } from 'motion/react';
-import { RatingBadge } from './blitz/RatingBadge';
+import { RatingBadge } from './ui/RatingBadge';
+import { Tag } from './ui/Tag';
 
 interface NavbarProps {
   activeTab: string;
@@ -24,9 +25,9 @@ export const Navbar: React.FC<NavbarProps> = ({
   ];
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b border-bb-line bg-bb-paper/90 backdrop-blur-xl">
+    <nav className="sticky top-0 z-50 w-full border-b-[1.5px] border-bb-line-strong bg-bb-ground/95 backdrop-blur-xl">
       <div className="max-w-[1400px] mx-auto flex items-center justify-between h-16 px-6 lg:px-8">
-        {/* Logo — terminal-flavored mark inside an otherwise paper identity */}
+        {/* Logo — boxed scoreboard mark */}
         <div
           className="flex items-center gap-2.5 cursor-pointer group select-none"
           onClick={() => onNavigate('home')}
@@ -34,15 +35,13 @@ export const Navbar: React.FC<NavbarProps> = ({
           role="link" tabIndex={0}
           onKeyDown={e => { if (e.key === 'Enter') onNavigate('home'); }}
         >
-          <span className="w-7 h-7 rounded-md bg-bb-ink text-bb-term-acc flex items-center justify-center font-mono text-[13px] font-bold group-hover:bg-bb-orange group-hover:text-bb-ink transition-colors">
+          <span className="w-7 h-7 rounded-sm bg-bb-ink text-bb-yellow flex items-center justify-center font-mono text-[13px] font-bold group-hover:bg-bb-yellow group-hover:text-bb-ground transition-colors">
             {'>_'}
           </span>
-          <span className="text-[17px] font-bold text-bb-ink tracking-tight font-heading">
+          <span className="text-[17px] font-bold text-bb-ink tracking-tight font-display">
             Binary Beats
           </span>
-          <span className="sticker-tag hidden sm:inline text-[9px] font-mono font-bold uppercase tracking-widest text-bb-ink-faint border border-bb-line-strong rounded-full px-2 py-0.5 ml-0.5">
-            C++17
-          </span>
+          <Tag tone="neutral" bracket className="hidden sm:inline-flex ml-0.5">C++17</Tag>
         </div>
 
         {/* Center: tab nav */}
@@ -54,18 +53,18 @@ export const Navbar: React.FC<NavbarProps> = ({
                 key={t.id}
                 onClick={() => onNavigate(t.id)}
                 onMouseEnter={onHoverSound}
-                className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded-full text-[13px] font-medium font-mono cursor-pointer transition-colors duration-150 ${
-                  isActive ? 'text-bb-paper' : 'text-bb-ink-soft hover:text-bb-ink'
+                className={`relative flex items-center gap-1.5 px-3.5 py-2 rounded text-[13px] font-medium font-mono cursor-pointer transition-colors duration-150 ${
+                  isActive ? 'text-bb-ground' : 'text-bb-ink-soft hover:text-bb-ink'
                 }`}
               >
                 {isActive && (
                   <motion.div
                     layoutId="navIndicator"
-                    className="absolute inset-0 rounded-full bg-bb-ink"
+                    className="absolute inset-0 rounded bg-bb-yellow"
                     transition={{ type: 'spring', stiffness: 500, damping: 35 }}
                   />
                 )}
-                <span className={`relative z-10 text-[9px] ${isActive ? 'text-bb-term-acc' : 'text-bb-ink-faint'}`}>{t.n}</span>
+                <span className={`relative z-10 text-[9px] ${isActive ? 'text-bb-ground/60' : 'text-bb-ink-faint'}`}>{t.n}</span>
                 <span className="relative z-10">{t.label}</span>
               </button>
             );
@@ -79,7 +78,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onToggleTheme}
             onMouseEnter={onHoverSound}
             aria-label={theme === 'light' ? 'Switch to dark theme' : 'Switch to light theme'}
-            className="w-8 h-8 rounded-full flex items-center justify-center text-bb-ink-faint hover:text-bb-orange hover:bg-bb-ink/[0.05] transition-all cursor-pointer"
+            className="w-8 h-8 rounded flex items-center justify-center text-bb-ink-faint hover:text-bb-yellow hover:bg-bb-ink/[0.06] transition-all cursor-pointer"
           >
             {theme === 'light' ? (
               <svg className="w-4 h-4" fill="none" stroke="currentColor" strokeWidth="1.8" viewBox="0 0 24 24">
@@ -93,7 +92,7 @@ export const Navbar: React.FC<NavbarProps> = ({
           </button>
 
           {/* Rating — real Codeforces rating from the linked handle, if any */}
-          <div className="flex items-center gap-1.5 text-[13px] pill border border-bb-line-strong px-2.5 py-1">
+          <div className="flex items-center gap-1.5 text-[13px] rounded-sm border border-bb-line-strong px-2.5 py-1">
             <RatingBadge rating={rating} />
           </div>
 
@@ -106,7 +105,7 @@ export const Navbar: React.FC<NavbarProps> = ({
             onClick={onLogout}
             onMouseEnter={onHoverSound}
           >
-            <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[11px] font-bold font-mono">
+            <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-ground flex items-center justify-center text-[11px] font-bold font-mono">
               {username[0].toUpperCase()}
             </div>
             <span className="text-[13px] font-medium text-bb-ink-soft hidden sm:inline">{username}</span>

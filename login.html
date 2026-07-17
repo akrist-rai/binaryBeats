@@ -2,38 +2,24 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<title>ACCESS TERMINAL // BINARY BEATS</title>
+<title>SIGN IN // BINARY BEATS</title>
 <link rel="icon" type="image/svg+xml" href="/favicon.svg">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Big+Shoulders+Display:wght@600;700;800;900&family=Orbitron:wght@600;700;800&family=JetBrains+Mono:wght@400;500;700;800&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="/src/styles/tokens.css">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
-  :root{
-    --bg:#07070a;
-    --amber:#ff8a3d;
-    --amber-dim:#c9601a;
-    --lime:#c8ff4d;
-    --danger:#ff4d4d;
-    --success:#8CFF9B;
-    --red:#c4241c;
-    --card:#eee6d2;
-    --card-2:#e4d9bf;
-    --ink:#161309;
-    --muted:#7c7360;
-    --line:rgba(22,19,9,0.18);
-    --steel:#2a2c28;
-  }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{
     background:
-      radial-gradient(ellipse 900px 500px at 50% -8%, rgba(255,138,61,0.09), transparent 60%),
-      radial-gradient(circle at 1px 1px, rgba(255,255,255,0.04) 1px, transparent 1px) 0 0/28px 28px,
-      var(--bg);
-    color:#efeadd;
-    font-family:'JetBrains Mono', monospace;
+      radial-gradient(ellipse 900px 500px at 50% -8%, rgba(255,212,0,0.06), transparent 60%),
+      radial-gradient(circle at 1px 1px, rgba(242,242,237,0.05) 1px, transparent 1px) 0 0/32px 32px,
+      var(--bb-ground);
+    color:var(--bb-ink);
+    font-family:var(--bb-font-mono);
     min-height:100vh;
     display:flex;
     flex-direction:column;
@@ -45,27 +31,26 @@
   /* ── Split-flap marquee ─────────────────────────────────────────────── */
   .marquee{
     display:flex; align-items:center; justify-content:space-between; gap:16px;
-    width:min(760px, 100%); background:#0a0a0a; border:1px solid #201f1c;
-    border-radius:6px; padding:10px 14px; margin-bottom:22px;
-    box-shadow: inset 0 0 0 1px rgba(255,255,255,0.02), 0 20px 40px -25px rgba(0,0,0,0.8);
+    width:min(760px, 100%); background:var(--bb-ground); border:1.5px solid var(--bb-line-strong);
+    border-radius:4px; padding:10px 14px; margin-bottom:22px;
   }
-  .marquee-label{font-size:9px; letter-spacing:.16em; color:#57544a; text-transform:uppercase; white-space:nowrap;}
+  .marquee-label{font-size:9px; letter-spacing:.16em; color:var(--bb-ink-faint); text-transform:uppercase; white-space:nowrap;}
   .flap-row{display:flex; gap:2px;}
   .flap-cell{
     position:relative; width:15px; height:22px; border-radius:2px; overflow:hidden;
-    background:#111; box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.6) inset, 0 1px 2px rgba(0,0,0,0.5);
+    background:var(--bb-surface); box-shadow: 0 1px 0 rgba(255,255,255,0.04) inset, 0 -1px 0 rgba(0,0,0,0.6) inset;
     perspective:100px; flex-shrink:0;
   }
   .flap-cell::after{
     content:""; position:absolute; left:0; right:0; top:50%; height:1px;
     background:rgba(0,0,0,0.75); z-index:9; pointer-events:none;
   }
-  .flap-half{ position:absolute; left:0; right:0; height:50%; overflow:hidden; display:flex; justify-content:center; background:#111; }
+  .flap-half{ position:absolute; left:0; right:0; height:50%; overflow:hidden; display:flex; justify-content:center; background:var(--bb-surface); }
   .flap-half.top{ top:0; align-items:flex-start; border-radius:2px 2px 0 0; }
-  .flap-half.bottom{ bottom:0; align-items:flex-start; border-radius:0 0 2px 2px; background:#0b0b0b; }
+  .flap-half.bottom{ bottom:0; align-items:flex-start; border-radius:0 0 2px 2px; background:var(--bb-surface-2); }
   .flap-char{
-    font-family:'JetBrains Mono', monospace; font-weight:700; font-size:11px; color:var(--amber);
-    text-shadow:0 0 6px rgba(255,138,61,0.5); height:22px; line-height:22px; width:15px; display:block; text-align:center;
+    font-family:var(--bb-font-hud); font-weight:700; font-size:11px; color:var(--bb-yellow);
+    height:22px; line-height:22px; width:15px; display:block; text-align:center;
   }
   .flap-half.bottom .flap-char{ margin-top:-11px; }
   .flap-leaf{ z-index:8; backface-visibility:hidden; will-change:transform; }
@@ -74,119 +59,78 @@
 
   .clock-row{display:flex; gap:2px;}
   .clock-row .flap-cell{width:12px; height:19px;}
-  .clock-row .flap-char{font-size:9.5px; color:var(--lime); text-shadow:0 0 6px rgba(200,255,77,0.45); height:19px; line-height:19px; width:12px;}
+  .clock-row .flap-char{font-size:9.5px; color:var(--bb-success); height:19px; line-height:19px; width:12px;}
   .clock-row .flap-half.bottom .flap-char{margin-top:-9.5px;}
 
-  /* ── 3D stage ───────────────────────────────────────────────────────── */
-  .deck{
-    position:relative; perspective:1600px; width:min(880px, 100%);
-    animation: deckIn .7s cubic-bezier(.16,1,.3,1) both;
+  /* ── Roster card — flat, sharp, brutalist. Replaces the old laminated
+     ID-badge (3D tilt, foil strip, grommet, member ribbon) with a single
+     bordered panel + hard offset shadow, in the same shape language as the
+     rest of the app. ── */
+  .stage{
+    width:min(880px, 100%);
+    animation: stageIn .5s cubic-bezier(.16,1,.3,1) both;
   }
-  @keyframes deckIn{
-    from{ opacity:0; transform:translateY(36px) scale(.97); }
-    to{ opacity:1; transform:translateY(0) scale(1); }
+  @keyframes stageIn{
+    from{ opacity:0; transform:translateY(24px); }
+    to{ opacity:1; transform:translateY(0); }
   }
-  .deck-shadow{
-    position:absolute; left:8%; right:8%; bottom:-16px; height:36px; z-index:-1;
-    background:radial-gradient(ellipse at center, rgba(0,0,0,0.6), rgba(0,0,0,0) 72%);
-    filter:blur(9px); opacity:.85; transition:transform .12s ease-out;
-  }
-  .tilt{
-    position:relative; width:100%; transform-style:preserve-3d;
-    transition:transform .12s ease-out;
-  }
-  .flip{
-    display:grid; width:100%; transform-style:preserve-3d;
-    transition:transform .65s cubic-bezier(.34,1.15,.4,1);
-  }
-  .flip.flipped{ transform:rotateY(180deg); }
 
-  .face{
-    grid-area:1/1;
-    backface-visibility:hidden;
-    transform-style:preserve-3d;
-    background:linear-gradient(160deg, var(--card), var(--card-2));
-    color:var(--ink);
-    border-radius:14px;
-    box-shadow:
-      0 2px 0 rgba(255,255,255,0.5) inset,
-      0 60px 90px -35px rgba(0,0,0,0.85),
-      0 10px 30px -12px rgba(0,0,0,0.6);
+  .tabs{display:flex; gap:8px; margin-bottom:10px;}
+  .tab{
+    font-family:var(--bb-font-mono); font-size:11px; font-weight:700; letter-spacing:.1em; text-transform:uppercase;
+    color:var(--bb-ink-faint); background:var(--bb-surface); border:1.5px solid var(--bb-line-strong);
+    border-radius:4px; padding:8px 16px; cursor:pointer; transition:color .15s ease, background .15s ease, border-color .15s ease;
+  }
+  .tab:hover{ color:var(--bb-ink); }
+  .tab[aria-selected="true"]{ background:var(--bb-yellow); color:var(--bb-ground); border-color:var(--bb-yellow); }
+
+  .card{
     position:relative;
+    background:var(--bb-surface);
+    border:2px solid var(--bb-border-hard);
+    border-radius:4px;
+    box-shadow:6px 6px 0 var(--bb-border-hard);
+    padding:26px 28px 24px;
     overflow:hidden;
-    padding:26px 28px 22px;
   }
-  .face.back{ transform:rotateY(180deg); }
+  .card[hidden]{ display:none; }
 
-  /* laminate sheen + holographic foil strip, follow tilt via JS-set custom props inherited from .face */
-  .sheen{
-    position:absolute; inset:0; pointer-events:none; z-index:5; border-radius:14px;
-    background:radial-gradient(circle at var(--sx,50%) var(--sy,20%), rgba(255,255,255,0.55), rgba(255,255,255,0.06) 32%, transparent 55%);
-    mix-blend-mode:overlay; opacity:.8;
-  }
-  .foil-strip{
-    position:absolute; top:0; bottom:0; left:0; width:11px; z-index:7; pointer-events:none;
-    background:linear-gradient(180deg,
-      rgba(255,138,61,.6), rgba(200,255,77,.55), rgba(110,180,255,.55), rgba(255,120,200,.55), rgba(255,138,61,.6));
-    background-size:100% 240%;
-    background-position: 0 calc(50% + (var(--sy, 20%) - 50%) * 0.7);
-    mix-blend-mode:color-dodge; opacity:.55;
-  }
-  .face.back .foil-strip{ left:auto; right:0; }
-
-  /* grommet / hole punch */
-  .grommet{
-    position:absolute; top:18px; left:18px; width:20px; height:20px; border-radius:50%;
-    background:radial-gradient(circle at 35% 35%, #444 0%, #0d0d0d 60%, #000 100%);
-    box-shadow:0 1px 2px rgba(0,0,0,0.5), inset 0 0 0 2px #6b6b6b;
-    z-index:6; transform:translateZ(18px);
-  }
-  .face.back .grommet{ left:auto; right:18px; }
-
-  .member-ribbon{
-    position:absolute; top:14px; right:-38px; width:150px; text-align:center;
-    background:var(--red); color:#fff2ee; font-family:'Bebas Neue', sans-serif;
-    font-size:11px; letter-spacing:.24em; padding:4px 0; transform:rotate(40deg) translateZ(28px);
-    box-shadow:0 2px 6px rgba(0,0,0,0.35); z-index:6;
-  }
-  .face.back .member-ribbon{ right:auto; left:-38px; transform:rotate(-40deg) translateZ(28px); background:var(--ink); color:var(--lime); }
-
-  .card-top{display:flex; align-items:flex-start; justify-content:space-between; padding-left:34px; margin-bottom:14px; transform:translateZ(14px);}
-  .brand{font-family:'Bebas Neue', sans-serif; font-size:13px; letter-spacing:.22em; color:var(--ink);}
-  .brand b{color:var(--red);}
-  .subline{font-size:8.5px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase; margin-top:2px;}
-  .serial-block{text-align:right; font-size:8.5px; letter-spacing:.08em; color:var(--muted);}
-  .serial-block b{color:var(--ink); font-size:9.5px;}
+  .card-top{display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px;}
+  .brand{font-family:var(--bb-font-mono); font-size:11px; font-weight:800; letter-spacing:.18em; color:var(--bb-ink); text-transform:uppercase;}
+  .brand b{color:var(--bb-yellow);}
+  .subline{font-size:9px; letter-spacing:.1em; color:var(--bb-ink-faint); text-transform:uppercase; margin-top:3px;}
+  .serial-block{text-align:right; font-size:8.5px; letter-spacing:.08em; color:var(--bb-ink-faint);}
+  .serial-block b{color:var(--bb-ink); font-size:10px; font-family:var(--bb-font-hud);}
 
   .card-body{display:grid; grid-template-columns:1fr 130px; gap:22px; align-items:start;}
 
-  h1.title{font-family:'Bebas Neue', sans-serif; font-size:38px; line-height:.95; margin:0 0 3px; padding-left:34px; letter-spacing:.01em; transform:translateZ(22px); text-shadow:0 1px 0 rgba(255,255,255,.4);}
-  .tagline{font-size:10px; letter-spacing:.05em; color:var(--muted); margin-bottom:16px; padding-left:34px;}
-  .tagline .prompt{color:var(--red); font-weight:700;}
+  h1.title{font-family:var(--bb-font-display); font-weight:800; font-size:34px; line-height:1; margin:0 0 4px; letter-spacing:-0.01em; color:var(--bb-ink);}
+  .tagline{font-size:10.5px; letter-spacing:.03em; color:var(--bb-ink-faint); margin-bottom:16px;}
+  .tagline .prompt{color:var(--bb-yellow); font-weight:700;}
 
-  .status-row{display:flex; align-items:center; gap:8px; padding-left:34px; margin-bottom:16px; transform:translateZ(12px);}
-  .status-dot{width:7px; height:7px; border-radius:50%; background:var(--muted); flex-shrink:0;}
-  .status-dot.busy{background:var(--amber); animation:pulse 1s infinite;}
-  .status-dot.granted{background:var(--success);}
-  .status-dot.denied{background:var(--danger);}
+  .status-row{display:flex; align-items:center; gap:8px; margin-bottom:16px;}
+  .status-dot{width:7px; height:7px; border-radius:2px; background:var(--bb-ink-faint); flex-shrink:0;}
+  .status-dot.busy{background:var(--bb-yellow); animation:pulse 1s infinite;}
+  .status-dot.granted{background:var(--bb-success);}
+  .status-dot.denied{background:var(--bb-danger);}
   @keyframes pulse{50%{opacity:.35;}}
-  .status-text{font-size:9.5px; letter-spacing:.12em; text-transform:uppercase; color:var(--muted); font-weight:700;}
+  .status-text{font-size:9.5px; letter-spacing:.1em; text-transform:uppercase; color:var(--bb-ink-faint); font-weight:700;}
 
   form{margin:0;}
   .fields{display:flex; flex-direction:column; gap:14px; margin-bottom:14px;}
   .field{position:relative;}
-  .field label{display:block; font-size:9px; letter-spacing:.14em; text-transform:uppercase; color:var(--muted); margin-bottom:5px; font-weight:700; transition:color .15s ease;}
-  .field:focus-within label{color:var(--red);}
+  .field label{display:block; font-size:9px; letter-spacing:.12em; text-transform:uppercase; color:var(--bb-ink-faint); margin-bottom:5px; font-weight:700; transition:color .15s ease;}
+  .field:focus-within label{color:var(--bb-yellow);}
   .field input{
-    width:100%; border:none; border-bottom:1.5px solid var(--ink); background:transparent;
-    font-family:'JetBrains Mono', monospace; font-size:14px; font-weight:600; color:var(--ink);
+    width:100%; border:none; border-bottom:1.5px solid var(--bb-line-strong); background:transparent;
+    font-family:var(--bb-font-mono); font-size:14px; font-weight:600; color:var(--bb-ink);
     padding:3px 2px 7px; outline:none; letter-spacing:.02em;
   }
-  .field input::placeholder{color:var(--muted); font-weight:400;}
+  .field input::placeholder{color:var(--bb-ink-faint); font-weight:400;}
   .field input:disabled{opacity:.5;}
   .field::after{
     content:""; position:absolute; left:0; right:0; bottom:0; height:1.5px;
-    background:var(--red); box-shadow:0 0 8px rgba(196,36,28,.55);
+    background:var(--bb-yellow);
     transform:scaleX(0); transform-origin:left; transition:transform .3s cubic-bezier(.4,0,.2,1);
     pointer-events:none;
   }
@@ -195,121 +139,94 @@
   @keyframes shake{0%,100%{transform:translateX(0);} 25%{transform:translateX(-6px);} 75%{transform:translateX(6px);}}
 
   .toggle-row{display:flex; align-items:center; justify-content:space-between; margin-bottom:14px; font-size:10px;}
-  .stay{display:flex; align-items:center; gap:6px; color:var(--muted); text-transform:uppercase; letter-spacing:.06em; cursor:pointer; -webkit-user-select:none; user-select:none;}
-  .stay input{appearance:none; width:12px; height:12px; border:1.5px solid var(--ink); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer; transition:transform .1s ease, background .15s ease;}
+  .stay{display:flex; align-items:center; gap:6px; color:var(--bb-ink-faint); text-transform:uppercase; letter-spacing:.05em; cursor:pointer; -webkit-user-select:none; user-select:none;}
+  .stay input{appearance:none; width:12px; height:12px; border:1.5px solid var(--bb-line-strong); border-radius:2px; margin:0; display:grid; place-content:center; cursor:pointer; transition:transform .1s ease, background .15s ease, border-color .15s ease;}
   .stay input:active{transform:scale(.82);}
-  .stay input:checked{background:var(--ink);}
-  .stay input:checked::after{content:""; width:6px; height:6px; background:var(--card); animation:checkPop .18s cubic-bezier(.34,1.56,.64,1);}
+  .stay input:checked{background:var(--bb-yellow); border-color:var(--bb-yellow);}
+  .stay input:checked::after{content:""; width:6px; height:6px; background:var(--bb-ground); animation:checkPop .18s cubic-bezier(.34,1.56,.64,1);}
   @keyframes checkPop{from{transform:scale(0);} to{transform:scale(1);}}
-  .forgot{color:var(--red); text-decoration:none; border-bottom:1px dotted var(--red); letter-spacing:.04em;}
+  .forgot{color:var(--bb-ink-faint); text-decoration:none; border-bottom:1px dotted var(--bb-ink-faint); letter-spacing:.03em;}
+  .forgot:hover{color:var(--bb-yellow); border-color:var(--bb-yellow);}
 
-  .form-msg{font-size:9.5px; letter-spacing:.03em; color:var(--red); margin:-6px 0 12px; min-height:12px;}
+  .form-msg{font-size:9.5px; letter-spacing:.02em; color:var(--bb-danger); margin:-6px 0 12px; min-height:12px;}
 
   .cta{
-    width:100%; background:var(--ink); color:var(--card); border:none;
-    font-family:'Bebas Neue', sans-serif; font-size:18px; letter-spacing:.14em;
-    padding:13px 16px; display:flex; align-items:center; justify-content:space-between;
-    cursor:pointer; transition:background .15s ease, transform .12s ease, box-shadow .12s ease;
-    border-radius:3px; position:relative; overflow:hidden; transform:translateZ(8px);
-    box-shadow:0 1px 0 rgba(255,255,255,.08) inset, 0 3px 0 rgba(0,0,0,.35);
+    width:100%; background:var(--bb-yellow); color:var(--bb-ground); border:2px solid var(--bb-border-hard);
+    font-family:var(--bb-font-mono); font-size:12px; font-weight:800; letter-spacing:.1em; text-transform:uppercase;
+    padding:12px 16px; display:flex; align-items:center; justify-content:space-between;
+    cursor:pointer; transition:background .15s ease, transform .1s ease, box-shadow .1s ease;
+    border-radius:4px; box-shadow:4px 4px 0 var(--bb-border-hard);
   }
-  .cta::before{
-    content:""; position:absolute; top:0; left:-60%; width:40%; height:100%;
-    background:linear-gradient(120deg, transparent, rgba(255,255,255,.2), transparent);
-    transform:skewX(-20deg); transition:left .5s ease; pointer-events:none;
-  }
-  .cta:hover::before{left:120%;}
-  .cta:hover{background:var(--red);}
-  .cta:active{transform:translateY(2px) translateZ(8px); box-shadow:0 0 0 rgba(0,0,0,0) inset, 0 1px 0 rgba(0,0,0,.35);}
+  .cta:hover{background:var(--bb-yellow-dim);}
+  .cta:active{transform:translate(3px,3px); box-shadow:none;}
   .cta:disabled{cursor:wait; opacity:.7;}
 
-  .or-divider{display:flex; align-items:center; gap:10px; margin:14px 0 10px; font-size:9px; letter-spacing:.14em; color:var(--muted); text-transform:uppercase;}
-  .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:var(--line);}
+  .or-divider{display:flex; align-items:center; gap:10px; margin:14px 0 10px; font-size:9px; letter-spacing:.12em; color:var(--bb-ink-faint); text-transform:uppercase;}
+  .or-divider::before, .or-divider::after{content:""; flex:1; height:1px; background:var(--bb-line);}
   .google-slot{display:flex; justify-content:center; min-height:38px;}
 
-  /* photo swatch — laminated mugshot */
-  .id-photo{display:flex; flex-direction:column; align-items:center; gap:8px; transform:translateZ(16px);}
+  /* photo tile — player photo, dithered on drop */
+  .id-photo{display:flex; flex-direction:column; align-items:center; gap:8px;}
   .swatch{
-    width:100%; aspect-ratio:3/4; border:2px solid var(--ink); position:relative;
-    background:repeating-linear-gradient(45deg, #d8cdb0 0 2px, transparent 2px 6px), var(--card-2);
-    background-size:cover; background-position:center; cursor:pointer; overflow:hidden; border-radius:2px;
+    width:100%; aspect-ratio:3/4; border:1.5px dashed var(--bb-line-strong); position:relative;
+    background:var(--bb-surface-2);
+    background-size:cover; background-position:center; cursor:pointer; overflow:hidden; border-radius:4px;
   }
   .swatch canvas{width:100%; height:100%; display:block; image-rendering:pixelated;}
   .swatch .drop-label{
     position:absolute; inset:0; display:flex; align-items:center; justify-content:center;
-    text-align:center; font-size:7.5px; letter-spacing:.08em; color:var(--muted); text-transform:uppercase;
+    text-align:center; font-size:7.5px; letter-spacing:.08em; color:var(--bb-ink-faint); text-transform:uppercase;
     padding:6px; pointer-events:none; font-weight:700;
   }
-  .swatch.dragging{outline:2px dashed var(--red); outline-offset:-4px;}
+  .swatch.dragging{border-color:var(--bb-yellow); border-style:solid;}
   .swatch .clear-photo{
-    position:absolute; top:3px; right:3px; width:15px; height:15px; background:var(--ink);
-    border:none; color:var(--card); font-size:9px; line-height:1;
+    position:absolute; top:3px; right:3px; width:16px; height:16px; background:var(--bb-ink);
+    border:none; color:var(--bb-ground); font-size:9px; line-height:1;
     display:flex; align-items:center; justify-content:center; cursor:pointer; z-index:2; border-radius:2px;
   }
-  .id-plate{width:100%; text-align:center; font-size:7.5px; letter-spacing:.1em; color:var(--muted); text-transform:uppercase;}
-  .id-plate b{display:block; font-size:10px; color:var(--ink); font-family:'Bebas Neue',sans-serif; letter-spacing:.08em; margin-top:1px;}
+  .id-plate{width:100%; text-align:center; font-size:7.5px; letter-spacing:.08em; color:var(--bb-ink-faint); text-transform:uppercase;}
+  .id-plate b{display:block; font-size:10px; color:var(--bb-ink); font-family:var(--bb-font-hud); letter-spacing:.04em; margin-top:2px;}
 
-  /* tear/perforation strip between body and footer ephemera */
-  .perf-line{
-    position:relative; height:0; border-top:2px dashed rgba(22,19,9,0.22); margin:18px -28px 14px; padding-left:34px;
-  }
-  .perf-line::before, .perf-line::after{
-    content:""; position:absolute; top:-9px; width:18px; height:18px; border-radius:50%; background:var(--bg);
-  }
-  .perf-line::before{left:-9px;} .perf-line::after{right:-9px;}
+  .rule{ border-top:1.5px dashed var(--bb-line-strong); margin:18px 0 14px; }
 
-  .ephemera{display:flex; align-items:flex-end; justify-content:space-between; gap:16px; padding-left:34px; transform:translateZ(10px);}
+  .ephemera{display:flex; align-items:flex-end; justify-content:space-between; gap:16px;}
   .ephemera-left{display:flex; flex-direction:column; gap:6px;}
   .barcode{width:150px; height:34px;}
-  .code-num{font-size:9.5px; letter-spacing:.25em; color:var(--muted);}
-  .qr{width:56px; height:56px; flex-shrink:0;}
+  .code-num{font-size:9.5px; letter-spacing:.2em; color:var(--bb-ink-faint); font-family:var(--bb-font-mono);}
+  .qr{width:52px; height:52px; flex-shrink:0;}
 
-  .mode-tabs{
-    position:absolute; top:64px; right:-1px; display:flex; flex-direction:column; gap:10px; z-index:8;
-    transform:translateX(100%);
+  /* status banner — replaces the old rotated rubber-stamp effect with a flat
+     boxed [ACCESS GRANTED]/[ACCESS DENIED] readout, same device VerdictBadge
+     uses elsewhere in the app. */
+  .status-banner{
+    position:absolute; inset:auto 20px 20px 20px; display:flex; align-items:center; justify-content:center;
+    font-family:var(--bb-font-mono); font-weight:800; font-size:13px; letter-spacing:.14em; text-transform:uppercase;
+    padding:10px 16px; border:2px solid currentColor; border-radius:4px;
+    opacity:0; transform:translateY(6px); pointer-events:none; z-index:20;
+    transition:opacity .18s ease, transform .18s ease;
   }
-  .mode-tab{
-    writing-mode:vertical-rl; background:var(--ink); color:var(--muted); border:none; cursor:pointer;
-    font-family:'Bebas Neue', sans-serif; letter-spacing:.2em; font-size:12px; padding:12px 7px;
-    border-radius:0 4px 4px 0; box-shadow:3px 3px 0 rgba(0,0,0,0.35); transition:color .15s ease, background .15s ease;
-  }
-  .mode-tab[aria-selected="true"]{ background:var(--red); color:#fff2ee; }
-  .mode-tab:hover{ color:#fff2ee; }
-
-  /* stamp */
-  .stamp{
-    position:absolute; top:44%; left:50%; font-family:'Bebas Neue', sans-serif;
-    font-size:34px; letter-spacing:.12em; padding:8px 18px; border:5px solid currentColor;
-    border-radius:8px; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1.5);
-    opacity:0; pointer-events:none; z-index:20; mix-blend-mode:multiply;
-  }
-  .stamp.show{animation:stampHit .35s cubic-bezier(.2,1.4,.4,1) forwards;}
-  @keyframes stampHit{
-    0%{opacity:0; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1.8);}
-    60%{opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(.94);}
-    100%{opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1);}
-  }
-  .stamp.denied{color:var(--danger);}
-  .stamp.granted{color:#2f7d3a;}
+  .status-banner.show{ opacity:1; transform:translateY(0); }
+  .status-banner.denied{ color:var(--bb-danger); background:color-mix(in srgb, var(--bb-danger) 12%, var(--bb-surface)); box-shadow:4px 4px 0 var(--bb-danger); }
+  .status-banner.granted{ color:var(--bb-success); background:color-mix(in srgb, var(--bb-success) 12%, var(--bb-surface)); box-shadow:4px 4px 0 var(--bb-success); }
 
   /* ── Flight schedule footer board ───────────────────────────────────── */
   .schedule{
-    width:min(880px, 100%); margin-top:26px; background:#0a0a0a; border:1px solid #201f1c; border-radius:6px;
-    overflow:hidden; box-shadow:0 30px 60px -30px rgba(0,0,0,0.8);
+    width:min(880px, 100%); margin-top:26px; background:var(--bb-ground); border:1.5px solid var(--bb-line-strong); border-radius:4px;
+    overflow:hidden;
   }
   .schedule-head{
     display:flex; align-items:center; justify-content:space-between; padding:9px 16px;
-    border-bottom:1px solid #201f1c; font-size:9px; letter-spacing:.18em; color:#57544a; text-transform:uppercase;
+    border-bottom:1.5px solid var(--bb-line-strong); font-size:9px; letter-spacing:.16em; color:var(--bb-ink-faint); text-transform:uppercase;
   }
   .schedule-row{
     display:grid; grid-template-columns:1fr 90px 90px; gap:8px; padding:10px 16px;
-    font-family:'JetBrains Mono', monospace; font-size:11px; letter-spacing:.08em; color:var(--amber);
-    border-bottom:1px solid #16150f;
+    font-family:var(--bb-font-mono); font-size:11px; letter-spacing:.06em; color:var(--bb-yellow);
+    border-bottom:1px solid var(--bb-line);
   }
   .schedule-row:last-child{border-bottom:none;}
-  .schedule-row span:nth-child(2){color:var(--lime); text-align:center;}
-  .schedule-row span:nth-child(3){color:#8a877a; text-align:right;}
-  .schedule-row.active{color:#fff; text-shadow:0 0 8px rgba(255,138,61,0.6);}
+  .schedule-row span:nth-child(2){color:var(--bb-success); text-align:center;}
+  .schedule-row span:nth-child(3){color:var(--bb-ink-faint); text-align:right; font-family:var(--bb-font-hud);}
+  .schedule-row.active{color:var(--bb-ink);}
   .schedule-row.active span:nth-child(2){animation:pulse 1s infinite;}
 
   @media (max-width:760px){
@@ -317,17 +234,13 @@
     .id-photo{flex-direction:row; align-items:center;}
     .swatch{width:70px; aspect-ratio:3/4;}
     .id-plate{text-align:left;}
-    .mode-tabs{ position:static; transform:none; flex-direction:row; margin:14px 0 0; justify-content:center; }
-    .mode-tab{ writing-mode:horizontal-tb; border-radius:4px; padding:8px 14px; box-shadow:none; }
-    h1.title{font-size:30px;}
+    h1.title{font-size:28px;}
     .schedule-row{grid-template-columns:1fr 70px 70px; font-size:9.5px;}
   }
   @media (prefers-reduced-motion: reduce){
     .status-dot.busy{animation:none;}
     .field.shake input{animation:none;}
-    .stamp.show{animation:none; opacity:1; transform:translate(-50%,-50%) translateZ(60px) rotate(-12deg) scale(1);}
-    .flip{transition:none;}
-    .deck{animation:none; opacity:1; transform:none;}
+    .stage{animation:none; opacity:1; transform:none;}
   }
 </style>
 </head>
@@ -339,169 +252,152 @@
     <div class="clock-row" id="flapClock"></div>
   </div>
 
-  <div class="deck" id="deck">
-    <div class="deck-shadow" id="deckShadow"></div>
-    <div class="tilt" id="tilt">
-      <div class="flip" id="flip">
+  <div class="stage">
+    <div class="tabs" role="tablist">
+      <button type="button" role="tab" class="tab" id="tabSignIn" aria-selected="true">Sign In</button>
+      <button type="button" role="tab" class="tab" id="tabSignUp" aria-selected="false">Sign Up</button>
+    </div>
 
-        <!-- ══ FRONT — SIGN IN ══ -->
-        <div class="face front">
-          <div class="sheen"></div>
-          <div class="foil-strip"></div>
-          <div class="grommet"></div>
-          <div class="member-ribbon">MEMBER</div>
-
-          <div class="card-top">
-            <div>
-              <div class="brand">BINARY<b>//</b>BEATS</div>
-              <div class="subline">Access Terminal · Operative Card</div>
-            </div>
-            <div class="serial-block">SERIAL<br><b id="serialFront">BB-7749-XJ</b></div>
-          </div>
-
-          <h1 class="title">ACCESS CARD</h1>
-          <div class="tagline"><span class="prompt">&gt;</span> Present credentials to board the mainframe</div>
-
-          <div class="status-row">
-            <span class="status-dot" id="statusDotFront"></span>
-            <span class="status-text" id="statusTextFront">AWAITING INPUT</span>
-          </div>
-
-          <div class="card-body">
-            <form id="signinForm">
-              <div class="fields">
-                <div class="field" id="signinEmailField">
-                  <label for="signinEmail">Email</label>
-                  <input id="signinEmail" type="email" placeholder="you@example.com" autocomplete="username">
-                </div>
-                <div class="field" id="signinPassField">
-                  <label for="signinPass">Access code</label>
-                  <input id="signinPass" type="password" placeholder="••••••••••" autocomplete="current-password">
-                </div>
-              </div>
-
-              <div class="toggle-row">
-                <label class="stay">
-                  <input type="checkbox" id="signinRemember">
-                  Keep me checked in
-                </label>
-                <a class="forgot" href="#" title="Password reset isn't wired up yet">Lost your code?</a>
-              </div>
-
-              <div class="form-msg" id="signinMsg"></div>
-
-              <button class="cta" type="submit" id="signinCta">
-                <span id="signinCtaLabel">BOARD SYSTEM</span>
-                <span>&raquo;&raquo;</span>
-              </button>
-
-              <div class="or-divider" id="orDividerFront" style="display:none;">or</div>
-              <div class="google-slot" id="googleSlotFront" style="display:none;"></div>
-            </form>
-
-            <div class="id-photo">
-              <div class="swatch" id="swatchFront">
-                <span class="drop-label" id="dropLabelFront">DRAG PHOTO<br>OR CLICK TO SCAN</span>
-                <button type="button" class="clear-photo" id="clearPhotoFront" style="display:none;" aria-label="Remove photo">&times;</button>
-              </div>
-              <input type="file" id="fileInputFront" accept="image/*" style="display:none;">
-              <div class="id-plate">Operative ID<b>07749 / AK</b></div>
-            </div>
-          </div>
-
-          <div class="perf-line"></div>
-
-          <div class="ephemera">
-            <div class="ephemera-left">
-              <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeFront"></svg>
-              <div class="code-num" id="codeNumFront">XJ7K9AK04</div>
-            </div>
-            <svg class="qr" viewBox="0 0 29 29" id="qrFront"></svg>
-          </div>
-
-          <div class="stamp" id="stampFront">ACCESS</div>
+    <!-- ══ SIGN IN ══ -->
+    <div class="card" id="cardFront">
+      <div class="card-top">
+        <div>
+          <div class="brand">BINARY<b>//</b>BEATS</div>
+          <div class="subline">Access Terminal</div>
         </div>
-
-        <!-- ══ BACK — SIGN UP ══ -->
-        <div class="face back">
-          <div class="sheen"></div>
-          <div class="foil-strip"></div>
-          <div class="grommet"></div>
-          <div class="member-ribbon">NEW</div>
-
-          <div class="card-top">
-            <div>
-              <div class="brand">BINARY<b>//</b>BEATS</div>
-              <div class="subline">New Member Application</div>
-            </div>
-            <div class="serial-block">SERIAL<br><b id="serialBack">BB-0000-NEW</b></div>
-          </div>
-
-          <h1 class="title">REQUEST ACCESS</h1>
-          <div class="tagline"><span class="prompt">&gt;</span> Enroll a new operative into the system</div>
-
-          <div class="status-row">
-            <span class="status-dot" id="statusDotBack"></span>
-            <span class="status-text" id="statusTextBack">AWAITING INPUT</span>
-          </div>
-
-          <div class="card-body">
-            <form id="signupForm">
-              <div class="fields">
-                <div class="field" id="signupNameField">
-                  <label for="signupName">Display name</label>
-                  <input id="signupName" type="text" placeholder="akrist" autocomplete="name">
-                </div>
-                <div class="field" id="signupEmailField">
-                  <label for="signupEmail">Email</label>
-                  <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username">
-                </div>
-                <div class="field" id="signupPassField">
-                  <label for="signupPass">Access code (8+ characters)</label>
-                  <input id="signupPass" type="password" placeholder="••••••••••" autocomplete="new-password">
-                </div>
-              </div>
-
-              <div class="form-msg" id="signupMsg"></div>
-
-              <button class="cta" type="submit" id="signupCta">
-                <span id="signupCtaLabel">REQUEST ACCESS</span>
-                <span>&raquo;&raquo;</span>
-              </button>
-
-              <div class="or-divider" id="orDividerBack" style="display:none;">or</div>
-              <div class="google-slot" id="googleSlotBack" style="display:none;"></div>
-            </form>
-
-            <div class="id-photo">
-              <div class="swatch" id="swatchBack">
-                <span class="drop-label" id="dropLabelBack">DRAG PHOTO<br>OR CLICK TO SCAN</span>
-                <button type="button" class="clear-photo" id="clearPhotoBack" style="display:none;" aria-label="Remove photo">&times;</button>
-              </div>
-              <input type="file" id="fileInputBack" accept="image/*" style="display:none;">
-              <div class="id-plate">Operative ID<b>PENDING</b></div>
-            </div>
-          </div>
-
-          <div class="perf-line"></div>
-
-          <div class="ephemera">
-            <div class="ephemera-left">
-              <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeBack"></svg>
-              <div class="code-num" id="codeNumBack">NEW-APPLICANT</div>
-            </div>
-            <svg class="qr" viewBox="0 0 29 29" id="qrBack"></svg>
-          </div>
-
-          <div class="stamp" id="stampBack">ACCESS</div>
-        </div>
-
+        <div class="serial-block">SERIAL<br><b id="serialFront">BB-7749-XJ</b></div>
       </div>
 
-      <div class="mode-tabs" role="tablist">
-        <button type="button" role="tab" class="mode-tab" id="tabSignIn" aria-selected="true">SIGN IN</button>
-        <button type="button" role="tab" class="mode-tab" id="tabSignUp" aria-selected="false">SIGN UP</button>
+      <h1 class="title">SIGN IN</h1>
+      <div class="tagline"><span class="prompt">&gt;</span> Present credentials to board the mainframe</div>
+
+      <div class="status-row">
+        <span class="status-dot" id="statusDotFront"></span>
+        <span class="status-text" id="statusTextFront">AWAITING INPUT</span>
       </div>
+
+      <div class="card-body">
+        <form id="signinForm">
+          <div class="fields">
+            <div class="field" id="signinEmailField">
+              <label for="signinEmail">Email</label>
+              <input id="signinEmail" type="email" placeholder="you@example.com" autocomplete="username">
+            </div>
+            <div class="field" id="signinPassField">
+              <label for="signinPass">Access code</label>
+              <input id="signinPass" type="password" placeholder="••••••••••" autocomplete="current-password">
+            </div>
+          </div>
+
+          <div class="toggle-row">
+            <label class="stay">
+              <input type="checkbox" id="signinRemember">
+              Keep me checked in
+            </label>
+            <a class="forgot" href="#" title="Password reset isn't wired up yet">Lost your code?</a>
+          </div>
+
+          <div class="form-msg" id="signinMsg"></div>
+
+          <button class="cta" type="submit" id="signinCta">
+            <span id="signinCtaLabel">BOARD SYSTEM</span>
+            <span>&raquo;&raquo;</span>
+          </button>
+
+          <div class="or-divider" id="orDividerFront" style="display:none;">or</div>
+          <div class="google-slot" id="googleSlotFront" style="display:none;"></div>
+        </form>
+
+        <div class="id-photo">
+          <div class="swatch" id="swatchFront">
+            <span class="drop-label" id="dropLabelFront">DRAG PHOTO<br>OR CLICK TO SCAN</span>
+            <button type="button" class="clear-photo" id="clearPhotoFront" style="display:none;" aria-label="Remove photo">&times;</button>
+          </div>
+          <input type="file" id="fileInputFront" accept="image/*" style="display:none;">
+          <div class="id-plate">Player ID<b>07749 / AK</b></div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <div class="ephemera">
+        <div class="ephemera-left">
+          <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeFront"></svg>
+          <div class="code-num" id="codeNumFront">XJ7K9AK04</div>
+        </div>
+        <svg class="qr" viewBox="0 0 29 29" id="qrFront"></svg>
+      </div>
+
+      <div class="status-banner" id="stampFront">ACCESS</div>
+    </div>
+
+    <!-- ══ SIGN UP ══ -->
+    <div class="card" id="cardBack" hidden>
+      <div class="card-top">
+        <div>
+          <div class="brand">BINARY<b>//</b>BEATS</div>
+          <div class="subline">New Player Registration</div>
+        </div>
+        <div class="serial-block">SERIAL<br><b id="serialBack">BB-0000-NEW</b></div>
+      </div>
+
+      <h1 class="title">SIGN UP</h1>
+      <div class="tagline"><span class="prompt">&gt;</span> Enroll a new player into the system</div>
+
+      <div class="status-row">
+        <span class="status-dot" id="statusDotBack"></span>
+        <span class="status-text" id="statusTextBack">AWAITING INPUT</span>
+      </div>
+
+      <div class="card-body">
+        <form id="signupForm">
+          <div class="fields">
+            <div class="field" id="signupNameField">
+              <label for="signupName">Display name</label>
+              <input id="signupName" type="text" placeholder="akrist" autocomplete="name">
+            </div>
+            <div class="field" id="signupEmailField">
+              <label for="signupEmail">Email</label>
+              <input id="signupEmail" type="email" placeholder="you@example.com" autocomplete="username">
+            </div>
+            <div class="field" id="signupPassField">
+              <label for="signupPass">Access code (8+ characters)</label>
+              <input id="signupPass" type="password" placeholder="••••••••••" autocomplete="new-password">
+            </div>
+          </div>
+
+          <div class="form-msg" id="signupMsg"></div>
+
+          <button class="cta" type="submit" id="signupCta">
+            <span id="signupCtaLabel">REQUEST ACCESS</span>
+            <span>&raquo;&raquo;</span>
+          </button>
+
+          <div class="or-divider" id="orDividerBack" style="display:none;">or</div>
+          <div class="google-slot" id="googleSlotBack" style="display:none;"></div>
+        </form>
+
+        <div class="id-photo">
+          <div class="swatch" id="swatchBack">
+            <span class="drop-label" id="dropLabelBack">DRAG PHOTO<br>OR CLICK TO SCAN</span>
+            <button type="button" class="clear-photo" id="clearPhotoBack" style="display:none;" aria-label="Remove photo">&times;</button>
+          </div>
+          <input type="file" id="fileInputBack" accept="image/*" style="display:none;">
+          <div class="id-plate">Player ID<b>PENDING</b></div>
+        </div>
+      </div>
+
+      <div class="rule"></div>
+
+      <div class="ephemera">
+        <div class="ephemera-left">
+          <svg class="barcode" viewBox="0 0 160 40" preserveAspectRatio="none" id="barcodeBack"></svg>
+          <div class="code-num" id="codeNumBack">NEW-APPLICANT</div>
+        </div>
+        <svg class="qr" viewBox="0 0 29 29" id="qrBack"></svg>
+      </div>
+
+      <div class="status-banner" id="stampBack">ACCESS</div>
     </div>
   </div>
 
@@ -516,7 +412,7 @@
 <script type="module">
   import { API_ORIGIN } from './src/lib/apiBase.ts';
 
-  // ── audio (unchanged tiny synth beeps for tactile feedback) ─────────────
+  // ── audio (tiny synth beeps for tactile feedback) ───────────────────────
   var audioCtx = null;
   function ctx(){ if(!audioCtx){ audioCtx = new (window.AudioContext || window.webkitAudioContext)(); } return audioCtx; }
   function playBeep(freq, dur, type){
@@ -593,7 +489,7 @@
       cells.push({ current: ' ', top: top, bottom: bottom, topLeaf: topLeaf, bottomLeaf: bottomLeaf });
     }
 
-    function disp(ch){ return ch === ' ' ? ' ' : ch; }
+    function disp(ch){ return ch === ' ' ? ' ' : ch; }
 
     function flipCell(c, ch, beep){
       if(c.current === ch) return;
@@ -705,7 +601,7 @@
         var rect = document.createElementNS(ns, 'rect');
         rect.setAttribute('x', x); rect.setAttribute('y', 2);
         rect.setAttribute('width', w); rect.setAttribute('height', 32);
-        rect.setAttribute('fill', '#161309');
+        rect.setAttribute('fill', '#F2F2ED');
         svg.appendChild(rect);
       }
       x += w + 1;
@@ -742,7 +638,7 @@
         var rect = document.createElementNS(ns, 'rect');
         rect.setAttribute('x', c); rect.setAttribute('y', r);
         rect.setAttribute('width', 1); rect.setAttribute('height', 1);
-        rect.setAttribute('fill', '#161309');
+        rect.setAttribute('fill', '#F2F2ED');
         frag.appendChild(rect);
       }
     }
@@ -756,39 +652,18 @@
   document.getElementById('serialFront').textContent = frontSeed;
   document.getElementById('codeNumFront').textContent = frontSeed;
 
-  // ── 3D tilt on mouse move ───────────────────────────────────────────────
-  var deck = document.getElementById('deck');
-  var tiltEl = document.getElementById('tilt');
-  var deckShadow = document.getElementById('deckShadow');
-  var faces = document.querySelectorAll('.face');
-  if(!reduce){
-    deck.addEventListener('pointermove', function(e){
-      var rect = deck.getBoundingClientRect();
-      var px = (e.clientX - rect.left) / rect.width;
-      var py = (e.clientY - rect.top) / rect.height;
-      var rx = (0.5 - py) * 14;
-      var ry = (px - 0.5) * 18;
-      tiltEl.style.transform = 'rotateX(' + rx.toFixed(2) + 'deg) rotateY(' + ry.toFixed(2) + 'deg)';
-      faces.forEach(function(f){
-        f.style.setProperty('--sx', (px*100).toFixed(1) + '%');
-        f.style.setProperty('--sy', (py*100).toFixed(1) + '%');
-      });
-      deckShadow.style.transform = 'translateX(' + (-ry*1.4).toFixed(1) + 'px) scaleX(' + (1 - Math.abs(ry)/55).toFixed(2) + ')';
-    });
-    deck.addEventListener('pointerleave', function(){
-      tiltEl.style.transform = '';
-      deckShadow.style.transform = '';
-    });
-  }
-
-  // ── face flip (sign in <-> sign up) ─────────────────────────────────────
-  var flipEl = document.getElementById('flip');
+  // ── sign in / sign up switch — a flat panel swap, no 3D flip ────────────
+  var cardFront = document.getElementById('cardFront');
+  var cardBack = document.getElementById('cardBack');
   var tabSignIn = document.getElementById('tabSignIn');
   var tabSignUp = document.getElementById('tabSignUp');
+  var currentFace = 'signin';
 
   function setFace(face){
     var isBack = face === 'signup';
-    flipEl.classList.toggle('flipped', isBack);
+    currentFace = face;
+    cardFront.hidden = isBack;
+    cardBack.hidden = !isBack;
     tabSignIn.setAttribute('aria-selected', String(!isBack));
     tabSignUp.setAttribute('aria-selected', String(isBack));
     playBeep(isBack ? 340 : 620, 0.05, 'triangle');
@@ -816,10 +691,10 @@
   }
 
   function showStamp(stampEl, kind, text){
-    stampEl.className = 'stamp show ' + kind;
-    stampEl.textContent = text;
+    stampEl.className = 'status-banner show ' + kind;
+    stampEl.textContent = '[ ' + text + ' ]';
     playStamp();
-    setTimeout(function(){ stampEl.className = 'stamp'; }, 2400);
+    setTimeout(function(){ stampEl.className = 'status-banner'; }, 2400);
   }
 
   function makeStatusSetter(dotEl, textEl){
@@ -932,7 +807,7 @@
 
     function handleGoogleCredential(response){
       setMarquee('STATUS: VERIFYING CREDENTIALS');
-      var isBack = flipEl.classList.contains('flipped');
+      var isBack = currentFace === 'signup';
       var setStatus = isBack ? setStatusBack : setStatusFront;
       var stampEl = isBack ? stampBack : stampFront;
       setStatus('busy', 'VERIFYING');
@@ -945,14 +820,14 @@
     fetch(API_ORIGIN + '/api/auth/config').then(function(res){ return res.json(); }).then(function(cfg){
       if(!cfg || !cfg.googleClientId || !window.google || !window.google.accounts) return;
       window.google.accounts.id.initialize({ client_id: cfg.googleClientId, callback: handleGoogleCredential });
-      window.google.accounts.id.renderButton(slotFront, { theme: 'outline', size: 'large', width: 240 });
-      window.google.accounts.id.renderButton(slotBack, { theme: 'outline', size: 'large', width: 240 });
+      window.google.accounts.id.renderButton(slotFront, { theme: 'filled_black', size: 'large', width: 240 });
+      window.google.accounts.id.renderButton(slotBack, { theme: 'filled_black', size: 'large', width: 240 });
       slotFront.style.display = 'flex'; dividerFront.style.display = 'flex';
       slotBack.style.display = 'flex'; dividerBack.style.display = 'flex';
     }).catch(function(){ /* backend unreachable — form-only auth still works */ });
   });
 
-  // ── photo dropzone (dithered mugshot), wired for both faces ─────────────
+  // ── photo dropzone (dithered player photo), wired for both faces ────────
   var BAYER = [[0,8,2,10],[12,4,14,6],[3,11,1,9],[15,7,13,5]];
 
   function processImage(file, swatch, dropLabel, clearBtn){
@@ -976,7 +851,7 @@
             var gray = 0.3*d[idx] + 0.59*d[idx+1] + 0.11*d[idx+2];
             var threshold = (BAYER[py%4][px%4] / 16) * 255;
             var on = gray > threshold;
-            d[idx] = on ? 22 : 200; d[idx+1] = on ? 20 : 255; d[idx+2] = on ? 9 : 77;
+            d[idx] = on ? 11 : 255; d[idx+1] = on ? 12 : 212; d[idx+2] = on ? 14 : 0;
           }
         }
         cctx.putImageData(imgData, 0, 0);

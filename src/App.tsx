@@ -22,7 +22,7 @@ export default function App() {
   });
   const [theme, setTheme] = useState<Theme>(() => {
     const saved = localStorage.getItem("bb_theme");
-    return saved === "dark" ? "dark" : "light";
+    return saved === "light" ? "light" : "dark";
   });
   const [sharedCode, setSharedCode] = useState<{ problemTitle: string; code: string } | null>(null);
 
@@ -61,16 +61,16 @@ export default function App() {
   if (authStatus !== "authenticated" || !user) {
     // "checking" renders nothing (avoids a flash of the dashboard before the
     // session check resolves); "unauthenticated" is mid-redirect to login.html.
-    return <div className="w-full min-h-screen bg-bb-paper" />;
+    return <div className="w-full min-h-screen bg-bb-ground" />;
   }
 
   const username = user.name || user.email;
 
   return (
-    <div className="w-full min-h-screen bg-bb-paper text-bb-ink flex flex-col font-sans noise-bg relative overflow-x-hidden">
-      {/* Shared ambient background — faint blueprint grid, sits behind every tab */}
+    <div className="w-full min-h-screen bg-bb-ground text-bb-ink flex flex-col font-sans relative overflow-x-hidden">
+      {/* Shared ambient background — flat scoreboard/pixel grid, sits behind every tab */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none z-0">
-        <div className="absolute inset-0 grid-paper" />
+        <div className="absolute inset-0 scoreboard-grid" />
       </div>
 
       <Navbar

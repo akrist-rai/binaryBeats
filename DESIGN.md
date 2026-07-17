@@ -1,128 +1,173 @@
 # Binary Beats — Design Philosophy
 
-Synthesized from 55 moodboard references in `design/` (three independent passes,
-cross-checked). This is the design system for the full redesign — every token and
-pattern below is derived from a signal that repeated across the majority of the
-board, not a one-off.
+**Scoreboard Brutalism.** Stadium-jumbotron / arcade-high-score-table energy,
+chosen because the product's actual content — ranks, live timers, pass/fail
+verdicts — maps directly onto a scoreboard metaphor. This is the second
+full redesign of the app; it replaces the earlier "paper shell, glass
+terminal core" system (warm cream + burnt-orange + a separate dark
+terminal register) with a different set of first principles entirely, not
+an iteration on it.
 
-## The signal, distilled
+## The core idea
 
-Across all three batches, two things were true almost everywhere:
+The old system ran two simultaneous registers — a calm light "paper" shell
+for chrome, and a separate, always-dark "terminal" register for the code
+editor — because paper and terminal were deliberately opposite polarities.
 
-1. **Warm neutral "paper," never pure white or pure black.** Cream, ivory,
-   parchment, warm greige recurred far more than `#fff`/`#000`/grey. Black ink
-   text on warm paper, not dark-grey-on-white.
-2. **Exactly one loud saturated accent against that neutral.** Never two or
-   three competing brand colors — one confident hue doing all the work. The
-   single most-repeated accent across all three batches was **burnt-orange /
-   terracotta**, with **acid lime-green** and **electric blue** as the next most
-   common signature accents.
+**That duality is gone.** Dark is the app's one primary register,
+app-wide, not just inside the code editor. A jumbotron doesn't have a calm
+mode and a live mode running side by side; the whole screen is the
+scoreboard. Light mode still exists (inverted, via the theme toggle) but
+dark is the default and the intended primary experience — `:root` carries
+the dark values directly, `:root[data-theme='light']` overrides them
+(the reverse of the old structure).
 
-Layered onto that neutral+accent formula, one typographic pairing showed up
-constantly regardless of a piece's overall mood: **bold condensed grotesque
-display type** for headlines, next to **small monospace type** used for
-metadata, specs, coordinates, timestamps, hex codes — i.e. treating structural/
-meta information as visible decorative content instead of hiding it.
-
-A third recurring thread was **corner radius as a mood signal**: sharp corners
-and hairline borders read as technical/serious (spec sheets, terminal readouts,
-isometric diagrams, dotted-grid "blueprint" backgrounds); soft pill shapes and
-generous radius read as friendly/product (tags, buttons, avatar chips). The
-strongest boards used both, deliberately, in the same layout.
-
-## Why this maps onto Binary Beats specifically
-
-Binary Beats is a competitive-programming judge — problem statements, a real
-C++ compiler, live session polling, rating math. The "industrial-technical
-minimalism" register from the moodboard (isometric line art, spec tables,
-monospace data chrome, dotted blueprint grids, numbered sections) is a natural
-fit for a product whose actual content *is* specs, verdicts, and numbers. The
-previous UI already leaned into a dark hacker-terminal identity; this redesign
-keeps that instinct but relocates it: the **terminal becomes a component, not
-the whole app**.
-
-## Core decision: Paper shell, glass terminal core
-
-The app shell — nav, hero, dashboard, cards, badges, marketing chrome — runs on
-the **warm paper** register: cream background, ink-black text, one accent
-color, sharp-ish cards with hairline borders. The **code editor, judge console,
-and verdict output** run on a **dark glass terminal** register: near-black,
-JetBrains Mono, lime glow — a literal "window into the machine" set inside the
-paper layout, styled like the framed-browser-window and terminal-readout motifs
-that recurred throughout the board. Corner radius tells you which register
-you're in: 6–10px sharp cards outside, 12px soft "glass" panel inside.
-
-This isn't a compromise between two moods — it's the single most consistent
-device across the whole board: bounding a technical/dark artifact inside a
-calmer, warmer frame.
+The code editor keeps its own theme-constant "code register"
+(`--bb-code-*`), fixed dark in both app themes — but in dark mode it's
+now identical to the app tokens by design. There's only one dark register
+left; the code register just doesn't flip when the app around it goes
+light, because code needs a stable reading surface regardless.
 
 ## Tokens
 
-**Paper (primary surface):**
-- `--bb-paper: #F3EEE2` — page background
-- `--bb-paper-raised: #FBF8F0` — card/surface background
-- `--bb-ink: #17140F` — primary text, warm black (never pure `#000`)
-- `--bb-ink-soft: #57503F` — secondary text
-- `--bb-ink-faint: #8C8371` — tertiary/placeholder text
-- `--bb-line: rgba(23,20,15,0.13)` — hairline border
-- `--bb-line-strong: rgba(23,20,15,0.28)` — emphasized border
+**Neutrals:**
+- `--bb-ground: #0B0C0E` (dark) / `#F2F2ED` (light) — page background
+- `--bb-surface: #16181C` / `#FFFFFF` — card/panel background
+- `--bb-surface-2` — nested/hover surface
+- `--bb-ink` / `--bb-ink-soft` / `--bb-ink-faint` — text, three weights
+- `--bb-line` / `--bb-line-strong` — hairline / emphasized border
+- `--bb-border-hard` — the sticker-shadow and focus-ring color (matches ink)
 
-**Accents (used with strict hierarchy — orange leads, lime is a status color, blue is rare):**
-- `--bb-orange: #E15A20` — primary accent: CTAs, links, active states, brand mark
-- `--bb-orange-soft: #F3A468` — orange tint for hover fills/backgrounds
-- `--bb-lime: #8FB537` — success / AC verdict / XP / streak (muted vs. the old
-  neon `#c3f73a` so it reads on paper — full neon lime is reserved for the dark
-  terminal register below)
-- `--bb-blue: #2138C4` — rare tertiary accent: info, secondary links only
-- `--bb-red: #C4402E` — error / WA / destructive
+**Accent — exactly one loud color, app-wide, including inside code:**
+- `--bb-yellow: #FFD400` — CTAs, links, active states, brand mark, and
+  (unlike the old system, which had a second "neon" terminal accent) the
+  code editor's keyword/cursor/live-indicator color too. One accent, no
+  exceptions.
+- `--bb-yellow-dim` / `--bb-yellow-fill` — hover/pressed and tint variants
 
-**Terminal (dark register — code editor, judge console, inset stat chips):**
-- `--bb-term-bg: #14110C`
-- `--bb-term-surface: #1D1811`
-- `--bb-term-line: rgba(244,239,228,0.10)`
-- `--bb-term-text: #F3EEE2`
-- `--bb-term-acc: #C3F73A` — full neon lime lives here (this is the old brand
-  color, kept exactly, now scoped to where it always made the most sense)
-- `--bb-term-acc2: #35E8FF`
+**Status — scoreboard traffic lights, constant across both themes (a
+stadium's colored bulbs don't change with daylight, and a verdict
+shouldn't either):**
+- `--bb-success: #35D46A` — AC
+- `--bb-danger: #E8362B` — WA / RE / CE / destructive actions
+- `--bb-warning: #FF9F1C` — TLE / pending / caution
+
+**Documented exceptions — narrow, deliberate, not casual reuse of the palette:**
+- **Rival identity** (`--bb-rival: #3AA0FF` / `#1D6FE0`) — Duel mode needs a
+  second identity color to distinguish "me" from "the opponent." Scoped
+  strictly to opponent-identity contexts: rival avatar ring/fill, rival's
+  half of a scoreboard bar, a "watching" pulse dot. Never a general
+  secondary brand color, and never used for anything decorative.
+- **Codeforces rating color** (`ui/RatingBadge.tsx`'s `colorForRating()`) —
+  the 7 Codeforces-standard rating bands (`#8C8371` Newbie →
+  `#D6331E` Grandmaster), unchanged from the previous system. Domain
+  vocabulary any Codeforces user reads instantly, independent of the app
+  palette. Reused for problem-difficulty coloring everywhere a difficulty
+  needs a color (`ProblemCard`, `SolveSidebar`, `ProblemOrbit`) instead of a
+  bespoke 3-step ramp — that ramp used to collide with real status/rival
+  colors (a "Hard" tag and a WA verdict could both read red).
+- **Syntax highlighting** (`cppHighlight.ts` / `.syntax-*` classes) — a
+  legible C++ highlighter needs more hue variety than the one-accent rule
+  allows. Keywords use the app's one accent; strings/numbers/functions map
+  onto success/warning/rival by loose editor convention; `type`/`builtin`
+  keep two narrow, muted syntax-only hues that exist nowhere else in the
+  app.
 
 ## Typography
 
-- **Display/heading — Space Grotesk** (kept from before; bold 700–800, tight
-  tracking, often upper-cased for eyebrows). Matches the "bold condensed
-  grotesque" signal directly.
-- **Editorial accent — Fraunces** (new; serif, italic-capable). Used sparingly
-  for big emotive one-off statements — duel verdicts, empty states, session
-  results — the same role elegant serif italics played against sans-driven
-  layouts on the board.
-- **Body — Inter** (kept).
-- **Mono — JetBrains Mono** (kept, and leaned into harder). Every label, stat,
-  timestamp, rating, section eyebrow, and spec value uses mono. This is the
-  single most repeated device across the entire board and Binary Beats already
-  had the right font loaded — it just wasn't used consistently enough.
+- **Display — Big Shoulders Display.** Heavy, condensed, industrial —
+  its heritage is literally Chicago municipal/skyscraper signage
+  lettering. Ships a real 400–900 weight range, so it carries the entire
+  heading hierarchy (h1 hero down to nav-active labels) without falling
+  back to a second face at smaller sizes, the way a single-weight display
+  face (Anton, Archivo Black) would have forced.
+- **HUD numerals — Orbitron**, scoped tightly to `StatNumeral`/`Countdown`
+  digits only (ratings, timers, scores, ranks) — never prose, labels, or
+  buttons. It reads more "sci-fi dashboard" than "stadium LED board," so
+  keeping it narrow lets that flavor register as "special instrument
+  readout" instead of becoming the app's everyday voice.
+- **Body — Inter.** Kept, unchanged — neutral, no reason to touch it.
+- **Mono — JetBrains Mono.** Kept, and the old system's discipline of
+  "every label/stat/timestamp/spec-value is mono" carries over unchanged —
+  it fits a scoreboard's data-forward voice even better than it fit paper.
+
+Fraunces (the old system's editorial serif-italic accent) is dropped
+entirely — there's no elegant-warmth role left for it. Moments that used
+to lean on italic serif (a duel's victory/defeat banner, empty states) now
+get a boxed, bold `font-display` "stamp" treatment instead.
+
+## Shape language
+
+Brutalist: sharp corners almost everywhere (`rounded` = 4px, `rounded-sm`
+= 2px — the hard cap), thick borders (1.5–2px), and **hard offset
+"sticker" shadows** (`4px 4px 0 <color>`) instead of any blur. `rounded-full`
+is reserved for actual circles — avatars, small status dots — never cards,
+buttons, or tags.
+
+No blur, anywhere. This is the biggest structural break from the old
+system, which used blurred glow/shadow throughout its dark terminal
+register (`card-glow-*`, `glow-text-*`, aurora-gradient backgrounds). All
+of it is gone, replaced by flat status-color fills, thick borders, and
+sticker shadows. The one narrow exception: a small functional
+`shadowBlur` on `ProblemOrbit`'s hovered tile, which marks the exact
+clickable target under the cursor — a pragmatic affordance, not
+decoration, and everywhere else on the same board uses a crisp doubled-
+square outline instead.
 
 ## Structural motifs
 
-- **Numbered section eyebrows** — `/01 · PROBLEMS` style labels above section
-  headers. Recurring "cataloged/systemized" device.
-- **Corner marks** — small L-shaped registration/crosshair marks on card
-  corners in the paper register, nodding to print/technical-drawing crop marks.
-- **Grid-paper texture** — faint blueprint grid behind hero/dashboard sections,
-  masked so it fades at the edges.
-- **Oversized numerals as graphics** — rating, XP, streak, stats are large bold
-  mono numerals treated as hero visual elements, not just data.
-- **Pills for status, sharp cards for structure** — difficulty tags, verdicts,
-  rating badges: full pill radius. Containing cards/panels: 6–10px radius,
-  hairline border, flat (no blur shadow) in the paper register.
-- **Grain** — the existing SVG noise overlay is kept; it matches the grain/
-  halftone texture that recurred throughout the board.
+- **Numbered section eyebrows** — `/01 · PROBLEMS` style labels (the
+  `Eyebrow` primitive). Carried over from the old system; fits the
+  brutalist "systemized/cataloged" register even better than it fit paper.
+- **Bracket frames** — `.bracket-frame`, a thicker two-corner
+  viewfinder/broadcast-frame bracket (currentColor-driven, works in both
+  the app and code registers). Replaces the old system's four-corner
+  print/crop-mark motif — "framed monitor" fits a scoreboard better than
+  "technical drawing."
+- **Boxed `[TAGS]`** — the `Tag` primitive defaults to a bordered box, not
+  a soft pill; an optional `bracket` prop wraps the label in literal `[ ]`
+  characters for standalone status chips (verdicts, `[LIVE]`) — reserved
+  for exactly that use, since wrapping every tag in a dense list would
+  read as clutter. True pill radius survives only on round avatars.
+- **Scoreboard grid** — `.scoreboard-grid`, a flat pixel-grid background
+  texture, rendered once app-wide (`App.tsx`), replacing both the old
+  paper "blueprint grid" and the old Blitz-only "arena" aurora-glow
+  background — there's no longer a separate theatrical register for Blitz
+  to have its own background at all.
+- **Hazard stripes** — kept from the old system, retinted to
+  `--bb-danger`; still reserved for one genuine danger zone (end-session
+  confirmation), not decoration.
+- **Grain/noise texture** — dropped. It was an analog/print/halftone
+  device tied to the discarded paper system; a jumbotron's texture is
+  pixels and LEDs, not film grain.
+
+## Shared primitives (`src/components/ui/`)
+
+A real architectural change alongside the visual one: every screen used to
+hand-roll Tailwind utility strings against ad hoc CSS classes
+(`.spec-card`, `.pill`, `.btn-primary`, `.eyebrow`...). Those are now
+backed by actual React components — `Button`, `Panel`, `Tag`,
+`VerdictBadge`, `StatNumeral`, `Countdown`, `Eyebrow`, `Divider`, plus
+`RatingBadge` (moved here from `blitz/`, since six-plus files across three
+folders were already consuming it like a shared primitive). `VerdictBadge`
+and `TestGrid` both route through one `lib/verdictTone.ts` status→color
+function — the old system had this logic independently hardcoded in five
+different files, a real duplication bug this redesign fixed, not just a
+cosmetic one.
 
 ## What NOT to do
 
-- No pure white/pure black surfaces — always the warm paper/ink pair.
-- No more than one loud accent color per screen — orange leads, lime signals
-  success/XP only, blue is reserved for rare secondary links.
-- No blurred glow/shadow in the paper register — that effect is scoped to the
-  dark terminal register only, where it reads as a CRT/screen glow instead of
-  generic soft-UI drama.
-- No decorative illustration beyond what's listed above — the board's strength
-  was restraint plus one strong motif per piece, not maximalist collage.
+- No blur — shadows are hard-offset "stickers," glows don't exist outside
+  one documented functional exception.
+- No more than one loud accent color per screen — yellow leads everywhere,
+  including inside code; status colors and the rival exception are
+  reserved for real semantic meaning, never decoration.
+- No soft pill shapes on cards, buttons, panels, or dense tag lists —
+  sharp corners are the default; `rounded-full` is for circles only.
+- No reusing status/rival colors for anything that isn't an actual
+  verdict or duel-opponent identity (this is precisely the bug the
+  difficulty-color unification fixed — see the rating-color exception
+  above).
+- No italic serif, foil/laminate/glossy card textures, or rotated
+  rubber-stamp effects — those were paper- and passport-card-specific
+  devices with no role in a flat, LED-lit scoreboard.

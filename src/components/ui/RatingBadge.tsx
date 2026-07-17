@@ -2,9 +2,8 @@ import React from "react";
 
 // Mirrors Codeforces' own rating-color convention — kept as a deliberate
 // exception to the one-accent design system: color here is domain vocabulary
-// any Codeforces user reads instantly. Rendered as bold colored mono text with
-// a status dot (not a bordered chip) so it reads correctly on both the paper
-// and terminal registers.
+// any Codeforces user reads instantly. Unchanged from the previous system,
+// see DESIGN.md.
 export function colorForRating(rating: number): string {
   if (rating < 1200) return "#8C8371";
   if (rating < 1400) return "#3FA34D";
@@ -24,6 +23,17 @@ export function tierForRating(rating: number): string {
   if (rating < 2100) return "Candidate Master";
   if (rating < 2400) return "Master";
   return "Grandmaster";
+}
+
+// Product-specific Easy/Medium/Hard framing (distinct from the CF tier
+// names above) — used by problem lists/cards. Deliberately reuses
+// colorForRating for its color instead of a separate lime/blue/red ramp, so
+// difficulty color can never collide with a verdict/status color (a "Hard"
+// tag and a WA verdict used to both read as red).
+export function difficultyLabel(rating: number): "Easy" | "Medium" | "Hard" {
+  if (rating <= 1300) return "Easy";
+  if (rating <= 1900) return "Medium";
+  return "Hard";
 }
 
 interface RatingBadgeProps {

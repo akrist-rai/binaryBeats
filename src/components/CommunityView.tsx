@@ -1,5 +1,10 @@
 import React, { useState, useEffect, useMemo } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
+import { Panel } from './ui/Panel';
+import { Tag } from './ui/Tag';
+import { Button } from './ui/Button';
+import { Eyebrow } from './ui/Eyebrow';
+import { Divider } from './ui/Divider';
 
 interface CommunityViewProps {
   playSound: (type: 'click' | 'hover') => void;
@@ -42,14 +47,17 @@ interface Clan {
   desc: string;
 }
 
-// Per-channel accent color — same left-accent-bar convention as the problem
-// lists (LeetCodeDashboard / ProblemCard), applied here to forum tags so the
-// two list surfaces in the app read consistently.
+// Forum categories (Solutions/Contest/General/Bugs) are decorative labels,
+// not semantic states — they don't get success/danger/rival/warning colors,
+// since those are reserved for real verdict/duel/caution meaning elsewhere
+// in the app. Every category renders in the same neutral tone and is told
+// apart by its label text only (left-accent-bar convention kept from the
+// problem lists, just de-tinted to match).
 const TAG_ACCENT: Record<ForumThread['tag'], string> = {
-  Solutions: 'bg-bb-lime',
-  Contest: 'bg-bb-orange',
-  General: 'bg-bb-blue',
-  Bugs: 'bg-bb-red',
+  Solutions: 'bg-bb-line-strong',
+  Contest: 'bg-bb-line-strong',
+  General: 'bg-bb-line-strong',
+  Bugs: 'bg-bb-line-strong',
 };
 
 export const CommunityView: React.FC<CommunityViewProps> = ({
@@ -340,17 +348,17 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* Hub Header & Navigation sub-tabs */}
         <div className="flex flex-col md:flex-row md:items-center justify-between gap-6 border-b border-bb-line pb-6 mb-6">
           <div>
-            <span className="eyebrow mb-2">/04 <span className="text-bb-ink-faint normal-case">·</span> Community</span>
-            <h2 className="text-2xl md:text-3xl font-heading font-extrabold tracking-tight text-bb-ink mb-2 mt-2">
+            <Eyebrow number="04" className="mb-2">Community</Eyebrow>
+            <h2 className="text-2xl md:text-3xl font-display font-extrabold tracking-tight text-bb-ink mb-2 mt-2">
               Community Hub
             </h2>
-            <p className="label-caps">
+            <p className="text-xs font-mono text-bb-ink-faint">
               Share C++ solutions, review code, and coordinate within engineering guilds
             </p>
           </div>
 
           {/* Sub tabs */}
-          <div className="flex rounded-full overflow-hidden border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[10px]">
+          <div className="flex rounded overflow-hidden border border-bb-line bg-bb-surface p-0.5 font-mono text-[10px]">
             {[
               { id: 'forum', label: 'Discussions' },
               { id: 'feed', label: 'Live Activities' },
@@ -363,14 +371,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   setActiveSubTab(tab.id as any);
                   setSelectedThread(null);
                 }}
-                className={`px-4 h-8 rounded-full font-bold tracking-wider cursor-pointer uppercase transition-colors relative ${
-                  activeSubTab === tab.id ? 'text-bb-paper' : 'text-bb-ink-faint hover:text-bb-ink-soft'
+                className={`px-4 h-8 rounded-sm font-bold tracking-wider cursor-pointer uppercase transition-colors relative ${
+                  activeSubTab === tab.id ? 'text-bb-ground' : 'text-bb-ink-faint hover:text-bb-ink-soft'
                 }`}
               >
                 {activeSubTab === tab.id && (
                   <motion.span
                     layoutId="activeSubTabBg"
-                    className="absolute inset-0 bg-bb-ink rounded-full"
+                    className="absolute inset-0 bg-bb-ink rounded-sm"
                     transition={{ type: 'spring', stiffness: 350, damping: 28 }}
                   />
                 )}
@@ -391,32 +399,31 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                 <motion.div
                   initial={{ opacity: 0, y: 10 }}
                   animate={{ opacity: 1, y: 0 }}
-                  className="spec-card p-6"
                 >
+                  <Panel className="p-6">
                   {/* Thread Header */}
                   <div className="flex items-center justify-between mb-4">
-                    <button
+                    <Button
+                      variant="outline"
+                      size="sm"
                       onClick={() => {
                         playSound('click');
                         setSelectedThread(null);
                       }}
-                      className="btn-outline px-3 py-1.5 cursor-pointer font-mono text-[10px] uppercase tracking-wider"
                     >
                       ← Back to Feed
-                    </button>
+                    </Button>
 
-                    <span className="sticker-tag pill text-[10px] font-mono font-bold uppercase tracking-wider px-2.5 py-0.5 border border-bb-orange/30 bg-bb-orange/[0.06] text-bb-orange">
-                      {selectedThread.tag}
-                    </span>
+                    <Tag tone="neutral">{selectedThread.tag}</Tag>
                   </div>
 
                   {/* Title & Author Info */}
                   <div className="flex gap-4 items-start mb-6">
-                    <div className="w-10 h-10 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-xs font-bold font-mono">
+                    <div className="w-10 h-10 rounded-full bg-bb-ink text-bb-ground flex items-center justify-center text-xs font-bold font-mono">
                       {selectedThread.avatar}
                     </div>
                     <div className="flex-1 min-w-0">
-                      <h3 className="text-xl font-bold font-heading text-bb-ink leading-tight">
+                      <h3 className="text-xl font-bold font-display text-bb-ink leading-tight">
                         {selectedThread.title}
                       </h3>
                       <div className="flex gap-3 text-[10px] text-bb-ink-faint font-mono mt-1">
@@ -427,7 +434,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   </div>
 
                   {/* Body Content */}
-                  <div className="bg-bb-paper border border-bb-line p-5 rounded-lg text-bb-ink-soft text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
+                  <div className="bg-bb-ground border border-bb-line p-5 rounded text-bb-ink-soft text-xs leading-relaxed whitespace-pre-wrap font-sans mb-6">
                     {selectedThread.content}
                   </div>
 
@@ -435,10 +442,12 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                   <div className="flex items-center gap-4 border-b border-bb-line pb-5 mb-5">
                     <button
                       onClick={(e) => handleUpvote(selectedThread.id, e)}
-                      className="pill flex items-center gap-2 px-3 py-1.5 border border-bb-lime/30 bg-bb-lime/[0.08] hover:border-bb-lime/50 text-bb-lime cursor-pointer text-xs font-mono font-bold uppercase tracking-wider transition-colors"
+                      className="cursor-pointer"
                     >
-                      <span>👍 Upvote</span>
-                      <span className="font-bold text-bb-ink">{selectedThread.upvotes}</span>
+                      <Tag tone="success" className="gap-2 px-3 py-1.5 text-xs">
+                        <span>👍 Upvote</span>
+                        <span className="font-bold text-bb-ink">{selectedThread.upvotes}</span>
+                      </Tag>
                     </button>
                     <span className="text-bb-ink-faint font-mono text-[10px]">
                       {selectedThread.commentsCount} Comments
@@ -447,18 +456,16 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
                   {/* Comments list */}
                   <div className="flex flex-col gap-4 mb-6">
-                    <h4 className="label-caps mb-2">
-                      Review Thread Comments
-                    </h4>
+                    <Eyebrow tone="muted" className="mb-2">Review Thread Comments</Eyebrow>
 
                     {selectedThread.comments.length === 0 ? (
-                      <div className="py-4 text-center text-xs text-bb-ink-faint font-mono bg-bb-paper rounded-lg border border-dashed border-bb-line">
+                      <div className="py-4 text-center text-xs text-bb-ink-faint font-mono bg-bb-ground rounded border border-dashed border-bb-line">
                         No responses yet. Start the review thread!
                       </div>
                     ) : (
                       selectedThread.comments.map(c => (
-                        <div key={c.id} className="flex gap-3 items-start p-4 rounded-lg border border-bb-line bg-bb-paper">
-                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono">
+                        <Panel key={c.id} className="flex gap-3 items-start p-4">
+                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-ground flex items-center justify-center text-[10px] font-bold font-mono">
                             {c.avatar}
                           </div>
                           <div className="flex-1">
@@ -470,7 +477,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                               {c.content}
                             </p>
                           </div>
-                        </div>
+                        </Panel>
                       ))
                     )}
                   </div>
@@ -481,17 +488,15 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={commentInput}
                       onChange={e => setCommentInput(e.target.value)}
                       placeholder="Compile response or review comments..."
-                      className="w-full h-20 p-3 bg-bb-paper border border-bb-line rounded-lg text-xs text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono"
+                      className="w-full h-20 p-3 bg-bb-ground border border-bb-line rounded text-xs text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono"
                     />
                     <div className="flex justify-end">
-                      <button
-                        onClick={handleAddComment}
-                        className="btn-primary px-5 h-8 font-bold text-xs uppercase tracking-wider cursor-pointer"
-                      >
+                      <Button variant="primary" size="sm" onClick={handleAddComment}>
                         Post Response
-                      </button>
+                      </Button>
                     </div>
                   </div>
+                  </Panel>
                 </motion.div>
               ) : (
                 /* Thread Feed list */
@@ -507,58 +512,56 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                         value={searchQuery}
                         onChange={e => setSearchQuery(e.target.value)}
                         placeholder="Search posts or code..."
-                        className="w-full h-9 pl-9 pr-3 rounded-lg text-xs text-bb-ink bg-bb-paper-raised placeholder-bb-ink-faint focus:outline-none transition-colors border border-bb-line focus:border-bb-line-strong"
+                        className="w-full h-9 pl-9 pr-3 rounded text-xs text-bb-ink bg-bb-surface placeholder-bb-ink-faint focus:outline-none transition-colors border border-bb-line focus:border-bb-line-strong"
                       />
                     </div>
 
                     {/* New Post Button */}
-                    <button
+                    <Button
+                      variant="primary"
                       onClick={() => {
                         playSound('click');
                         setIsCreatorOpen(true);
                       }}
-                      className="btn-primary px-4 h-9 font-bold text-xs uppercase tracking-wider cursor-pointer flex items-center justify-center gap-1.5"
                     >
-                      <span>+ Create Post</span>
-                    </button>
+                      + Create Post
+                    </Button>
                   </div>
 
                   {/* Thread Cards list */}
                   <div className="flex flex-col gap-3">
                     {filteredThreads.length === 0 ? (
-                      <div className="py-16 text-center text-xs text-bb-ink-faint font-mono rounded-lg border border-dashed border-bb-line">
+                      <div className="py-16 text-center text-xs text-bb-ink-faint font-mono rounded border border-dashed border-bb-line">
                         No discussion threads match this criteria
                       </div>
                     ) : (
                       filteredThreads.map(t => (
-                        <motion.div
-                          key={t.id}
-                          layout
-                          onClick={() => {
-                            playSound('click');
-                            setSelectedThread(t);
-                          }}
-                          className="relative spec-card p-5 pl-6 cursor-pointer flex gap-4 items-start group overflow-hidden"
-                        >
+                        <motion.div key={t.id} layout>
+                          <Panel
+                            lift
+                            onClick={() => {
+                              playSound('click');
+                              setSelectedThread(t);
+                            }}
+                            className="relative p-5 pl-6 cursor-pointer flex gap-4 items-start group overflow-hidden"
+                          >
                           <span className={`absolute left-0 top-0 bottom-0 w-[3px] ${TAG_ACCENT[t.tag]}`} />
                           <span className="link-chip">↗</span>
                           {/* Left avatar column */}
-                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-paper flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
+                          <div className="w-8 h-8 rounded-full bg-bb-ink text-bb-ground flex items-center justify-center text-[10px] font-bold font-mono shrink-0">
                             {t.avatar}
                           </div>
 
                           {/* Right main column */}
                           <div className="flex-1 min-w-0 font-mono">
                             <div className="flex items-center gap-2 mb-1.5 flex-wrap">
-                              <span className="pill text-[9px] uppercase tracking-wider px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
-                                {t.tag}
-                              </span>
+                              <Tag tone="neutral">{t.tag}</Tag>
                               <span className="text-[9.5px] text-bb-ink-faint">
                                 Posted by @{t.author} • {t.date}
                               </span>
                             </div>
 
-                            <h3 className="text-[13px] font-bold text-bb-ink group-hover:text-bb-orange transition-colors leading-tight">
+                            <h3 className="text-[13px] font-bold text-bb-ink group-hover:text-bb-yellow transition-colors leading-tight">
                               {t.title}
                             </h3>
 
@@ -569,7 +572,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                             <div className="flex items-center gap-4 mt-3 text-[10px] text-bb-ink-faint font-mono">
                               <button
                                 onClick={(e) => handleUpvote(t.id, e)}
-                                className="flex items-center gap-1.5 hover:text-bb-lime transition-colors group/up"
+                                className="flex items-center gap-1.5 hover:text-bb-success transition-colors group/up"
                               >
                                 <span className="group-hover/up:scale-110 transition-transform">👍</span>
                                 <span className="font-bold">{t.upvotes}</span>
@@ -581,6 +584,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                               </div>
                             </div>
                           </div>
+                          </Panel>
                         </motion.div>
                       ))
                     )}
@@ -593,32 +597,34 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
             <div className="flex flex-col gap-6 font-mono">
               {/* Trending thread — a practical shortcut to whatever's resonating right now */}
               {trendingThread && (
-                <div className="spec-card corner-marks p-5 relative overflow-hidden">
-                  <div className="eyebrow mb-3">Trending</div>
+                <Panel bracket className="p-5 relative overflow-hidden text-bb-yellow">
+                  <Eyebrow tone="accent" className="mb-3">Trending</Eyebrow>
                   <div className="flex items-center gap-2 mb-2 flex-wrap">
                     <span className={`w-2 h-2 rounded-full shrink-0 ${TAG_ACCENT[trendingThread.tag]}`} />
                     <span className="text-[9px] uppercase tracking-wider text-bb-ink-faint">{trendingThread.tag}</span>
                     <span className="text-[9px] text-bb-ink-faint ml-auto">👍 {trendingThread.upvotes}</span>
                   </div>
-                  <div className="text-sm font-heading font-bold text-bb-ink mb-4 leading-snug line-clamp-2">
+                  <div className="text-sm font-display font-bold text-bb-ink mb-4 leading-snug line-clamp-2">
                     {trendingThread.title}
                   </div>
-                  <button
+                  <Button
+                    variant="primary"
+                    className="w-full"
                     onClick={() => {
                       playSound('click');
                       setSelectedThread(trendingThread);
                     }}
-                    className="btn-primary w-full h-9 text-[11px] font-bold uppercase tracking-wider cursor-pointer"
                   >
                     Read Thread →
-                  </button>
-                </div>
+                  </Button>
+                </Panel>
               )}
 
-              <div className="spec-card p-5">
-                <h4 className="label-caps mb-3.5 border-b border-bb-line pb-2">
-                  Topic Filter
-                </h4>
+              <Panel className="p-5">
+                <div className="mb-3.5">
+                  <Eyebrow tone="muted">Topic Filter</Eyebrow>
+                  <Divider className="mt-2" />
+                </div>
                 <div className="flex flex-col gap-2">
                   {(['All', 'Solutions', 'Contest', 'General', 'Bugs'] as const).map(tag => {
                     const isSelected = selectedTag === tag;
@@ -630,9 +636,9 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           setSelectedTag(tag);
                           setSelectedThread(null);
                         }}
-                        className={`w-full flex items-center justify-between px-3 py-2 rounded-md border text-left text-xs transition-colors cursor-pointer ${
+                        className={`w-full flex items-center justify-between px-3 py-2 rounded border text-left text-xs transition-colors cursor-pointer ${
                           isSelected
-                            ? 'bg-bb-orange/[0.06] text-bb-orange border-bb-orange/30 font-bold'
+                            ? 'bg-bb-yellow-fill text-bb-yellow border-bb-yellow/30 font-bold'
                             : 'border-transparent text-bb-ink-faint hover:text-bb-ink-soft hover:bg-bb-ink/[0.03]'
                         }`}
                       >
@@ -641,40 +647,37 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           {tag === 'All' ? 'All Channels' : `# ${tag}`}
                         </span>
                         {tag !== 'All' && (
-                          <span className={`pill text-[9px] border px-1.5 py-0.5 ${
-                            isSelected
-                              ? 'text-bb-orange bg-bb-orange/[0.06] border-bb-orange/30'
-                              : 'text-bb-ink-faint bg-bb-paper border-bb-line'
-                          }`}>
+                          <Tag tone={isSelected ? 'accent' : 'neutral'}>
                             {threads.filter(t => t.tag === tag).length}
-                          </span>
+                          </Tag>
                         )}
                       </button>
                     );
                   })}
                 </div>
-              </div>
+              </Panel>
 
               {/* Guidelines panel */}
-              <div className="spec-card p-5 text-[10px] text-bb-ink-faint">
-                <h4 className="label-caps mb-3 border-b border-bb-line pb-2">
-                  Code Sharing Protocol
-                </h4>
+              <Panel className="p-5 text-[10px] text-bb-ink-faint">
+                <div className="mb-3">
+                  <Eyebrow tone="muted">Code Sharing Protocol</Eyebrow>
+                  <Divider className="mt-2" />
+                </div>
                 <ul className="flex flex-col gap-2.5 list-none pl-0 leading-relaxed">
                   <li className="flex gap-2">
-                    <span className="text-bb-orange">◼</span>
+                    <span className="text-bb-yellow">◼</span>
                     <span>Sanitize secrets, keys, and tokens prior to uploading scripts.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-bb-orange">◼</span>
+                    <span className="text-bb-yellow">◼</span>
                     <span>Explain O(N) constraints to simplify complexity reviews.</span>
                   </li>
                   <li className="flex gap-2">
-                    <span className="text-bb-orange">◼</span>
+                    <span className="text-bb-yellow">◼</span>
                     <span>Upvote optimized compilers to encourage clean architecture.</span>
                   </li>
                 </ul>
-              </div>
+              </Panel>
             </div>
 
           </div>
@@ -683,13 +686,11 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ TAB CONTENT: LIVE ACTIVITIES ═══ */}
         {activeSubTab === 'feed' && (
           <div className="w-full font-mono">
-            <div className="spec-card p-6">
+            <Panel className="p-6">
               <div className="flex items-center justify-between border-b border-bb-line pb-4 mb-6 select-none">
-                <span className="label-caps">
-                  Live Activity Signal Feed
-                </span>
-                <span className="flex items-center gap-1.5 text-[9px] text-bb-lime uppercase tracking-widest font-black animate-pulse">
-                  <span className="w-1.5 h-1.5 rounded-full bg-bb-lime" />
+                <Eyebrow tone="muted">Live Activity Signal Feed</Eyebrow>
+                <span className="flex items-center gap-1.5 text-[9px] text-bb-success uppercase tracking-widest font-black animate-pulse">
+                  <span className="w-1.5 h-1.5 rounded-full bg-bb-success" />
                   Live Syncing
                 </span>
               </div>
@@ -703,24 +704,25 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       animate={{ opacity: 1, x: 0 }}
                       exit={{ opacity: 0, height: 0, overflow: 'hidden', margin: 0, padding: 0 }}
                       transition={{ type: 'spring', stiffness: 500, damping: 30 }}
-                      className="flex items-start gap-4 p-4 rounded-lg border border-bb-line bg-bb-paper-raised hover:border-bb-line-strong transition-colors"
                     >
-                      <div className="w-8 h-8 rounded-lg bg-bb-paper border border-bb-line flex items-center justify-center text-xs shrink-0">
-                        {a.icon}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="text-[11px] font-semibold text-bb-ink leading-relaxed">
-                          {a.message}
-                        </p>
-                        <span className="text-[8px] text-bb-ink-faint block mt-1 uppercase font-bold">
-                          ⏱ {a.time}
-                        </span>
-                      </div>
+                      <Panel className="flex items-start gap-4 p-4 hover:border-bb-line-strong transition-colors">
+                        <div className="w-8 h-8 rounded bg-bb-ground border border-bb-line flex items-center justify-center text-xs shrink-0">
+                          {a.icon}
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-[11px] font-semibold text-bb-ink leading-relaxed">
+                            {a.message}
+                          </p>
+                          <span className="text-[8px] text-bb-ink-faint block mt-1 uppercase font-bold">
+                            ⏱ {a.time}
+                          </span>
+                        </div>
+                      </Panel>
                     </motion.div>
                   ))}
                 </AnimatePresence>
               </div>
-            </div>
+            </Panel>
           </div>
         )}
 
@@ -729,27 +731,26 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
           <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-8">
             {/* Clans list */}
             <div className="flex flex-col gap-4 font-mono">
-              <h3 className="label-caps mb-1 border-b border-bb-line pb-2">
-                Clans Standing Leaderboard
-              </h3>
+              <div className="mb-1">
+                <Eyebrow tone="muted">Clans Standing Leaderboard</Eyebrow>
+                <Divider className="mt-2" />
+              </div>
 
               <div className="flex flex-col gap-3">
                 {clans.map((clan, idx) => {
                   const isMember = userClan === clan.name;
                   return (
-                    <div
+                    <Panel
                       key={clan.id}
-                      className={`rounded-lg p-5 border transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-4 ${
-                        isMember
-                          ? 'border-bb-lime/50 bg-bb-lime/[0.06]'
-                          : 'border-bb-line bg-bb-paper-raised hover:border-bb-line-strong'
+                      className={`p-5 flex flex-col sm:flex-row sm:items-center justify-between gap-4 transition-all ${
+                        isMember ? 'border-bb-success/50 bg-bb-success/[0.06]' : 'hover:border-bb-line-strong'
                       }`}
                     >
                       <div className="flex gap-4 items-start">
-                        <div className={`w-10 h-10 rounded-lg flex items-center justify-center font-bold text-xs border ${
+                        <div className={`w-10 h-10 rounded flex items-center justify-center font-bold text-xs border ${
                           isMember
-                            ? 'bg-bb-lime text-bb-ink border-bb-lime'
-                            : 'bg-bb-ink text-bb-paper border-bb-ink'
+                            ? 'bg-bb-success text-bb-ground border-bb-success'
+                            : 'bg-bb-ink text-bb-ground border-bb-ink'
                         }`}>
                           {clan.tag}
                         </div>
@@ -774,18 +775,16 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                           <span className="text-xs font-bold text-bb-ink-soft">{clan.members}</span>
                         </div>
 
-                        <button
+                        <Button
+                          variant={isMember ? 'outline' : 'primary'}
+                          size="sm"
                           onClick={() => handleJoinClan(clan.id)}
-                          className={`px-4 py-1.5 rounded-full text-[10px] uppercase font-bold tracking-wider cursor-pointer transition-all ${
-                            isMember
-                              ? 'bg-transparent hover:bg-bb-red/10 text-bb-ink-soft hover:text-bb-red border border-bb-line-strong hover:border-bb-red/40'
-                              : 'btn-primary'
-                          }`}
+                          className={isMember ? 'hover:text-bb-danger hover:border-bb-danger/40 hover:bg-bb-danger/10' : ''}
                         >
                           {isMember ? 'Leave' : 'Join'}
-                        </button>
+                        </Button>
                       </div>
-                    </div>
+                    </Panel>
                   );
                 })}
               </div>
@@ -793,25 +792,26 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
 
             {/* User Guild Profile status */}
             <div className="flex flex-col gap-6 font-mono">
-              <div className="spec-card p-5 relative">
-                <h4 className="label-caps mb-3.5 border-b border-bb-line pb-2">
-                  Your Guild Affiliation
-                </h4>
+              <Panel className="p-5 relative">
+                <div className="mb-3.5">
+                  <Eyebrow tone="muted">Your Guild Affiliation</Eyebrow>
+                  <Divider className="mt-2" />
+                </div>
 
                 {userClan ? (
                   <div className="flex flex-col gap-4">
                     <div>
                       <span className="text-[9px] text-bb-ink-faint uppercase block mb-1">Active Clan</span>
                       <div className="text-base font-bold text-bb-ink uppercase tracking-wider flex items-center gap-2">
-                        <span className="w-2 h-2 rounded-full bg-bb-lime" />
+                        <span className="w-2 h-2 rounded-full bg-bb-success" />
                         {userClan}
                       </div>
                     </div>
                     <div>
                       <span className="text-[9px] text-bb-ink-faint uppercase block mb-1">Weekly contribution</span>
-                      <span className="text-xs font-bold text-bb-lime">7 problems solved</span>
+                      <span className="text-xs font-bold text-bb-success">7 problems solved</span>
                     </div>
-                    <div className="p-3 bg-bb-paper border border-bb-line rounded-lg text-[9px] text-bb-ink-faint leading-relaxed font-sans font-light">
+                    <div className="p-3 bg-bb-ground border border-bb-line rounded text-[9px] text-bb-ink-faint leading-relaxed font-sans font-light">
                       Your solves add to the clan leaderboard weekly. Keep solving to rank up your guild!
                     </div>
                   </div>
@@ -824,7 +824,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     </p>
                   </div>
                 )}
-              </div>
+              </Panel>
             </div>
           </div>
         )}
@@ -832,13 +832,14 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
         {/* ═══ CREATE THREAD DIALOG MODAL ═══ */}
         <AnimatePresence>
           {isCreatorOpen && (
-            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-bb-ink/50 backdrop-blur-sm">
+            <div className="fixed inset-0 z-50 flex items-center justify-center px-4 bg-bb-ground/80 backdrop-blur-sm">
               <motion.div
                 initial={{ opacity: 0, scale: 0.95 }}
                 animate={{ opacity: 1, scale: 1 }}
                 exit={{ opacity: 0, scale: 0.95 }}
-                className="w-full max-w-[600px] spec-card p-6 font-mono"
+                className="w-full max-w-[600px] font-mono"
               >
+                <Panel className="p-6">
                 <div className="flex items-center justify-between border-b border-bb-line pb-3.5 mb-5">
                   <h3 className="text-sm font-bold text-bb-ink uppercase tracking-wider">
                     Compile New Forum Thread
@@ -863,7 +864,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={newTitle}
                       onChange={e => setNewTitle(e.target.value)}
                       placeholder="E.g., std::vector capacity reservation tricks"
-                      className="h-10 px-3.5 bg-bb-paper border border-bb-line rounded-lg text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong"
+                      className="h-10 px-3.5 bg-bb-ground border border-bb-line rounded text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong"
                     />
                   </div>
 
@@ -873,7 +874,7 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                     <select
                       value={newTag}
                       onChange={e => setNewTag(e.target.value as any)}
-                      className="h-10 px-3 bg-bb-paper border border-bb-line rounded-lg text-bb-ink focus:outline-none focus:border-bb-line-strong"
+                      className="h-10 px-3 bg-bb-ground border border-bb-line rounded text-bb-ink focus:outline-none focus:border-bb-line-strong"
                     >
                       <option value="Solutions"># Solutions</option>
                       <option value="Contest"># Contest</option>
@@ -889,29 +890,27 @@ export const CommunityView: React.FC<CommunityViewProps> = ({
                       value={newContent}
                       onChange={e => setNewContent(e.target.value)}
                       placeholder="Write your explanation or paste your codebase snippets..."
-                      className="h-44 p-4 bg-bb-paper border border-bb-line rounded-lg text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono text-[11px] leading-relaxed"
+                      className="h-44 p-4 bg-bb-ground border border-bb-line rounded text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong resize-none font-mono text-[11px] leading-relaxed"
                     />
                   </div>
 
                   {/* Save/Cancel */}
                   <div className="flex justify-end gap-3 pt-3 border-t border-bb-line mt-2">
-                    <button
+                    <Button
+                      variant="outline"
                       onClick={() => {
                         playSound('click');
                         setIsCreatorOpen(false);
                       }}
-                      className="btn-outline px-4 h-9 cursor-pointer uppercase text-xs"
                     >
                       Cancel
-                    </button>
-                    <button
-                      onClick={handleCreateThread}
-                      className="btn-primary px-5 h-9 font-bold uppercase tracking-wider cursor-pointer text-xs"
-                    >
+                    </Button>
+                    <Button variant="primary" onClick={handleCreateThread}>
                       Deploy Thread
-                    </button>
+                    </Button>
                   </div>
                 </div>
+                </Panel>
               </motion.div>
             </div>
           )}

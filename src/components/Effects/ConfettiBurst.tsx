@@ -9,7 +9,7 @@ interface ConfettiBurstProps {
   className?: string;
 }
 
-const DEFAULT_COLORS = ["#C3F73A", "#35E8FF", "#FF7A45", "#F3EEE2"];
+const DEFAULT_COLORS = ["#FFD400", "#35D46A", "#3AA0FF", "#F2F2ED"];
 
 /** A one-shot radial particle burst — no library, just randomized motion.div
  *  trajectories. Reserved for genuine "you won" moments (AC, duel victory). */

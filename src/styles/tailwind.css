@@ -1,60 +1,42 @@
-@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700;800&family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;500;600;700;800&family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,500;0,9..144,600;1,9..144,400;1,9..144,500;1,9..144,600&display=swap');
+@import './tokens.css';
 @import "tailwindcss";
 
 @theme {
-  --font-sans: 'Inter', system-ui, -apple-system, sans-serif;
-  --font-heading: 'Space Grotesk', 'Inter', system-ui, sans-serif;
-  --font-serif: 'Fraunces', Georgia, serif;
-  --font-mono: 'JetBrains Mono', 'Menlo', monospace;
+  --font-sans: var(--bb-font-sans);
+  --font-mono: var(--bb-font-mono);
+  --font-display: var(--bb-font-display);
+  --font-hud: var(--bb-font-hud);
 
-  /* Paper — primary surface */
-  --color-bb-paper: var(--bb-paper, #F3EEE2);
-  --color-bb-paper-raised: var(--bb-paper-raised, #FBF8F0);
-  --color-bb-ink: var(--bb-ink, #17140F);
-  --color-bb-ink-soft: var(--bb-ink-soft, #57503F);
-  --color-bb-ink-faint: var(--bb-ink-faint, #8C8371);
-  --color-bb-line: var(--bb-line, rgba(23, 20, 15, 0.13));
-  --color-bb-line-strong: var(--bb-line-strong, rgba(23, 20, 15, 0.28));
+  /* Neutrals */
+  --color-bb-ground: var(--bb-ground, #0B0C0E);
+  --color-bb-surface: var(--bb-surface, #16181C);
+  --color-bb-surface-2: var(--bb-surface-2, #1D2026);
+  --color-bb-ink: var(--bb-ink, #F2F2ED);
+  --color-bb-ink-soft: var(--bb-ink-soft, #B4B6B2);
+  --color-bb-ink-faint: var(--bb-ink-faint, #75786F);
+  --color-bb-line: var(--bb-line, rgba(242, 242, 237, 0.14));
+  --color-bb-line-strong: var(--bb-line-strong, rgba(242, 242, 237, 0.30));
+  --color-bb-border-hard: var(--bb-border-hard, #F2F2ED);
 
-  /* Accents */
-  --color-bb-orange: var(--bb-orange, #E15A20);
-  --color-bb-orange-soft: var(--bb-orange-soft, #F3A468);
-  --color-bb-lime: var(--bb-lime, #8FB537);
-  --color-bb-blue: var(--bb-blue, #2138C4);
-  --color-bb-red: var(--bb-red, #C4402E);
+  /* Accent */
+  --color-bb-yellow: var(--bb-yellow, #FFD400);
+  --color-bb-yellow-dim: var(--bb-yellow-dim, #E6BF00);
+  --color-bb-yellow-fill: var(--bb-yellow-fill, rgba(255, 212, 0, 0.14));
 
-  /* Terminal — dark register (editor / judge console) */
-  --color-bb-term-bg: var(--bb-term-bg, #14110C);
-  --color-bb-term-surface: var(--bb-term-surface, #1D1811);
-  --color-bb-term-line: var(--bb-term-line, rgba(244, 239, 228, 0.1));
-  --color-bb-term-text: var(--bb-term-text, #F3EEE2);
-  --color-bb-term-acc: var(--bb-term-acc, #C3F73A);
-  --color-bb-term-acc2: var(--bb-term-acc2, #35E8FF);
-}
+  /* Status */
+  --color-bb-success: var(--bb-success, #35D46A);
+  --color-bb-danger: var(--bb-danger, #E8362B);
+  --color-bb-warning: var(--bb-warning, #FF9F1C);
 
-/* ─── Theme: dark mode overrides the paper register only — the code-editor
-   "terminal" register (--bb-term-*) is intentionally constant in both themes. ─── */
-:root {
-  --bb-grid-line: rgba(23, 20, 15, 0.055);
-  color-scheme: light;
-}
-:root[data-theme='dark'] {
-  --bb-paper: #14110C;
-  --bb-paper-raised: #1D1811;
-  --bb-ink: #F3EEE2;
-  --bb-ink-soft: #C9C0AC;
-  --bb-ink-faint: #8C8371;
-  --bb-line: rgba(244, 239, 228, 0.12);
-  --bb-line-strong: rgba(244, 239, 228, 0.26);
+  /* Duel identity — narrow exception, see tokens.css */
+  --color-bb-rival: var(--bb-rival, #3AA0FF);
 
-  --bb-orange: #FF7A45;
-  --bb-orange-soft: #FFB088;
-  --bb-lime: #C3F73A;
-  --bb-blue: #7C93FF;
-  --bb-red: #FF6B57;
-
-  --bb-grid-line: rgba(244, 239, 228, 0.05);
-  color-scheme: dark;
+  /* Code register */
+  --color-bb-code-bg: var(--bb-code-bg, #0B0C0E);
+  --color-bb-code-surface: var(--bb-code-surface, #16181C);
+  --color-bb-code-line: var(--bb-code-line, rgba(242, 242, 237, 0.12));
+  --color-bb-code-text: var(--bb-code-text, #F2F2ED);
+  --color-bb-code-acc: var(--bb-code-acc, #FFD400);
 }
 
 @layer base {
@@ -65,151 +47,146 @@
   }
 
   html, body, #app {
-    background-color: var(--bb-paper, #F3EEE2);
-    color: var(--bb-ink, #17140F);
+    background-color: var(--bb-ground, #0B0C0E);
+    color: var(--bb-ink, #F2F2ED);
     margin: 0;
     padding: 0;
     min-height: 100vh;
     width: 100%;
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: var(--bb-font-sans);
     overflow-x: hidden;
     letter-spacing: -0.01em;
     transition: background-color 0.35s ease, color 0.35s ease;
   }
 
   ::selection {
-    background: rgba(225, 90, 32, 0.22);
-    color: var(--bb-ink, #17140F);
+    background: var(--bb-yellow-fill, rgba(255, 212, 0, 0.14));
+    color: var(--bb-ink, #F2F2ED);
   }
 
   h1, h2, h3 {
-    font-family: 'Space Grotesk', 'Inter', system-ui, sans-serif;
+    font-family: var(--bb-font-display);
   }
 
   :focus-visible {
-    outline: 2px solid var(--bb-orange, #E15A20);
+    outline: 2px solid var(--bb-yellow, #FFD400);
     outline-offset: 2px;
-    border-radius: 2px;
+    border-radius: var(--radius-sm, 2px);
   }
 }
 
-/* ─── Grain texture (kept — matches the grain/halftone motif on the board) ─── */
-.noise-bg::before {
-  content: '';
-  position: fixed;
-  inset: 0;
-  opacity: 0.035;
-  mix-blend-mode: multiply;
-  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");
-  pointer-events: none;
-  z-index: 0;
-}
-.noise-bg-dark::before {
-  mix-blend-mode: overlay;
-  opacity: 0.05;
-}
-:root[data-theme='dark'] .noise-bg::before {
-  mix-blend-mode: overlay;
-  opacity: 0.05;
-}
-
-/* ─── Blueprint grid-paper texture ─── */
-.grid-paper {
+/* ─── Scoreboard grid — flat blueprint/pixel-grid texture, app-wide (not a
+   Blitz-only "arena" register any more; the whole app is the theatrical
+   dark register now). ─── */
+.scoreboard-grid {
   background-image:
-    linear-gradient(var(--bb-grid-line, rgba(23, 20, 15, 0.055)) 1px, transparent 1px),
-    linear-gradient(90deg, var(--bb-grid-line, rgba(23, 20, 15, 0.055)) 1px, transparent 1px);
-  background-size: 40px 40px;
-  -webkit-mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 35%, transparent 88%);
-  mask-image: radial-gradient(ellipse 80% 60% at 50% 0%, black 35%, transparent 88%);
-}
-.grid-paper-dark {
-  background-image:
-    linear-gradient(rgba(244, 239, 228, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 239, 228, 0.05) 1px, transparent 1px);
-  background-size: 28px 28px;
+    linear-gradient(var(--bb-grid-line, rgba(242, 242, 237, 0.06)) 1px, transparent 1px),
+    linear-gradient(90deg, var(--bb-grid-line, rgba(242, 242, 237, 0.06)) 1px, transparent 1px);
+  background-size: 32px 32px;
+  -webkit-mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, black 30%, transparent 85%);
+  mask-image: radial-gradient(ellipse 85% 65% at 50% 0%, black 30%, transparent 85%);
 }
 
-/* ─── Terminal glow (scoped to dark register only) ─── */
-@keyframes aurora-drift-a {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(60px, -40px) scale(1.15); }
+/* ─── Panel — sharp bordered surface, the Panel primitive's base. ─── */
+.panel {
+  background: var(--bb-surface, #16181C);
+  border: var(--border-default, 1.5px) solid var(--bb-line-strong, rgba(242, 242, 237, 0.30));
+  border-radius: var(--radius-md, 4px);
 }
-.term-glow {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(70px);
-  pointer-events: none;
-  will-change: transform;
-  background: radial-gradient(circle, rgba(195, 247, 58, 0.30) 0%, transparent 70%);
-  animation: aurora-drift-a 20s ease-in-out infinite;
+.panel-lift {
+  transition: transform 0.12s ease, box-shadow 0.12s ease;
 }
-
-/* ─── Cards ─── */
-.spec-card {
-  background: var(--bb-paper-raised, #FBF8F0);
-  border: 1px solid var(--bb-line, rgba(23, 20, 15, 0.13));
-  border-radius: 8px;
-  transition: border-color 0.2s ease;
-}
-.spec-card:hover {
-  border-color: var(--bb-line-strong, rgba(23, 20, 15, 0.28));
+.panel-lift:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: var(--shadow-sticker, 4px 4px 0 var(--bb-border-hard));
 }
 
-.terminal-panel {
-  background: var(--bb-term-bg, #14110C);
-  border: 1px solid var(--bb-term-line, rgba(244, 239, 228, 0.1));
-  border-radius: 12px;
-  color: var(--bb-term-text, #F3EEE2);
-}
-
-/* ─── Corner marks (print/technical-drawing crop-mark motif) ─── */
-.corner-marks {
+/* ─── Bracket frame — broadcast/viewfinder corner marks (currentColor-driven,
+   so it works identically in the app and code registers). Replaces the old
+   delicate print crop-mark motif with a thicker, more "framed monitor" cue,
+   merging what used to be two near-duplicate classes into one. ─── */
+.bracket-frame {
   position: relative;
 }
-.corner-marks::before,
-.corner-marks::after {
+.bracket-frame::before,
+.bracket-frame::after {
   content: '';
   position: absolute;
-  width: 9px;
-  height: 9px;
+  width: 16px;
+  height: 16px;
   pointer-events: none;
-  opacity: 0.55;
+  opacity: 0.8;
+  z-index: 20;
 }
-.corner-marks::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1.5px solid var(--bb-ink, #17140F);
-  border-left: 1.5px solid var(--bb-ink, #17140F);
+.bracket-frame::before {
+  top: -2px;
+  left: -2px;
+  border-top: 2px solid currentColor;
+  border-left: 2px solid currentColor;
 }
-.corner-marks::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1.5px solid var(--bb-ink, #17140F);
-  border-right: 1.5px solid var(--bb-ink, #17140F);
-}
-
-/* ─── Pills (status/tag register — soft counterpoint to sharp spec-cards) ─── */
-.pill {
-  border-radius: 9999px;
-  font-family: 'JetBrains Mono', monospace;
+.bracket-frame::after {
+  bottom: -2px;
+  right: -2px;
+  border-bottom: 2px solid currentColor;
+  border-right: 2px solid currentColor;
 }
 
-/* ─── Refinement kit (stage 2 — recurring finishing details from the board) ─── */
+/* ─── Sticker shadows — hard offset shadows, no blur. ─── */
+.shadow-sticker-sm { box-shadow: var(--shadow-sticker-sm); }
+.shadow-sticker { box-shadow: var(--shadow-sticker); }
+.shadow-sticker-lg { box-shadow: var(--shadow-sticker-lg); }
+.shadow-sticker-yellow { box-shadow: var(--shadow-sticker-yellow); }
+.shadow-sticker-success { box-shadow: var(--shadow-sticker-success); }
+.shadow-sticker-danger { box-shadow: var(--shadow-sticker-danger); }
 
-/* Corner "open/explore" affordance chip — anchor to a card's top-right corner,
-   reveal on hover. One reusable glyph instead of a generic chevron. */
+/* ─── Eyebrow — numbered/plain section labels. One merged class (dark is the
+   app default now, so the old paper/terminal eyebrow split is redundant). ─── */
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--bb-font-mono);
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--bb-yellow, #FFD400);
+}
+.eyebrow-muted {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--bb-font-mono);
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: 0.09em;
+  text-transform: uppercase;
+  color: var(--bb-ink-faint, #75786F);
+}
+
+/* ─── Stat numerals — oversized HUD digits (Orbitron), used for ratings, XP,
+   timers, ranks. The single most visible typographic shift from the old
+   system, which used JetBrains Mono here. ─── */
+.stat-num {
+  font-family: var(--bb-font-hud);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ─── Corner "open/explore" affordance chip — sharp/bracket, not circular. ─── */
 .link-chip {
   position: absolute;
   top: 10px;
   right: 10px;
   width: 22px;
   height: 22px;
-  border-radius: 9999px;
-  border: 1px solid var(--bb-line-strong, rgba(23, 20, 15, 0.28));
+  border-radius: var(--radius-sm, 2px);
+  border: var(--border-default) solid var(--bb-line-strong);
   display: flex;
   align-items: center;
   justify-content: center;
-  color: var(--bb-ink-faint, #8C8371);
+  color: var(--bb-ink-faint, #75786F);
   opacity: 0;
   transform: translate(-2px, 2px);
   transition: opacity 0.15s ease, transform 0.15s ease, color 0.15s ease, border-color 0.15s ease;
@@ -218,52 +195,23 @@
 .group:hover .link-chip {
   opacity: 1;
   transform: translate(0, 0);
-  color: var(--bb-orange, #E15A20);
-  border-color: var(--bb-orange, #E15A20);
+  color: var(--bb-yellow, #FFD400);
+  border-color: var(--bb-yellow, #FFD400);
 }
 
-/* Avatar-stack separation ring — a paper-colored ring instead of a shadow,
-   so overlapping avatars stay legible in both themes automatically. */
-.avatar-ring {
-  box-shadow: 0 0 0 2px var(--bb-paper, #F3EEE2);
+/* ─── Hazard stripes — danger-zone motif (end session, destructive actions). ─── */
+.hazard-stripes {
+  background-image: repeating-linear-gradient(
+    -45deg,
+    rgba(232, 54, 43, 0.14) 0px,
+    rgba(232, 54, 43, 0.14) 6px,
+    transparent 6px,
+    transparent 14px
+  );
 }
 
-/* Dashed hairline divider — annotation-register counterpoint to the solid
-   hairline rule used everywhere else. Use sparingly, one per view at most. */
-.dashed-rule {
-  border-top: 1px dashed var(--bb-line-strong, rgba(23, 20, 15, 0.28));
-}
-
-/* Sticker-tag flourish — a small deliberate tilt against the grid. Reserve
-   for exactly one badge per screen; overuse cancels the effect. */
-.sticker-tag {
-  transform: rotate(-3deg);
-}
-
-/* Inline blinking caret — reads as "live/ready", not just decorative type. */
-.caret-inline {
-  display: inline-block;
-  width: 0.5em;
-  border-right: 2px solid currentColor;
-  margin-left: 1px;
-  animation: blink-caret 1s step-end infinite;
-}
-
-/* Ghosted step state — future/inactive steps recede by opacity alone, no
-   extra chrome; pair with a plain full-opacity step for "active." */
-.step-ghost {
-  opacity: 0.35;
-}
-
-/* Chamfered corner — cut exactly one corner at 45° on a single hero
-   container per view, breaking the otherwise uniform radius language.
-   Overusing this defeats the point; reserve for one landmark element. */
-.chamfer-tr {
-  clip-path: polygon(0 0, calc(100% - 14px) 0, 100% 14px, 100% 100%, 0 100%);
-}
-
-/* ─── CRT scanlines — scoped strictly to the code editor's terminal glass,
-   never the paper register. A faint horizontal grain, not a gimmick. ─── */
+/* ─── CRT scanlines — scoped to the code editor's glass, a legitimate
+   "machine" cue in a register that's always dark. ─── */
 .scanlines {
   position: relative;
 }
@@ -273,8 +221,8 @@
   inset: 0;
   background-image: repeating-linear-gradient(
     to bottom,
-    rgba(243, 238, 226, 0.05) 0px,
-    rgba(243, 238, 226, 0.05) 1px,
+    rgba(242, 242, 237, 0.05) 0px,
+    rgba(242, 242, 237, 0.05) 1px,
     transparent 1px,
     transparent 3px
   );
@@ -283,255 +231,7 @@
   mix-blend-mode: overlay;
 }
 
-/* ─── Buttons ─── */
-.btn-primary {
-  background: var(--bb-ink, #17140F);
-  color: var(--bb-paper, #F3EEE2);
-  border-radius: 9999px;
-  transition: background-color 0.2s ease, transform 0.15s ease;
-}
-.btn-primary:hover { background: var(--bb-orange, #E15A20); }
-
-.btn-outline {
-  background: transparent;
-  border: 1.5px solid var(--bb-line-strong, rgba(23, 20, 15, 0.28));
-  color: var(--bb-ink, #17140F);
-  border-radius: 9999px;
-  transition: border-color 0.2s ease, background-color 0.2s ease;
-}
-.btn-outline:hover {
-  border-color: var(--bb-ink, #17140F);
-  background: rgba(23, 20, 15, 0.03);
-}
-
-/* ─── Typography utilities ─── */
-.heading-xl {
-  font-family: 'Space Grotesk', system-ui, sans-serif;
-  font-weight: 700;
-  letter-spacing: -0.03em;
-  line-height: 1.1;
-}
-
-.editorial {
-  font-family: 'Fraunces', Georgia, serif;
-  font-style: italic;
-  font-weight: 500;
-}
-
-.label-caps {
-  font-size: 10px;
-  font-weight: 700;
-  letter-spacing: 0.09em;
-  text-transform: uppercase;
-  color: var(--bb-ink-faint, #8C8371);
-  font-family: 'JetBrains Mono', monospace;
-}
-
-.eyebrow {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bb-orange, #E15A20);
-}
-
-/* ─── Terminal-register counterparts — same numbered-eyebrow / crop-mark
-   devices used across the paper register, recolored so they read correctly
-   against the code editor's near-black glass instead of warm paper. ─── */
-.eyebrow-term {
-  display: inline-flex;
-  align-items: center;
-  gap: 8px;
-  font-family: 'JetBrains Mono', monospace;
-  font-size: 11px;
-  font-weight: 700;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-  color: var(--bb-term-acc, #C3F73A);
-}
-.corner-marks-term {
-  position: relative;
-}
-.corner-marks-term::before,
-.corner-marks-term::after {
-  content: '';
-  position: absolute;
-  width: 9px;
-  height: 9px;
-  pointer-events: none;
-  opacity: 0.7;
-  z-index: 30;
-}
-.corner-marks-term::before {
-  top: -1px;
-  left: -1px;
-  border-top: 1.5px solid var(--bb-term-text, #F3EEE2);
-  border-left: 1.5px solid var(--bb-term-text, #F3EEE2);
-  opacity: 0.25;
-}
-.corner-marks-term::after {
-  bottom: -1px;
-  right: -1px;
-  border-bottom: 1.5px solid var(--bb-term-text, #F3EEE2);
-  border-right: 1.5px solid var(--bb-term-text, #F3EEE2);
-  opacity: 0.25;
-}
-
-/* ─── Stat numerals (oversized numbers as graphics) ─── */
-.stat-num {
-  font-family: 'JetBrains Mono', monospace;
-  font-weight: 800;
-  letter-spacing: -0.02em;
-  font-variant-numeric: tabular-nums;
-}
-
-/* ─── Terminal glow text/box (scoped to dark register) ─── */
-.term-text-glow { text-shadow: 0 0 20px rgba(195, 247, 58, 0.4); }
-.term-box-glow { box-shadow: 0 0 40px -12px rgba(195, 247, 58, 0.4); }
-
-/* ─── Gradient text ─── */
-.gradient-text {
-  background: linear-gradient(120deg, var(--bb-ink, #17140F) 0%, var(--bb-ink, #17140F) 55%, var(--bb-orange, #E15A20) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-.gradient-text-dark {
-  background: linear-gradient(110deg, #ffffff 0%, var(--bb-term-acc, #C3F73A) 55%, var(--bb-term-acc2, #35E8FF) 100%);
-  -webkit-background-clip: text;
-  -webkit-text-fill-color: transparent;
-  background-clip: text;
-}
-
-/* ─── Syntax highlighting (C++) — terminal register ─── */
-.syntax-keyword { color: #c3f73a; font-weight: 600; }
-.syntax-string { color: #7fe8de; }
-.syntax-number { color: #f3a468; }
-.syntax-comment { color: #8C8371; font-style: italic; }
-.syntax-function { color: #35e8ff; }
-.syntax-type { color: #c084fc; }
-.syntax-builtin { color: #f472b6; }
-.syntax-preproc { color: #6b6455; }
-
-/* ─── Scrollbar ─── */
-.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
-.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
-.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bb-line-strong, rgba(23,20,15,0.28)); border-radius: 4px; }
-.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--bb-ink-faint, rgba(23,20,15,0.4)); }
-.custom-scrollbar-dark::-webkit-scrollbar-thumb { background: rgba(244,239,228,0.1); }
-.custom-scrollbar-dark::-webkit-scrollbar-thumb:hover { background: rgba(244,239,228,0.18); }
-.no-scrollbar::-webkit-scrollbar { display: none; }
-.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
-
-/* ─── Animations ─── */
-@keyframes fadeIn {
-  from { opacity: 0; transform: translateY(4px); }
-  to { opacity: 1; transform: translateY(0); }
-}
-.animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
-
-@keyframes popup {
-  from { opacity: 0; transform: translateY(4px) scale(0.98); }
-  to { opacity: 1; transform: translateY(0) scale(1); }
-}
-.animate-popup { animation: popup 0.15s ease-out forwards; }
-
-@keyframes pulse-lime {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.5; }
-}
-.animate-pulse-lime { animation: pulse-lime 2s ease-in-out infinite; }
-
-@keyframes blink-caret {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0; }
-}
-.animate-caret { animation: blink-caret 1s step-end infinite; }
-
-@keyframes marquee {
-  from { transform: translateX(0); }
-  to { transform: translateX(-50%); }
-}
-.animate-marquee { animation: marquee 22s linear infinite; }
-
-/* ─── Accent dot (status bullet motif) ─── */
-.accent-dot::after {
-  content: '';
-  display: inline-block;
-  width: 6px;
-  height: 6px;
-  border-radius: 50%;
-  background: var(--bb-orange, #E15A20);
-  margin-left: 4px;
-  vertical-align: middle;
-}
-
-/* ══════════════════════════════════════════════════════════════════════
-   ARENA — a third, deliberately louder register reserved for Blitz/Duel.
-   Practice is calm paper; the editor is a quiet dark glass window; Blitz is
-   a live competition against another human, so it gets to be theatrical —
-   near-black, aurora glow, neon wins/losses. Reuses the terminal palette
-   (this *is* competitive/live, same signal the editor already carries) but
-   turns the intensity all the way up.
-   ══════════════════════════════════════════════════════════════════════ */
-
-.arena-bg {
-  background:
-    radial-gradient(ellipse 70% 45% at 15% -8%, rgba(195, 247, 58, 0.10), transparent 60%),
-    radial-gradient(ellipse 60% 45% at 100% 8%, rgba(53, 232, 255, 0.08), transparent 60%),
-    radial-gradient(ellipse 55% 40% at 50% 115%, rgba(225, 90, 32, 0.06), transparent 60%),
-    var(--bb-term-bg, #14110C);
-}
-.arena-grid {
-  background-image:
-    linear-gradient(rgba(244, 239, 228, 0.05) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(244, 239, 228, 0.05) 1px, transparent 1px);
-  background-size: 34px 34px;
-  -webkit-mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 85%);
-  mask-image: radial-gradient(ellipse 90% 70% at 50% 0%, black 30%, transparent 85%);
-}
-
-@keyframes aurora-drift-b {
-  0%, 100% { transform: translate(0, 0) scale(1); }
-  50% { transform: translate(-50px, 50px) scale(1.2); }
-}
-.arena-glow-b {
-  position: absolute;
-  border-radius: 9999px;
-  filter: blur(80px);
-  pointer-events: none;
-  will-change: transform;
-  background: radial-gradient(circle, rgba(53, 232, 255, 0.22) 0%, transparent 70%);
-  animation: aurora-drift-b 24s ease-in-out infinite;
-}
-
-/* Text glow variants — victory (lime) / defeat (red) / draw (blue) reveals. */
-.glow-text-lime { text-shadow: 0 0 30px rgba(195, 247, 58, 0.55), 0 0 70px rgba(195, 247, 58, 0.25); }
-.glow-text-red { text-shadow: 0 0 30px rgba(255, 92, 92, 0.5), 0 0 70px rgba(255, 92, 92, 0.22); }
-.glow-text-blue { text-shadow: 0 0 30px rgba(53, 232, 255, 0.5), 0 0 70px rgba(53, 232, 255, 0.22); }
-
-/* Card-edge glow — difficulty/leader accents inside the arena register. */
-.card-glow-lime { box-shadow: 0 0 0 1px rgba(195, 247, 58, 0.25), 0 0 24px -6px rgba(195, 247, 58, 0.4); }
-.card-glow-orange { box-shadow: 0 0 0 1px rgba(255, 122, 69, 0.28), 0 0 24px -6px rgba(255, 122, 69, 0.4); }
-.card-glow-red { box-shadow: 0 0 0 1px rgba(255, 92, 92, 0.28), 0 0 24px -6px rgba(255, 92, 92, 0.4); }
-.card-glow-blue { box-shadow: 0 0 0 1px rgba(53, 232, 255, 0.25), 0 0 24px -6px rgba(53, 232, 255, 0.35); }
-
-/* Fail shake — a quick, small horizontal rattle. Reserved for one moment
-   (a fresh WA/RE/TLE stamp landing) — never looped, never on hover. */
-@keyframes shake-x {
-  0%, 100% { transform: translateX(0); }
-  20% { transform: translateX(-6px); }
-  40% { transform: translateX(5px); }
-  60% { transform: translateX(-3px); }
-  80% { transform: translateX(2px); }
-}
-.animate-shake { animation: shake-x 0.4s cubic-bezier(.36,.07,.19,.97) both; }
-
-/* Victory sheen — a single diagonal light sweep across a winning stamp/card. */
+/* ─── Victory sheen — a single diagonal light sweep across a winning stamp. ─── */
 @keyframes sheen-sweep {
   from { transform: translateX(-150%) skewX(-20deg); }
   to { transform: translateX(250%) skewX(-20deg); }
@@ -545,14 +245,74 @@
   pointer-events: none;
 }
 
-/* Hazard stripes — a construction/warning motif for the "end session" danger
-   zone, printed at low opacity so it reads as texture, not noise. */
-.hazard-stripes {
-  background-image: repeating-linear-gradient(
-    -45deg,
-    rgba(255, 107, 87, 0.12) 0px,
-    rgba(255, 107, 87, 0.12) 6px,
-    transparent 6px,
-    transparent 14px
-  );
+/* ─── Fail shake — a quick horizontal rattle for a fresh WA/RE/TLE stamp. ─── */
+@keyframes shake-x {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-6px); }
+  40% { transform: translateX(5px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
 }
+.animate-shake { animation: shake-x 0.4s cubic-bezier(.36,.07,.19,.97) both; }
+
+/* ─── Inline blinking caret — reads as "live/ready." ─── */
+.caret-inline {
+  display: inline-block;
+  width: 0.5em;
+  border-right: 2px solid currentColor;
+  margin-left: 1px;
+  animation: blink-caret 1s step-end infinite;
+}
+@keyframes blink-caret {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0; }
+}
+.animate-caret { animation: blink-caret 1s step-end infinite; }
+
+/* ─── Live-dot pulse — "running"/"live" indicators. Color comes from the
+   element's own bg-bb-* class; this keyframe only pulses opacity. ─── */
+@keyframes pulse-accent {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.5; }
+}
+.animate-pulse-accent { animation: pulse-accent 2s ease-in-out infinite; }
+
+/* ─── Generic entrance animations ─── */
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(4px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+.animate-fadeIn { animation: fadeIn 0.2s ease-out forwards; }
+
+@keyframes popup {
+  from { opacity: 0; transform: translateY(4px) scale(0.98); }
+  to { opacity: 1; transform: translateY(0) scale(1); }
+}
+.animate-popup { animation: popup 0.15s ease-out forwards; }
+
+/* ─── Scrollbar ─── */
+.custom-scrollbar::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar::-webkit-scrollbar-thumb { background: var(--bb-line-strong); border-radius: 4px; }
+.custom-scrollbar::-webkit-scrollbar-thumb:hover { background: var(--bb-ink-faint); }
+.custom-scrollbar-code::-webkit-scrollbar { width: 4px; height: 4px; }
+.custom-scrollbar-code::-webkit-scrollbar-track { background: transparent; }
+.custom-scrollbar-code::-webkit-scrollbar-thumb { background: rgba(242, 242, 237, 0.14); border-radius: 4px; }
+.custom-scrollbar-code::-webkit-scrollbar-thumb:hover { background: rgba(242, 242, 237, 0.24); }
+.no-scrollbar::-webkit-scrollbar { display: none; }
+.no-scrollbar { -ms-overflow-style: none; scrollbar-width: none; }
+
+/* ─── Syntax highlighting (C++) — code register, theme-constant. Keyword
+   uses the app's one accent; the rest follow common editor convention
+   (strings/success-green, numbers/warning-amber, functions/rival-blue).
+   type/builtin keep narrow, muted syntax-only hues — a legible C++
+   highlighter needs more variety than the brand's one-accent rule allows,
+   same kind of documented exception as RatingBadge. ─── */
+.syntax-keyword { color: var(--bb-yellow); font-weight: 600; }
+.syntax-string { color: var(--bb-success); }
+.syntax-number { color: var(--bb-warning); }
+.syntax-comment { color: var(--bb-ink-faint); font-style: italic; }
+.syntax-function { color: var(--bb-rival); }
+.syntax-type { color: #C4B5FD; }
+.syntax-builtin { color: #F9A8D4; }
+.syntax-preproc { color: var(--bb-ink-faint); opacity: 0.75; }

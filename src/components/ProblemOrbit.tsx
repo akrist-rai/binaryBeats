@@ -2,6 +2,12 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "motion/react";
 import type { Problem } from "../hooks/useProblems";
 import { fetchOrbitProblems, ORBIT_RINGS } from "../lib/orbitData";
+import { colorForRating, difficultyLabel } from "./ui/RatingBadge";
+import { Panel } from "./ui/Panel";
+import { Tag } from "./ui/Tag";
+import { Button } from "./ui/Button";
+import { Eyebrow } from "./ui/Eyebrow";
+import { StatNumeral } from "./ui/StatNumeral";
 
 interface ProblemOrbitProps {
   solvedKeys: string[];
@@ -57,42 +63,42 @@ function hashStr(s: string): number {
   return Math.abs(h);
 }
 
+/** Thin wrapper around the shared rating->difficulty thresholds (ui/RatingBadge)
+ *  so this file doesn't re-hardcode the same Easy/Medium/Hard cutoffs a
+ *  second time — only adds the "Unrated" case, which is orbit-specific. */
 function diffLabel(r: number | null): "Unrated" | "Easy" | "Medium" | "Hard" {
-  return !r ? "Unrated" : r <= 1300 ? "Easy" : r <= 1900 ? "Medium" : "Hard";
+  return r == null ? "Unrated" : difficultyLabel(r);
 }
 
+/** Difficulty color now comes from the same Codeforces rating->color mapping
+ *  RatingBadge/ProblemCard/SolveSidebar all use, instead of a bespoke
+ *  success/yellow/danger 3-step ramp — that ramp used to collide with real
+ *  status colors (a "Hard" tile and a WA verdict could both read red). */
 function tierColor(rating: number | null, palette: Palette): string {
-  if (rating == null) return palette.inkFaint;
-  if (rating <= 1300) return palette.lime;
-  if (rating <= 1900) return palette.orange;
-  return palette.red;
+  return rating == null ? palette.inkFaint : colorForRating(rating);
 }
 
 interface Palette {
-  paper: string;
+  ground: string;
   ink: string;
   inkFaint: string;
   line: string;
   lineStrong: string;
-  orange: string;
-  lime: string;
-  red: string;
-  blue: string;
+  yellow: string;
+  success: string;
 }
 
 function readPalette(): Palette {
   const s = getComputedStyle(document.documentElement);
   const g = (name: string, fallback: string) => s.getPropertyValue(name).trim() || fallback;
   return {
-    paper: g("--bb-paper", "#F3EEE2"),
-    ink: g("--bb-ink", "#17140F"),
-    inkFaint: g("--bb-ink-faint", "#8C8371"),
-    line: g("--bb-line", "rgba(23,20,15,0.13)"),
-    lineStrong: g("--bb-line-strong", "rgba(23,20,15,0.28)"),
-    orange: g("--bb-orange", "#E15A20"),
-    lime: g("--bb-lime", "#8FB537"),
-    red: g("--bb-red", "#C4402E"),
-    blue: g("--bb-blue", "#2138C4"),
+    ground: g("--bb-ground", "#0B0C0E"),
+    ink: g("--bb-ink", "#F2F2ED"),
+    inkFaint: g("--bb-ink-faint", "#75786F"),
+    line: g("--bb-line", "rgba(242,242,237,0.14)"),
+    lineStrong: g("--bb-line-strong", "rgba(242,242,237,0.30)"),
+    yellow: g("--bb-yellow", "#FFD400"),
+    success: g("--bb-success", "#35D46A"),
   };
 }
 
@@ -113,6 +119,14 @@ function clampZoom(z: number): number {
 
 function easeOutCubic(t: number): number {
   return 1 - Math.pow(1 - t, 3);
+}
+
+/** Square path centered at (cx, cy) with half-side `half` — the one node/
+ *  ring/pulse shape for the whole board now (tiles + rectangular tier
+ *  bands), replacing the old circles/rings. */
+function squarePath(ctx: CanvasRenderingContext2D, cx: number, cy: number, half: number) {
+  ctx.beginPath();
+  ctx.rect(cx - half, cy - half, half * 2, half * 2);
 }
 
 export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, playSound }) => {
@@ -224,7 +238,9 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   // Build the static orbital layout once problems arrive: radius encodes
   // rating (your progression outward from center), angle clusters by topic
   // (a stable hash of the primary tag), with jitter so a topic reads as a
-  // loose constellation rather than a single spoke.
+  // loose constellation rather than a single spoke. The layout math stays
+  // polar/circular — only how each point is *drawn* (square tiles, square
+  // tier bands) changed for the brutalist reshape.
   useEffect(() => {
     if (!problems) return;
     nodesRef.current = problems.map((p) => {
@@ -316,11 +332,11 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
       }
 
       for (const n of nodes) {
-        // The star the user is currently hovering (as of last frame) freezes
+        // The tile the user is currently hovering (as of last frame) freezes
         // in place entirely — no float, no spring, no repel — so it holds
         // still under the cursor long enough to actually click. Without this
         // lock, continuous idle floating means a static cursor loses the
-        // node again within a couple hundred ms, which reads as "the graph
+        // node again within a couple hundred ms, which reads as "the board
         // dodges every click." Everything else keeps drifting normally.
         if (hoveredRef.current === n) {
           n.vx = 0;
@@ -359,16 +375,16 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
 
       const pal = readPalette();
 
-      // Rings + labels (label carries live solved/mapped counts per band)
+      // Tier bands + labels (label carries live solved/mapped counts per
+      // band) — rectangular now, replacing the old dashed circles.
       ctx.textAlign = "center";
       ctx.textBaseline = "middle";
       for (let i = 0; i < ORBIT_RINGS.length; i++) {
-        const r = ringRadius(i) + RING_WIDTH;
-        ctx.beginPath();
+        const half = ringRadius(i) + RING_WIDTH;
         ctx.setLineDash([2, 6]);
         ctx.lineWidth = 1 / cam.zoom;
         ctx.strokeStyle = pal.lineStrong;
-        ctx.arc(0, 0, r, 0, Math.PI * 2);
+        squarePath(ctx, 0, 0, half);
         ctx.stroke();
         ctx.setLineDash([]);
 
@@ -378,22 +394,23 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         ctx.fillText(
           `${ORBIT_RINGS[i].label.toUpperCase()} · ${ORBIT_RINGS[i].min}–${ORBIT_RINGS[i].max}${rs ? ` · ${rs.solved}/${rs.total}` : ""}`,
           0,
-          -r + 12 / cam.zoom
+          -half + 12 / cam.zoom
         );
       }
 
-      // Center "home" node
-      ctx.beginPath();
-      ctx.arc(0, 0, 9 / cam.zoom, 0, Math.PI * 2);
+      // Center "home" tile
+      squarePath(ctx, 0, 0, 8 / cam.zoom);
       ctx.fillStyle = pal.ink;
       ctx.fill();
-      ctx.beginPath();
-      ctx.arc(0, 0, 15 / cam.zoom, 0, Math.PI * 2);
+      squarePath(ctx, 0, 0, 13 / cam.zoom);
       ctx.strokeStyle = pal.lineStrong;
       ctx.lineWidth = 1 / cam.zoom;
       ctx.stroke();
 
-      // Nodes
+      // Nodes — square tiles: solved fills success, next-up fills the
+      // primary accent (CTA semantic), everything else outlines in its
+      // rating color (never a status color, so a tile's color can't be
+      // misread as a verdict).
       let hoveredNode: OrbitNode | null = null;
       const hitThreshold = 10 / cam.zoom;
       let closestDist = Infinity;
@@ -414,12 +431,11 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
 
         // A filter dims everything it doesn't match, so a search or tag
         // click reads as "these light up" rather than a silent no-op list.
-        // Hover always wins over dimming — mousing over a faded star still
+        // Hover always wins over dimming — mousing over a faded tile still
         // reveals it, so filtering never hides information, only emphasis.
         if (filterActive && !matched.has(n.problem.key) && !isHover) {
-          ctx.beginPath();
-          ctx.arc(n.x, n.y, n.r * 0.7, 0, Math.PI * 2);
-          ctx.fillStyle = pal.paper;
+          squarePath(ctx, n.x, n.y, n.r * 0.65);
+          ctx.fillStyle = pal.ground;
           ctx.globalAlpha = 0.16;
           ctx.fill();
           ctx.lineWidth = 1 / cam.zoom;
@@ -430,18 +446,21 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
           continue;
         }
 
-        const color = solved ? pal.lime : isNext ? pal.orange : tierColor(n.problem.rating, pal);
-        const radius = (isHover ? n.r * 1.9 : n.r) / 1;
+        const color = solved ? pal.success : isNext ? pal.yellow : tierColor(n.problem.rating, pal);
+        const half = isHover ? n.r * 1.7 : n.r;
 
-        if (solved || isNext || isHover) {
+        // Hover gets a small functional glow — a pragmatic exception, not
+        // decoration: it's the one moment glow earns its keep, marking the
+        // exact clickable target under the cursor. Idle solved/next-up
+        // tiles get a crisp doubled-square outline instead, no blur.
+        if (isHover) {
           ctx.save();
           ctx.shadowColor = color;
-          ctx.shadowBlur = (isNext ? 16 : 10) / cam.zoom;
+          ctx.shadowBlur = 12 / cam.zoom;
         }
 
-        ctx.beginPath();
-        ctx.arc(n.x, n.y, radius, 0, Math.PI * 2);
-        ctx.fillStyle = solved ? color : isNext ? color : pal.paper;
+        squarePath(ctx, n.x, n.y, half);
+        ctx.fillStyle = solved || isNext ? color : pal.ground;
         ctx.globalAlpha = solved || isNext || isHover ? 1 : 0.85;
         ctx.fill();
         ctx.lineWidth = (isHover ? 2 : 1.3) / cam.zoom;
@@ -449,11 +468,22 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
         ctx.globalAlpha = 1;
         ctx.stroke();
 
-        if (solved || isNext || isHover) ctx.restore();
+        if (isHover) ctx.restore();
+
+        if ((solved || isNext) && !isHover) {
+          const outer = half + 3 / cam.zoom;
+          squarePath(ctx, n.x, n.y, outer);
+          ctx.lineWidth = 1 / cam.zoom;
+          ctx.strokeStyle = color;
+          ctx.globalAlpha = 0.5;
+          ctx.stroke();
+          ctx.globalAlpha = 1;
+        }
       }
 
-      // Pulse — a brief expanding ring that marks where a search/focus jump
-      // landed, so a camera fly-to reads as "here" instead of a silent pan.
+      // Pulse — a brief expanding square that marks where a search/focus
+      // jump landed, so a camera fly-to reads as "here" instead of a silent
+      // pan.
       const pulse = pulseRef.current;
       if (pulse) {
         const dur = pulse.kind === "ring" ? 900 : 1100;
@@ -462,14 +492,13 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
           pulseRef.current = null;
         } else {
           const pt = elapsed / dur;
-          ctx.beginPath();
           ctx.lineWidth = (pulse.kind === "ring" ? 2.5 : 2) / cam.zoom;
-          ctx.strokeStyle = pal.orange;
+          ctx.strokeStyle = pal.yellow;
           ctx.globalAlpha = (1 - pt) * 0.9;
           if (pulse.kind === "ring") {
-            ctx.arc(0, 0, pulse.radius, 0, Math.PI * 2);
+            squarePath(ctx, 0, 0, pulse.radius);
           } else {
-            ctx.arc(pulse.x, pulse.y, 14 + pt * 46, 0, Math.PI * 2);
+            squarePath(ctx, pulse.x, pulse.y, 14 + pt * 46);
           }
           ctx.stroke();
           ctx.globalAlpha = 1;
@@ -501,7 +530,7 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   };
 
   // ── Camera choreography — search/tag/ring/"next up" all funnel through
-  // these so a filter or click reads as "the galaxy responds," not just a
+  // these so a filter or click reads as "the board responds," not just a
   // list narrowing somewhere off-screen. ──
   const startCameraAnim = (toX: number, toY: number, toZoom: number, duration = 650) => {
     const cam = cameraRef.current;
@@ -673,7 +702,7 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
   return (
     <div className="flex flex-col gap-3">
       <div className="flex items-center justify-between flex-wrap gap-2">
-        <span className="eyebrow">Circular Roadmap · drag to pan · scroll to zoom · click a star to solve</span>
+        <Eyebrow>Rating Ladder · drag to pan · scroll to zoom · click a tile to solve</Eyebrow>
         {problems && (
           <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
             {problems.length.toLocaleString()} problems mapped across the full rating range
@@ -693,16 +722,16 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
               onChange={(e) => setSearch(e.target.value)}
               placeholder="Search & fly to a problem…"
               aria-label="Search problems"
-              className="w-full h-8 pl-8 pr-3 rounded-lg text-xs font-mono text-bb-ink placeholder-bb-ink-faint focus:outline-none bg-bb-paper-raised border border-bb-line focus:border-bb-line-strong transition-colors"
+              className="w-full h-8 pl-8 pr-3 rounded text-xs font-mono text-bb-ink placeholder-bb-ink-faint focus:outline-none bg-bb-surface border-[1.5px] border-bb-line focus:border-bb-line-strong transition-colors"
             />
           </div>
 
-          <div className="flex rounded-full border border-bb-line bg-bb-paper-raised p-0.5 font-mono text-[10px] gap-0.5">
+          <div className="flex rounded border border-bb-line bg-bb-surface p-0.5 font-mono text-[10px] gap-0.5">
             {(["", "easy", "medium", "hard"] as const).map((d) => (
               <button
                 key={d}
                 onClick={() => { playSound("click"); setDiffFilter(d); }}
-                className={`px-2.5 h-7 rounded-full font-bold cursor-pointer transition-colors ${diffFilter === d ? "bg-bb-ink text-bb-paper" : "text-bb-ink-faint hover:text-bb-ink-soft"}`}
+                className={`px-2.5 h-7 rounded-sm font-bold cursor-pointer transition-colors ${diffFilter === d ? "bg-bb-yellow text-bb-ground" : "text-bb-ink-faint hover:text-bb-ink-soft"}`}
               >
                 {d === "" ? "All" : d[0].toUpperCase() + d.slice(1)}
               </button>
@@ -711,12 +740,8 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
 
           <div className="flex items-center gap-1 overflow-x-auto no-scrollbar max-w-[380px]">
             {topTags.map((t) => (
-              <button
-                key={t}
-                onClick={() => { playSound("click"); setSelectedTag(selectedTag === t ? null : t); }}
-                className={`pill shrink-0 text-[9px] font-mono px-2 py-1 border cursor-pointer transition-colors ${selectedTag === t ? "border-bb-line-strong bg-bb-ink/10 text-bb-ink" : "border-bb-line text-bb-ink-faint hover:text-bb-ink-soft"}`}
-              >
-                #{t}
+              <button key={t} onClick={() => { playSound("click"); setSelectedTag(selectedTag === t ? null : t); }} className="shrink-0 cursor-pointer">
+                <Tag tone={selectedTag === t ? "accent" : "neutral"}>#{t}</Tag>
               </button>
             ))}
           </div>
@@ -727,137 +752,145 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
                 <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
                   {filteredProblems.length} match{filteredProblems.length === 1 ? "" : "es"}
                 </span>
-                <button onClick={clearFilters} className="btn-outline h-7 px-2.5 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
-                  Clear
-                </button>
+                <Button variant="outline" size="sm" onClick={clearFilters}>Clear</Button>
               </>
             )}
-            <button onClick={resetView} className="btn-outline h-7 px-2.5 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
-              ⊙ Recenter
-            </button>
+            <Button variant="outline" size="sm" onClick={resetView}>⊙ Recenter</Button>
           </div>
         </div>
       )}
 
       <div className="grid grid-cols-1 lg:grid-cols-[1fr_248px] gap-3 items-start">
-        <div
-          ref={containerRef}
-          className="relative w-full h-[640px] spec-card corner-marks overflow-hidden select-none"
+        <Panel
+          bracket
+          className="relative w-full h-[640px] text-bb-line-strong overflow-hidden select-none"
           style={{ cursor: hovered ? "pointer" : "grab" }}
           onPointerMove={handlePointerMove}
           onPointerDown={handlePointerDown}
           onPointerUp={handlePointerUp}
           onPointerLeave={handleMouseLeave}
         >
-          <div className="absolute inset-0 grid-paper pointer-events-none" />
-          <canvas ref={canvasRef} className="absolute inset-0" />
+          <div ref={containerRef} className="absolute inset-0">
+            <div className="absolute inset-0 scoreboard-grid pointer-events-none" />
+            <canvas ref={canvasRef} className="absolute inset-0" />
 
-          {!problems && (
-            <div className="absolute inset-0 flex items-center justify-center">
-              <motion.span
-                className="label-caps"
-                animate={{ opacity: [0.4, 1, 0.4] }}
-                transition={{ duration: 1.4, repeat: Infinity }}
-              >
-                Charting the galaxy…
-              </motion.span>
-            </div>
-          )}
-
-          {/* Legend */}
-          <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
-            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-bb-lime" /> Solved
-            </span>
-            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full bg-bb-orange" /> Next up
-            </span>
-            <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
-              <span className="w-2 h-2 rounded-full border border-bb-line-strong bg-bb-paper" /> Unsolved
-            </span>
-          </div>
-
-          {/* Cursor-following tooltip — positioned imperatively via ref for 60fps tracking */}
-          <div
-            ref={tooltipRef}
-            className="absolute top-0 left-0 pointer-events-none z-20 transition-opacity duration-100"
-            style={{ opacity: hovered ? 1 : 0, willChange: "transform" }}
-          >
-            {hovered && (
-              <div className="spec-card px-3 py-2.5 max-w-[220px] shadow-xl">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">
-                    {hovered.contestId}{hovered.index}
-                  </span>
-                  <span className="pill text-[8px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
-                    {diffLabel(hovered.rating)}
-                  </span>
-                </div>
-                <div className="text-xs font-bold text-bb-ink leading-snug mb-1">{hovered.title ?? hovered.key}</div>
-                <div className="flex items-center justify-between text-[10px] font-mono text-bb-ink-faint">
-                  <span>{hovered.tags.slice(0, 2).join(" · ") || "misc"}</span>
-                  <span className="tabular-nums">{hovered.rating ?? "—"}</span>
-                </div>
+            {!problems && (
+              <div className="absolute inset-0 flex items-center justify-center">
+                <motion.span
+                  className="eyebrow-muted"
+                  animate={{ opacity: [0.4, 1, 0.4] }}
+                  transition={{ duration: 1.4, repeat: Infinity }}
+                >
+                  Charting the board…
+                </motion.span>
               </div>
             )}
+
+            {/* Legend */}
+            <div className="absolute bottom-3 left-3 flex items-center gap-3 pointer-events-none">
+              <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-sm bg-bb-success" /> Solved
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-sm bg-bb-yellow" /> Next up
+              </span>
+              <span className="flex items-center gap-1.5 text-[9px] font-mono text-bb-ink-faint uppercase tracking-wider">
+                <span className="w-2 h-2 rounded-sm border border-bb-line-strong bg-bb-ground" /> Unsolved
+              </span>
+            </div>
+
+            {/* Cursor-following tooltip — positioned imperatively via ref for 60fps tracking */}
+            <div
+              ref={tooltipRef}
+              className="absolute top-0 left-0 pointer-events-none z-20 transition-opacity duration-100"
+              style={{ opacity: hovered ? 1 : 0, willChange: "transform" }}
+            >
+              {hovered && (
+                <Panel className="px-3 py-2.5 max-w-[220px] shadow-sticker">
+                  <div className="flex items-center gap-2 mb-1">
+                    <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">
+                      {hovered.contestId}{hovered.index}
+                    </span>
+                    {hovered.rating != null ? (
+                      <span
+                        className="inline-flex items-center rounded-sm border px-1.5 py-0.5 font-mono text-[8px] font-bold uppercase tracking-wider"
+                        style={{ color: colorForRating(hovered.rating), borderColor: colorForRating(hovered.rating) }}
+                      >
+                        {diffLabel(hovered.rating)}
+                      </span>
+                    ) : (
+                      <Tag tone="neutral">Unrated</Tag>
+                    )}
+                  </div>
+                  <div className="text-xs font-bold text-bb-ink leading-snug mb-1">{hovered.title ?? hovered.key}</div>
+                  <div className="flex items-center justify-between text-[10px] font-mono text-bb-ink-faint">
+                    <span>{hovered.tags.slice(0, 2).join(" · ") || "misc"}</span>
+                    <span className="tabular-nums">{hovered.rating ?? "—"}</span>
+                  </div>
+                </Panel>
+              )}
+            </div>
           </div>
-        </div>
+        </Panel>
 
         {/* ── Control panel — the "useful" half: progress, a one-click path
             back to where you left off, and ring shortcuts that fly the
             camera instead of leaving navigation to blind drag/scroll. ── */}
         <div className="flex flex-col gap-3">
-          <div className="spec-card corner-marks p-4">
-            <div className="eyebrow mb-2">Progress</div>
+          <Panel bracket className="p-4">
+            <Eyebrow className="mb-2">Progress</Eyebrow>
             <div className="flex items-baseline gap-1.5 mb-2">
-              <span className="stat-num text-2xl text-bb-ink">{totalSolved}</span>
+              <StatNumeral value={totalSolved} size="md" countUp />
               <span className="text-xs font-mono text-bb-ink-faint">/ {problems?.length ?? 0} mapped</span>
             </div>
-            <div className="h-1.5 rounded-full bg-bb-ink/[0.08] overflow-hidden">
+            <div className="h-1.5 rounded-sm bg-bb-ink/[0.08] overflow-hidden">
               <div
-                className="h-full bg-bb-lime rounded-full transition-all duration-500"
+                className="h-full bg-bb-success rounded-sm transition-all duration-500"
                 style={{ width: `${problems?.length ? (totalSolved / problems.length) * 100 : 0}%` }}
               />
             </div>
-          </div>
+          </Panel>
 
           {nextUpProblem && (
-            <div className="spec-card p-4">
+            <Panel className="p-4">
               <div className="flex items-center justify-between mb-2">
-                <span className="eyebrow">Next Up</span>
+                <Eyebrow>Next Up</Eyebrow>
                 <span className="text-[10px] font-mono text-bb-ink-faint tabular-nums">
                   {nextUpProblem.contestId}{nextUpProblem.index}
                 </span>
               </div>
-              <div className="text-sm font-heading font-bold text-bb-ink mb-2 leading-snug">
+              <div className="text-sm font-display font-bold text-bb-ink mb-2 leading-snug">
                 {nextUpProblem.title ?? nextUpProblem.key}
               </div>
               <div className="flex items-center gap-1.5 mb-3 flex-wrap">
-                <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint tabular-nums">
-                  {nextUpProblem.rating ?? "—"}
-                </span>
-                {nextUpProblem.tags[0] && (
-                  <span className="pill text-[9px] font-mono px-1.5 py-0.5 border border-bb-line text-bb-ink-faint">
-                    {nextUpProblem.tags[0]}
+                {nextUpProblem.rating != null ? (
+                  <span
+                    className="inline-flex items-center rounded-sm border px-1.5 py-0.5 font-mono text-[9px] font-bold tabular-nums"
+                    style={{ color: colorForRating(nextUpProblem.rating), borderColor: colorForRating(nextUpProblem.rating) }}
+                  >
+                    {nextUpProblem.rating}
                   </span>
+                ) : (
+                  <Tag tone="neutral">—</Tag>
                 )}
+                {nextUpProblem.tags[0] && <Tag tone="neutral">{nextUpProblem.tags[0]}</Tag>}
               </div>
               <div className="flex gap-2">
-                <button onClick={focusNextUp} className="btn-outline flex-1 h-8 text-[10px] font-mono uppercase tracking-wider cursor-pointer">
-                  Locate ◎
-                </button>
-                <button
+                <Button variant="outline" size="sm" className="flex-1" onClick={focusNextUp}>Locate ◎</Button>
+                <Button
+                  variant="primary"
+                  size="sm"
+                  className="flex-1"
                   onClick={() => { playSound("click"); onOpen(nextUpProblem.key); }}
-                  className="btn-primary flex-1 h-8 text-[10px] font-mono font-bold uppercase tracking-wider cursor-pointer"
                 >
                   Solve →
-                </button>
+                </Button>
               </div>
-            </div>
+            </Panel>
           )}
 
-          <div className="spec-card p-4">
-            <h4 className="label-caps mb-3">Rings</h4>
+          <Panel className="p-4">
+            <Eyebrow tone="muted" className="mb-3">Rings</Eyebrow>
             <div className="flex flex-col gap-2.5">
               {ORBIT_RINGS.map((ring, i) => {
                 const rs = ringStats[i] ?? { solved: 0, total: 0 };
@@ -865,19 +898,19 @@ export const ProblemOrbit: React.FC<ProblemOrbitProps> = ({ solvedKeys, onOpen, 
                 return (
                   <button key={ring.label} onClick={() => focusRing(i)} className="w-full text-left cursor-pointer group">
                     <div className="flex items-center justify-between mb-1">
-                      <span className="text-[10px] font-mono font-bold text-bb-ink-soft group-hover:text-bb-orange transition-colors uppercase tracking-wide">
+                      <span className="text-[10px] font-mono font-bold text-bb-ink-soft group-hover:text-bb-yellow transition-colors uppercase tracking-wide">
                         {ring.label}
                       </span>
                       <span className="text-[9px] font-mono text-bb-ink-faint tabular-nums">{rs.solved}/{rs.total}</span>
                     </div>
-                    <div className="h-1 rounded-full bg-bb-ink/[0.08] overflow-hidden">
-                      <div className="h-full bg-bb-orange rounded-full transition-all duration-500" style={{ width: `${pct}%` }} />
+                    <div className="h-1 rounded-sm bg-bb-ink/[0.08] overflow-hidden">
+                      <div className="h-full bg-bb-yellow rounded-sm transition-all duration-500" style={{ width: `${pct}%` }} />
                     </div>
                   </button>
                 );
               })}
             </div>
-          </div>
+          </Panel>
         </div>
       </div>
     </div>

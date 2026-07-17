@@ -13,11 +13,14 @@ import {
   type SampleResult,
   type Verdict,
 } from "../../lib/judgeApi";
+import { verdictTone, type VerdictStatus } from "../../lib/verdictTone";
 import { ConfettiBurst } from "../Effects/ConfettiBurst";
 import { DiffViewer } from "./DiffViewer";
 import { SubmissionHistoryPanel } from "./SubmissionHistoryPanel";
 import { TestGrid, tilesFromProgress, tilesFromVerdict } from "./TestGrid";
-import { VERDICT_LABEL, VERDICT_PANEL, VERDICT_TEXT } from "./verdictStyles";
+import { VerdictBadge } from "../ui/VerdictBadge";
+import { Eyebrow } from "../ui/Eyebrow";
+import { Button } from "../ui/Button";
 
 interface CodeWorkspaceProps {
   problemKey: string;
@@ -104,10 +107,10 @@ function reindentBlock(code: string, selStart: number, selEnd: number, outdent: 
 
 const ConsoleEmptyState: React.FC<{ icon: React.ReactNode; children: React.ReactNode }> = ({ icon, children }) => (
   <div className="h-full flex flex-col items-center justify-center gap-2.5 text-center px-6">
-    <div className="w-8 h-8 rounded-full border border-bb-term-line flex items-center justify-center text-bb-term-text/25 shrink-0">
+    <div className="w-8 h-8 rounded-sm border border-bb-code-line flex items-center justify-center text-bb-code-text/25 shrink-0">
       {icon}
     </div>
-    <span className="text-bb-term-text/40 text-[11px] leading-relaxed max-w-sm">{children}</span>
+    <span className="text-bb-code-text/40 text-[11px] leading-relaxed max-w-sm">{children}</span>
   </div>
 );
 
@@ -498,17 +501,18 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
   };
 
   const lines = draft.code.split("\n");
+  const tone = verdict ? verdictTone(verdict.status as VerdictStatus) : null;
 
   return (
-    <div className="flex-1 flex flex-col gap-3 min-h-0 p-3 bg-bb-term-bg">
+    <div className="flex-1 flex flex-col gap-3 min-h-0 p-3 bg-bb-code-bg">
       {/* Verdict stamp — keyed by submitCount so the whole thing (badge spring,
           shake, confetti) remounts and replays on every submission, even a
           repeat AC on the same code. */}
-      {verdict && (
+      {verdict && tone && (
         <div
           key={submitCount}
-          className={`relative overflow-hidden rounded border px-4 py-3.5 flex flex-col gap-2.5 font-mono ${VERDICT_PANEL[verdict.status]} ${
-            verdict.status === "AC" ? "sheen" : "animate-shake"
+          className={`relative overflow-hidden rounded border-2 px-4 py-3.5 flex flex-col gap-2.5 font-mono ${tone.border} ${tone.bg} ${
+            verdict.status === "AC" ? "sheen shadow-sticker-success" : "animate-shake shadow-sticker-danger"
           }`}
         >
           {verdict.status === "AC" && <ConfettiBurst burstKey={submitCount} />}
@@ -517,22 +521,20 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               initial={{ scale: 0.3, opacity: 0, rotate: -16 }}
               animate={{ scale: 1, opacity: 1, rotate: 0 }}
               transition={{ type: "spring", stiffness: 340, damping: 16 }}
-              className={`shrink-0 w-11 h-11 rounded border-2 border-current flex items-center justify-center ${VERDICT_TEXT[verdict.status]} ${
-                verdict.status === "AC" ? "card-glow-lime" : verdict.status === "TLE" ? "" : "card-glow-red"
-              }`}
+              className="shrink-0"
             >
-              <span className="text-sm font-black tracking-tighter">{verdict.status}</span>
+              <VerdictBadge status={verdict.status as VerdictStatus} size="lg" />
             </motion.div>
             <div className="flex items-center gap-3 flex-wrap">
               <span
-                className={`font-black uppercase tracking-wider ${VERDICT_TEXT[verdict.status]} ${
-                  verdict.status === "AC" ? "text-xl glow-text-lime" : "text-base"
+                className={`font-black uppercase tracking-wider font-display ${tone.text} ${
+                  verdict.status === "AC" ? "text-xl" : "text-base"
                 }`}
               >
-                {VERDICT_LABEL[verdict.status]}
+                {tone.label}
               </span>
               {verdict.status !== "CE" && (
-                <span className="text-xs text-bb-term-text/60 stat-num">
+                <span className="text-xs text-bb-code-text/60 stat-num">
                   {verdict.passedCount} / {verdict.totalCount} tests
                   {verdict.failedTestIndex !== undefined && ` · failed on test ${verdict.failedTestIndex}`}
                   {verdict.status === "AC" && ` · ${verdict.timeMs} ms`}
@@ -542,14 +544,14 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               {verdict.status === "WA" && verdict.failedTest && (
                 <button
                   onClick={() => setShowDiff((s) => !s)}
-                  className={`text-[10px] font-mono uppercase tracking-wider underline underline-offset-2 cursor-pointer ${VERDICT_TEXT[verdict.status]} opacity-80 hover:opacity-100 transition-opacity`}
+                  className={`text-[10px] font-mono uppercase tracking-wider underline underline-offset-2 cursor-pointer ${tone.text} opacity-80 hover:opacity-100 transition-opacity`}
                 >
                   {showDiff ? "Hide Diff" : "View Diff"}
                 </button>
               )}
             </div>
             {verdict.status === "AC" && verdict.solveRecorded && (
-              <span className="ml-auto text-[10px] uppercase tracking-wider text-bb-term-acc/80 whitespace-nowrap">solve recorded ✓</span>
+              <span className="ml-auto text-[10px] uppercase tracking-wider text-bb-yellow/80 whitespace-nowrap">solve recorded ✓</span>
             )}
           </div>
 
@@ -572,27 +574,25 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           them as a plain sibling — putting it inside the console's own
           overflow-hidden box would clip it out of the hit-testable area. */}
       <div className="flex-1 flex flex-col min-h-0">
-      <div className="flex-1 min-h-[360px] relative rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono corner-marks-term">
-        <div className="h-8 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-3 select-none">
+      <div className="flex-1 min-h-[360px] relative rounded border border-bb-code-line bg-bb-code-surface overflow-hidden flex flex-col font-mono bracket-frame text-bb-code-line">
+        <div className="h-8 bg-bb-code-bg/40 border-b border-bb-code-line flex items-center justify-between px-3 select-none">
           <div className="flex items-center gap-2.5 min-w-0">
-            <span className="eyebrow-term hidden sm:inline-flex shrink-0">
-              /02 <span className="text-bb-term-text/25 normal-case">·</span> Editor
-            </span>
-            <span className="w-px h-3.5 bg-bb-term-line hidden sm:inline-block shrink-0" />
-            <span className="text-[11.5px] font-bold text-bb-term-text shrink-0 flex items-center gap-1.5">
+            <Eyebrow number="02" className="hidden sm:inline-flex shrink-0">Editor</Eyebrow>
+            <span className="w-px h-3.5 bg-bb-code-line hidden sm:inline-block shrink-0" />
+            <span className="text-[11.5px] font-bold text-bb-code-text shrink-0 flex items-center gap-1.5">
               solution.cpp
               {hasUnsavedChanges && (
-                <span className="w-1.5 h-1.5 rounded-full bg-bb-term-acc2" title="Changed since your last submission" />
+                <span className="w-1.5 h-1.5 rounded-full bg-bb-code-acc" title="Changed since your last submission" />
               )}
             </span>
           </div>
           <div className="flex items-center gap-3 shrink-0">
-            <div className="flex items-center gap-1 text-bb-term-text/50">
+            <div className="flex items-center gap-1 text-bb-code-text/50">
               <button
                 onClick={() => adjustFontSize(-1)}
                 disabled={fontSize <= FONT_SIZE_MIN}
                 title="Decrease font size"
-                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-term-text transition-colors disabled:opacity-25 cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-code-text transition-colors disabled:opacity-25 cursor-pointer"
               >
                 A−
               </button>
@@ -601,7 +601,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 onClick={() => adjustFontSize(1)}
                 disabled={fontSize >= FONT_SIZE_MAX}
                 title="Increase font size"
-                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-term-text transition-colors disabled:opacity-25 cursor-pointer"
+                className="w-5 h-5 flex items-center justify-center text-[10px] font-bold hover:text-bb-code-text transition-colors disabled:opacity-25 cursor-pointer"
               >
                 A+
               </button>
@@ -610,7 +610,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               onClick={handleReset}
               disabled={busy !== null}
               title="Reset to starter template"
-              className="text-bb-term-text/35 hover:text-bb-term-acc transition-colors disabled:opacity-30 cursor-pointer shrink-0"
+              className="text-bb-code-text/35 hover:text-bb-code-acc transition-colors disabled:opacity-30 cursor-pointer shrink-0"
             >
               <svg className="w-3.5 h-3.5" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
                 <path strokeLinecap="round" strokeLinejoin="round" d="M16.023 9.348h4.992v-.001M2.985 19.644v-4.992m0 0h4.992m-4.993 0 3.181 3.183a8.25 8.25 0 0 0 13.803-3.7M4.031 9.865a8.25 8.25 0 0 1 13.803-3.7l3.181 3.182m0-4.991v4.99" />
@@ -622,13 +622,13 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         <div className="flex-1 relative flex overflow-hidden scanlines">
           <div
             ref={gutterRef}
-            className="w-11 bg-bb-term-bg border-r border-bb-term-line flex flex-col pt-4 items-end pr-3 text-bb-term-text/35 select-none overflow-hidden font-mono"
+            className="w-11 bg-bb-code-bg border-r border-bb-code-line flex flex-col pt-4 items-end pr-3 text-bb-code-text/35 select-none overflow-hidden font-mono"
             style={{ fontSize }}
           >
             {lines.map((_, idx) => (
               <div
                 key={idx}
-                className={`w-full flex items-center justify-end font-bold transition-colors ${idx === cursor.line - 1 ? "text-bb-term-acc" : ""}`}
+                className={`w-full flex items-center justify-end font-bold transition-colors ${idx === cursor.line - 1 ? "text-bb-code-acc" : ""}`}
                 style={{ height: lineHeight }}
               >
                 {idx + 1}
@@ -639,12 +639,12 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           <div className="flex-1 relative overflow-hidden bg-transparent">
             <div
               aria-hidden="true"
-              className="absolute left-0 right-0 bg-bb-term-acc/[0.06] pointer-events-none z-[1]"
+              className="absolute left-0 right-0 bg-bb-code-acc/[0.06] pointer-events-none z-[1]"
               style={{ top: (cursor.line - 1) * lineHeight - scrollTop, height: lineHeight }}
             />
             <pre
               ref={highlightRef}
-              className="absolute inset-0 p-4 pt-4 text-bb-term-text overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
+              className="absolute inset-0 p-4 pt-4 text-bb-code-text overflow-hidden pointer-events-none select-none font-mono whitespace-pre bg-transparent border-0 outline-none z-0"
               style={{ lineHeight: `${lineHeight}px`, fontSize }}
               dangerouslySetInnerHTML={{ __html: getHighlightedCode(draft.code) }}
             />
@@ -657,16 +657,16 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               onKeyUp={updateCursor}
               onClick={updateCursor}
               onSelect={updateCursor}
-              className="absolute inset-0 p-4 pt-4 text-transparent caret-bb-term-acc selection:bg-bb-term-acc2/20 selection:text-bb-term-text overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar-dark"
+              className="absolute inset-0 p-4 pt-4 text-transparent caret-bb-code-acc selection:bg-bb-code-acc/20 selection:text-bb-code-text overflow-auto font-mono whitespace-pre bg-transparent border-0 outline-none resize-none focus:ring-0 focus:border-0 w-full h-full z-10 custom-scrollbar-code"
               style={{ lineHeight: `${lineHeight}px`, fontSize }}
               spellCheck={false}
             />
           </div>
         </div>
 
-        <div className="h-6 bg-bb-term-bg border-t border-bb-term-line flex items-center justify-between px-3 text-[10px] font-mono text-bb-term-text/50 select-none">
-          <span className="flex items-center gap-1.5 text-bb-term-acc font-bold">
-            <span className="w-1.5 h-1.5 rounded-full bg-bb-term-acc" />
+        <div className="h-6 bg-bb-code-bg border-t border-bb-code-line flex items-center justify-between px-3 text-[10px] font-mono text-bb-code-text/50 select-none">
+          <span className="flex items-center gap-1.5 text-bb-code-acc font-bold">
+            <span className="w-1.5 h-1.5 rounded-full bg-bb-code-acc" />
             C++17
           </span>
           <span className="tabular-nums">Ln {cursor.line}, Col {cursor.col}</span>
@@ -691,23 +691,21 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
         className="h-3 shrink-0 cursor-row-resize flex items-center justify-center group/resize"
       >
         <div
-          className={`w-10 h-[3px] rounded-full transition-colors ${
-            resizingConsole ? "bg-bb-orange" : "bg-bb-term-line group-hover/resize:bg-bb-term-text/40"
+          className={`w-10 h-[3px] rounded-sm transition-colors ${
+            resizingConsole ? "bg-bb-yellow" : "bg-bb-code-line group-hover/resize:bg-bb-code-text/40"
           }`}
         />
       </div>
 
       {/* Console */}
       <div
-        className="rounded border border-bb-term-line bg-bb-term-surface overflow-hidden flex flex-col font-mono text-xs shrink-0 corner-marks-term"
+        className="rounded border border-bb-code-line bg-bb-code-surface overflow-hidden flex flex-col font-mono text-xs shrink-0 bracket-frame text-bb-code-line"
         style={{ height: consoleHeight }}
       >
-        <div className="h-8 bg-bb-term-bg/40 border-b border-bb-term-line flex items-center justify-between px-3 select-none">
+        <div className="h-8 bg-bb-code-bg/40 border-b border-bb-code-line flex items-center justify-between px-3 select-none">
           <div className="flex gap-5 items-center h-full">
-            <span className="eyebrow-term hidden md:inline-flex shrink-0">
-              /03 <span className="text-bb-term-text/25 normal-case">·</span> Console
-            </span>
-            <span className="w-px h-3.5 bg-bb-term-line hidden md:inline-block shrink-0" />
+            <Eyebrow number="03" className="hidden md:inline-flex shrink-0">Console</Eyebrow>
+            <span className="w-px h-3.5 bg-bb-code-line hidden md:inline-block shrink-0" />
             {(
               [
                 { id: "tests" as const, label: "Tests" },
@@ -719,7 +717,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 key={tab.id}
                 onClick={() => setConsoleTab(tab.id)}
                 className={`h-full text-[10px] font-mono tracking-wider uppercase cursor-pointer border-b-2 flex items-center transition-all ${
-                  consoleTab === tab.id ? "border-bb-term-acc text-bb-term-text" : "border-transparent text-bb-term-text/40 hover:text-bb-term-text/70"
+                  consoleTab === tab.id ? "border-bb-code-acc text-bb-code-text" : "border-transparent text-bb-code-text/40 hover:text-bb-code-text/70"
                 }`}
               >
                 {tab.label}
@@ -735,7 +733,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                   {Array.from({ length: 6 }).map((_, i) => (
                     <motion.span
                       key={i}
-                      className="w-2.5 h-1.5 rounded-[1px] bg-bb-term-acc"
+                      className="w-2.5 h-1.5 rounded-[1px] bg-bb-code-acc"
                       animate={{ opacity: [0.15, 1, 0.15] }}
                       transition={{ duration: 1, repeat: Infinity, delay: i * 0.12 }}
                     />
@@ -746,26 +744,26 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 key={statusLine}
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
-                className="text-bb-term-acc text-[10px] font-mono"
+                className="text-bb-code-acc text-[10px] font-mono"
               >
-                <span className="text-bb-term-text/30">$</span> {statusLine}
-                <span className="caret-inline text-bb-term-acc" />
+                <span className="text-bb-code-text/30">$</span> {statusLine}
+                <span className="caret-inline text-bb-code-acc" />
               </motion.span>
             </div>
           )}
         </div>
 
-        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar-dark bg-bb-term-bg/30">
+        <div className="flex-1 p-3 overflow-y-auto custom-scrollbar-code bg-bb-code-bg/30">
           {consoleTab === "custom" ? (
             <div className="h-full flex flex-col gap-2">
               <div className="flex items-center justify-between shrink-0">
-                <span className="text-[9px] uppercase tracking-wider text-bb-term-text/35">
+                <span className="text-[9px] uppercase tracking-wider text-bb-code-text/35">
                   optional — test your program against input you type in
                 </span>
                 <button
                   onClick={handleRunCustom}
                   disabled={busy !== null}
-                  className="h-6 px-2.5 rounded border border-bb-term-line hover:border-bb-term-acc/40 hover:text-bb-term-acc bg-bb-term-bg/60 text-bb-term-text/70 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-40 cursor-pointer flex items-center gap-1.5 shrink-0"
+                  className="h-6 px-2.5 rounded border border-bb-code-line hover:border-bb-code-acc/40 hover:text-bb-code-acc bg-bb-code-bg/60 text-bb-code-text/70 text-[10px] font-mono uppercase tracking-wider transition-colors disabled:opacity-40 cursor-pointer flex items-center gap-1.5 shrink-0"
                 >
                   <PlayIcon className="w-2.5 h-2.5" />
                   {busy === "custom" ? "Running…" : "Run"}
@@ -776,19 +774,19 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
                 onChange={(e) => setStdin(e.target.value)}
                 placeholder="stdin — optional"
                 spellCheck={false}
-                className="flex-1 min-h-0 bg-bb-term-bg/40 rounded border border-bb-term-line p-2.5 text-bb-term-text placeholder-bb-term-text/30 focus:outline-none focus:border-bb-term-text/25 resize-none"
+                className="flex-1 min-h-0 bg-bb-code-bg/40 rounded border border-bb-code-line p-2.5 text-bb-code-text placeholder-bb-code-text/30 focus:outline-none focus:border-bb-code-text/25 resize-none"
               />
               {(customError || customOut) && (
-                <div className="shrink-0 max-h-24 overflow-y-auto custom-scrollbar-dark rounded border border-bb-term-line bg-bb-term-bg/40 p-2.5">
+                <div className="shrink-0 max-h-24 overflow-y-auto custom-scrollbar-code rounded border border-bb-code-line bg-bb-code-bg/40 p-2.5">
                   {customError ? (
-                    <span className="text-[#ff5c5c] whitespace-pre-wrap">{customError}</span>
+                    <span className="text-bb-danger whitespace-pre-wrap">{customError}</span>
                   ) : (
                     customOut && (
                       <>
-                        <span className="text-bb-term-text/90 whitespace-pre-wrap">
+                        <span className="text-bb-code-text/90 whitespace-pre-wrap">
                           {customOut.timedOut ? "(time limit exceeded)" : customOut.stdout || "(no output)"}
                         </span>
-                        {customOut.stderr && <span className="text-[#ff5c5c] whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
+                        {customOut.stderr && <span className="text-bb-danger whitespace-pre-wrap block mt-2">{customOut.stderr}</span>}
                       </>
                     )
                   )}
@@ -804,40 +802,36 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
               }}
             />
           ) : testsError ? (
-            <span className="text-[#ff5c5c] whitespace-pre-wrap">{testsError}</span>
+            <span className="text-bb-danger whitespace-pre-wrap">{testsError}</span>
           ) : samples ? (
             <div className="flex flex-col gap-2.5">
-              {samples.map((s) => (
-                <div key={s.index} className="rounded border border-bb-term-line overflow-hidden">
-                  <div
-                    className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider ${
-                      s.pass
-                        ? "text-bb-term-acc bg-bb-term-acc/[0.06]"
-                        : s.outcome === "tle"
-                          ? "text-amber-400 bg-amber-400/[0.06]"
-                          : "text-[#ff5c5c] bg-[#ff5c5c]/[0.06]"
-                    }`}
-                  >
-                    <span>
-                      Test {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
-                    </span>
-                    <span className="text-bb-term-text/40 tabular-nums">
-                      {s.timeMs} ms{s.peakMemoryMb !== undefined ? ` · ${s.peakMemoryMb} MB` : ""}
-                    </span>
+              {samples.map((s) => {
+                const sampleStatus: VerdictStatus = s.pass ? "AC" : s.outcome === "tle" ? "TLE" : s.outcome === "re" ? "RE" : "WA";
+                const sTone = verdictTone(sampleStatus);
+                return (
+                  <div key={s.index} className="rounded border border-bb-code-line overflow-hidden">
+                    <div className={`flex items-center justify-between px-3 py-1.5 text-[10px] uppercase tracking-wider ${sTone.text} ${sTone.bg}`}>
+                      <span>
+                        Test {s.index + 1} — {s.pass ? "pass ✓" : s.outcome === "tle" ? "time limit" : s.outcome === "re" ? "runtime error" : "fail ✗"}
+                      </span>
+                      <span className="text-bb-code-text/40 tabular-nums">
+                        {s.timeMs} ms{s.peakMemoryMb !== undefined ? ` · ${s.peakMemoryMb} MB` : ""}
+                      </span>
+                    </div>
+                    {!s.pass &&
+                      (s.outcome === "ok" ? (
+                        <DiffViewer expected={s.expected} actual={s.actual} />
+                      ) : (
+                        <pre className="p-2.5 text-[11px] text-bb-code-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-code">{s.actual}</pre>
+                      ))}
                   </div>
-                  {!s.pass &&
-                    (s.outcome === "ok" ? (
-                      <DiffViewer expected={s.expected} actual={s.actual} />
-                    ) : (
-                      <pre className="p-2.5 text-[11px] text-bb-term-text/90 whitespace-pre-wrap max-h-28 overflow-y-auto custom-scrollbar-dark">{s.actual}</pre>
-                    ))}
-                </div>
-              ))}
+                );
+              })}
             </div>
           ) : hasExamples ? (
             <ConsoleEmptyState icon={<BeakerIcon />}>
               Run compiles your code and checks it against this problem's {examples.length} example test{examples.length === 1 ? "" : "s"}.
-              <span className="caret-inline text-bb-term-acc" />
+              <span className="caret-inline text-bb-code-acc" />
             </ConsoleEmptyState>
           ) : (
             <ConsoleEmptyState icon={<TerminalIcon />}>
@@ -853,40 +847,29 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
       {/* Actions */}
       <div className="flex items-center gap-2 shrink-0 flex-wrap">
         {judgeable && (
-          <button
-            onClick={handleSubmit}
-            disabled={busy !== null}
-            className="h-9 px-5 rounded bg-bb-term-acc hover:brightness-110 text-bb-term-bg font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-50 cursor-pointer flex items-center gap-2"
-          >
+          <Button variant="primary" onClick={handleSubmit} disabled={busy !== null}>
             <CheckCircleIcon />
             {busy === "submit" ? "Judging…" : "Submit"}
-          </button>
+          </Button>
         )}
-        <button
+        <Button
+          variant={judgeable ? "outline" : "primary"}
           onClick={handleRunTests}
           disabled={busy !== null || !hasExamples}
           title={hasExamples ? undefined : "No example tests available for this problem"}
-          className={`h-9 px-4 rounded font-bold font-mono text-xs uppercase tracking-wider transition-all disabled:opacity-40 cursor-pointer flex items-center gap-2 ${
-            judgeable
-              ? "border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text"
-              : "bg-bb-term-text hover:brightness-90 text-bb-term-bg"
-          }`}
         >
           <PlayIcon />
           {busy === "tests" ? "Running…" : "Run"}
-          <span className={`hidden sm:inline text-[9px] font-mono ${judgeable ? "text-bb-term-text/35" : "opacity-50"}`}>⌘⏎</span>
-        </button>
-        <button
-          onClick={handleCopy}
-          className="h-9 px-4 rounded border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-xs font-mono uppercase tracking-wider text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer flex items-center gap-2"
-        >
+          <span className={`hidden sm:inline text-[9px] font-mono ${judgeable ? "text-bb-code-text/35" : "opacity-50"}`}>⌘⏎</span>
+        </Button>
+        <Button variant="outline" onClick={handleCopy}>
           <ClipboardIcon />
           {copied ? "Copied ✓" : "Copy"}
-        </button>
+        </Button>
         <button
           onClick={handleDownload}
           title="Download solution.cpp"
-          className="h-9 w-9 rounded border border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text transition-colors cursor-pointer flex items-center justify-center shrink-0"
+          className="h-9 w-9 rounded border border-bb-code-line hover:border-bb-code-text/25 bg-bb-code-surface text-bb-code-text/70 hover:text-bb-code-text transition-colors cursor-pointer flex items-center justify-center shrink-0"
         >
           <DownloadIcon />
         </button>
@@ -897,8 +880,8 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
             title="Keyboard shortcuts"
             className={`h-9 w-9 rounded border transition-colors cursor-pointer flex items-center justify-center ${
               showShortcuts
-                ? "border-bb-term-acc/40 bg-bb-term-acc/[0.08] text-bb-term-acc"
-                : "border-bb-term-line hover:border-bb-term-text/25 bg-bb-term-surface text-bb-term-text/70 hover:text-bb-term-text"
+                ? "border-bb-code-acc/40 bg-bb-code-acc/[0.08] text-bb-code-acc"
+                : "border-bb-code-line hover:border-bb-code-text/25 bg-bb-code-surface text-bb-code-text/70 hover:text-bb-code-text"
             }`}
           >
             <QuestionMarkIcon />
@@ -906,13 +889,13 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           {showShortcuts && (
             <>
               <div className="fixed inset-0 z-30" onClick={() => setShowShortcuts(false)} />
-              <div className="absolute bottom-full right-0 mb-2 w-72 rounded border border-bb-term-line bg-bb-term-surface shadow-2xl shadow-black/40 p-3.5 z-40 corner-marks-term">
-                <span className="eyebrow-term mb-2.5">Shortcuts</span>
+              <div className="absolute bottom-full right-0 mb-2 w-72 rounded border border-bb-code-line bg-bb-code-surface shadow-2xl shadow-black/40 p-3.5 z-40 bracket-frame text-bb-code-line">
+                <Eyebrow className="mb-2.5">Shortcuts</Eyebrow>
                 <div className="flex flex-col gap-2">
                   {SHORTCUTS.map(([keys, desc]) => (
                     <div key={desc} className="flex items-center justify-between gap-3">
-                      <span className="text-[11px] font-mono text-bb-term-text/55">{desc}</span>
-                      <span className="text-[10px] font-mono text-bb-term-text px-1.5 py-0.5 rounded bg-bb-term-bg border border-bb-term-line shrink-0 whitespace-nowrap">
+                      <span className="text-[11px] font-mono text-bb-code-text/55">{desc}</span>
+                      <span className="text-[10px] font-mono text-bb-code-text px-1.5 py-0.5 rounded bg-bb-code-bg border border-bb-code-line shrink-0 whitespace-nowrap">
                         {keys}
                       </span>
                     </div>
@@ -923,7 +906,7 @@ export const CodeWorkspace: React.FC<CodeWorkspaceProps> = ({
           )}
         </div>
 
-        <span className="text-[9px] font-mono text-bb-term-text/35 ml-auto hidden md:inline">
+        <span className="text-[9px] font-mono text-bb-code-text/35 ml-auto hidden md:inline">
           {judgeable
             ? `Run checks the examples; Submit judges all ${testCount} official hidden tests, right here.`
             : "Run checks the examples. No local test suite for this problem — submit on Codeforces for the verdict."}

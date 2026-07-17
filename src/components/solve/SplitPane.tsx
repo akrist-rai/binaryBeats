@@ -88,13 +88,13 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
   if (!isDesktop) {
     return (
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex items-center gap-1 h-9 border-b border-bb-term-line select-none shrink-0 bg-bb-term-surface px-1">
+        <div className="flex items-center gap-1 h-9 border-b border-bb-line select-none shrink-0 bg-bb-surface px-1">
           {(["left", "right"] as const).map((id) => (
             <button
               key={id}
               onClick={() => setTab(id)}
               className={`h-full px-3.5 text-[11px] font-bold cursor-pointer border-b-2 flex items-center transition-all font-mono ${
-                tab === id ? "border-b-bb-term-acc text-bb-term-text" : "border-transparent text-bb-term-text/40 hover:text-bb-term-text/70"
+                tab === id ? "border-b-bb-yellow text-bb-ink" : "border-transparent text-bb-ink/40 hover:text-bb-ink/70"
               }`}
             >
               {id === "left" ? leftLabel : rightLabel}
@@ -133,13 +133,13 @@ export const SplitPane: React.FC<SplitPaneProps> = ({
         aria-orientation="vertical"
         title="Drag to resize · double-click to reset"
         className={`w-[2px] shrink-0 cursor-col-resize relative group/divider transition-colors ${
-          dragging ? "bg-bb-orange" : "bg-bb-term-line hover:bg-bb-term-text/30"
+          dragging ? "bg-bb-yellow" : "bg-bb-line hover:bg-bb-ink/30"
         }`}
       >
         <div className="absolute inset-y-0 -left-1.5 -right-1.5" />
         <div
-          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3px] h-9 rounded-full transition-opacity pointer-events-none ${
-            dragging ? "bg-bb-orange opacity-100" : "bg-bb-term-text/40 opacity-0 group-hover/divider:opacity-100"
+          className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[3px] h-9 rounded-sm transition-opacity pointer-events-none ${
+            dragging ? "bg-bb-yellow opacity-100" : "bg-bb-ink/40 opacity-0 group-hover/divider:opacity-100"
           }`}
         />
       </div>

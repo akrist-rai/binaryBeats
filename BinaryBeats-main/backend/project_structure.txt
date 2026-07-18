@@ -1,0 +1,25 @@
+src/
+  config/
+    db.js
+  models/
+    User.js
+    Problem.js
+    Submission.js
+  middleware/
+    auth.js
+    rateLimiter.js
+    botProtection.js
+  controllers/
+    authController.js
+    problemController.js
+    leaderboardController.js
+    duelController.js
+    cfController.js
+  routes/
+    authRoutes.js
+    problemRoutes.js
+    leaderboardRoutes.js
+    duelRoutes.js
+  app.js
+server.js
+.env

@@ -49,6 +49,93 @@ export const LeetCodeDashboard = ({ playSound, onShareSolution, onNavigateTab }:
   const [sortBy, setSortBy] = useState<typeof SORT_OPTIONS[number]['id']>('default');
   const searchInputRef = useRef<HTMLInputElement>(null);
 
+  // LeetCode Verification State
+  const [verifyStatus, setVerifyStatus] = useState<{ verified: boolean; username: string | null; code: string | null }>({
+    verified: false,
+    username: null,
+    code: null,
+  });
+  const [lcUsernameInput, setLcUsernameInput] = useState('');
+  const [loadingVerify, setLoadingVerify] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
+
+  // Fetch status on mount
+  useEffect(() => {
+    fetch("/api/leetcode/status")
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && typeof data.verified === "boolean") {
+          setVerifyStatus({
+            verified: data.verified,
+            username: data.username,
+            code: data.code,
+          });
+          if (data.username) {
+            setLcUsernameInput(data.username);
+          }
+        }
+      })
+      .catch((err) => console.error("Error fetching LeetCode status:", err));
+  }, []);
+
+  const handleStartVerify = async () => {
+    playSound("click");
+    setLoadingVerify(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/leetcode/start-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username: lcUsernameInput }),
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Failed to start verification");
+      }
+      setVerifyStatus({
+        verified: false,
+        username: lcUsernameInput,
+        code: data.code,
+      });
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoadingVerify(false);
+    }
+  };
+
+  const handleConfirmVerify = async () => {
+    playSound("click");
+    setLoadingVerify(true);
+    setErrorMsg(null);
+    try {
+      const res = await fetch("/api/leetcode/confirm-verification", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+      });
+      const data = await res.json();
+      if (!res.ok) {
+        throw new Error(data.message || "Verification check failed");
+      }
+      setVerifyStatus({
+        verified: true,
+        username: data.username,
+        code: null,
+      });
+    } catch (err: any) {
+      setErrorMsg(err.message);
+    } finally {
+      setLoadingVerify(false);
+    }
+  };
+
+  const handleCancelVerify = () => {
+    playSound("click");
+    setVerifyStatus({ verified: false, username: null, code: null });
+    setLcUsernameInput("");
+    setErrorMsg(null);
+  };
+
   const { problems, total, pages, loading, error } = useProblems({
     search: search || undefined,
     difficulty: difficulty || undefined,
@@ -395,6 +482,61 @@ export const LeetCodeDashboard = ({ playSound, onShareSolution, onNavigateTab }:
                         ))}
                       </div>
                     </div>
+                  </Panel>
+
+                  {/* LeetCode Verification Card */}
+                  <Panel className="p-5">
+                    <div className="flex items-center justify-between mb-3">
+                      <Eyebrow tone="muted">LeetCode Account</Eyebrow>
+                    </div>
+                    {verifyStatus.verified ? (
+                      <div className="flex flex-col gap-2">
+                        <div className="flex items-center gap-2 text-bb-success text-xs font-mono">
+                          <span className="w-2 h-2 rounded-full bg-bb-success animate-pulse" />
+                          Verified: <span className="font-bold text-bb-ink">{verifyStatus.username}</span>
+                        </div>
+                        <p className="text-[10px] font-mono text-bb-ink-faint">
+                          Your profile is fully linked and synced.
+                        </p>
+                      </div>
+                    ) : verifyStatus.code ? (
+                      <div className="flex flex-col gap-3">
+                        <div className="text-[10px] font-mono text-bb-ink-soft">
+                          Step 2: Add this code to your LeetCode "About Me" or "Real Name" field:
+                        </div>
+                        <div className="bg-bb-ground border border-bb-line px-3 py-2 rounded text-xs font-mono font-bold select-all text-center text-bb-yellow">
+                          {verifyStatus.code}
+                        </div>
+                        {errorMsg && <div className="text-[10px] font-mono text-bb-danger">{errorMsg}</div>}
+                        <div className="flex gap-2">
+                          <Button variant="primary" size="sm" className="flex-1" onClick={handleConfirmVerify} disabled={loadingVerify}>
+                            {loadingVerify ? "Verifying..." : "Confirm"}
+                          </Button>
+                          <Button variant="outline" size="sm" onClick={handleCancelVerify}>
+                            Cancel
+                          </Button>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="flex flex-col gap-3">
+                        <p className="text-[10px] font-mono text-bb-ink-soft">
+                          Link your LeetCode profile to sync stats and compete.
+                        </p>
+                        <div className="flex gap-2">
+                          <input
+                            type="text"
+                            value={lcUsernameInput}
+                            onChange={(e) => setLcUsernameInput(e.target.value)}
+                            placeholder="LeetCode username"
+                            className="flex-1 h-8 px-2 rounded text-xs font-mono bg-bb-ground border border-bb-line text-bb-ink placeholder-bb-ink-faint focus:outline-none focus:border-bb-line-strong"
+                          />
+                          <Button variant="outline" size="sm" onClick={handleStartVerify} disabled={loadingVerify || !lcUsernameInput.trim()}>
+                            {loadingVerify ? "..." : "Link"}
+                          </Button>
+                        </div>
+                        {errorMsg && <div className="text-[10px] font-mono text-bb-danger">{errorMsg}</div>}
+                      </div>
+                    )}
                   </Panel>
 
                   {/* Activity heatmap */}

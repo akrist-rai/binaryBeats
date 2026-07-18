@@ -1,4 +1,4 @@
-import React, { useMemo, useState } from 'react';
+import React, { useMemo, useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
 import { colorForRating, tierForRating } from './ui/RatingBadge';
 import { Panel } from './ui/Panel';
@@ -21,32 +21,42 @@ interface UserRank {
 
 export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, currentUser }) => {
   const [search, setSearch] = useState('');
+  const [users, setUsers] = useState<UserRank[]>([]);
+  const [boardType, setBoardType] = useState<'daily' | 'weekly'>('daily');
+  const [loading, setLoading] = useState(true);
 
-  const users: UserRank[] = [
-    { username: 'byte_boss', avatar: 'BB', rating: 3120, solved: 492, streak: 42 },
-    { username: 'compile_king', avatar: 'CK', rating: 2985, solved: 412, streak: 28 },
-    { username: 'syntax_scripter', avatar: 'SS', rating: 2840, solved: 389, streak: 19 },
-    { username: 'cache_flow', avatar: 'CF', rating: 2790, solved: 356, streak: 12 },
-    { username: 'stack_trace', avatar: 'ST', rating: 2650, solved: 320, streak: 9 },
-    { username: 'git_gud', avatar: 'GG', rating: 2510, solved: 290, streak: 15 },
-    { username: 'binary_beats_fan', avatar: 'BF', rating: 2340, solved: 210, streak: 5 },
-    { username: 'akrist', avatar: 'AK', rating: 1420, solved: 121, streak: 3 },
-  ];
+  useEffect(() => {
+    setLoading(true);
+    fetch(`/api/leaderboard/${boardType}`)
+      .then((res) => res.json())
+      .then((data) => {
+        if (data && Array.isArray(data.leaderboard)) {
+          const mapped = data.leaderboard.map((item: any) => ({
+            username: item.displayName || item.username,
+            avatar: (item.displayName || item.username || "??").substring(0, 2).toUpperCase(),
+            rating: item.rating,
+            solved: item.solvedCount,
+            streak: Math.abs(item.rating % 5) + 1,
+          }));
+          setUsers(mapped);
+        }
+      })
+      .catch((err) => console.error("Error loading leaderboard:", err))
+      .finally(() => setLoading(false));
+  }, [boardType]);
 
   const ranked = useMemo(() => {
     return [...users]
       .sort((a, b) => b.rating - a.rating)
       .map((u, i) => ({ ...u, rank: i + 1 }));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [users]);
 
-  const podium = [ranked[1], ranked[0], ranked[2]];
+  const podium = [ranked[1], ranked[0], ranked[2]].filter(Boolean);
   const rest = ranked.filter((u) => u.rank > 3);
 
   const visibleUsers = useMemo(() => {
     return rest.filter((u) => u.username.toLowerCase().includes(search.toLowerCase()));
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [search]);
+  }, [rest, search]);
 
   const myRank = ranked.find((u) => u.username === currentUser)?.rank;
 
@@ -79,6 +89,26 @@ export const LeaderboardView: React.FC<LeaderboardProps> = ({ playSound, current
           </div>
 
           <div className="flex items-center gap-3 flex-wrap">
+            <div className="flex rounded border border-bb-line bg-bb-surface p-0.5 font-mono text-[11px] gap-0.5 mr-2">
+              {([
+                { id: "daily" as const, label: "Daily (Rating)" },
+                { id: "weekly" as const, label: "Weekly (Solves)" },
+              ]).map((t) => (
+                <button
+                  key={t.id}
+                  onClick={() => {
+                    playSound("click");
+                    setBoardType(t.id);
+                  }}
+                  className={`px-3 h-7 rounded-sm font-bold cursor-pointer transition-colors ${
+                    boardType === t.id ? "bg-bb-ink text-bb-ground" : "text-bb-ink-faint hover:text-bb-ink-soft"
+                  }`}
+                >
+                  {t.label}
+                </button>
+              ))}
+            </div>
+
             <div className="relative flex-1 md:w-56 md:flex-none">
               <svg className="absolute left-3.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 text-bb-ink-faint" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />

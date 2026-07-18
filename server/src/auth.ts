@@ -1,11 +1,9 @@
 /**
- * Auth helpers — password hashing and the signed session cookie.
- * Session state itself is just a JWT (id + email) stored in an httpOnly
- * cookie; there's no separate session table to keep in sync.
+ * Auth helpers — plain-text passwords and signed session cookies.
+ * Session state is a JWT (id + email) stored in an httpOnly cookie.
  */
 import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
-import type { Context } from "koa";
+import type { Request, Response } from "express";
 
 const SESSION_COOKIE = "bb_session";
 const SESSION_TTL_S = 30 * 24 * 60 * 60; // 30 days
@@ -24,11 +22,13 @@ export interface SessionPayload {
 }
 
 export async function hashPassword(password: string): Promise<string> {
-  return bcrypt.hash(password, 12);
+  // Storing password in plain text as requested
+  return password;
 }
 
 export async function verifyPassword(password: string, hash: string): Promise<boolean> {
-  return bcrypt.compare(password, hash);
+  // Comparing in plain text as requested
+  return password === hash;
 }
 
 export function signSession(payload: SessionPayload): string {
@@ -43,28 +43,24 @@ export function verifySession(token: string): SessionPayload | null {
   }
 }
 
-export function setSessionCookie(ctx: Context, token: string): void {
-  // "lax" works for same-origin (local dev via the Vite proxy, or a same-domain
-  // deploy). Once the request arrives over HTTPS we assume frontend and backend
-  // may be on different domains (e.g. Vercel + Render) and need "none" for the
-  // browser to send the cookie on cross-site fetches — which itself requires
-  // `secure: true`, hence the two being tied together here.
-  const crossSite = ctx.secure;
-  ctx.cookies.set(SESSION_COOKIE, token, {
+export function setSessionCookie(res: Response, token: string): void {
+  // In production, the reverse proxy handles HTTPS, so we check process.env.NODE_ENV
+  const isProd = process.env.NODE_ENV === "production";
+  res.cookie(SESSION_COOKIE, token, {
     httpOnly: true,
-    sameSite: crossSite ? "none" : "lax",
-    secure: crossSite,
+    sameSite: isProd ? "none" : "lax",
+    secure: isProd,
     maxAge: SESSION_TTL_S * 1000,
     path: "/",
   });
 }
 
-export function clearSessionCookie(ctx: Context): void {
-  ctx.cookies.set(SESSION_COOKIE, null, { path: "/" });
+export function clearSessionCookie(res: Response): void {
+  res.clearCookie(SESSION_COOKIE, { path: "/" });
 }
 
-export function getSessionFromRequest(ctx: Context): SessionPayload | null {
-  const token = ctx.cookies.get(SESSION_COOKIE);
+export function getSessionFromRequest(req: Request): SessionPayload | null {
+  const token = req.cookies?.[SESSION_COOKIE];
   if (!token) return null;
   return verifySession(token);
 }

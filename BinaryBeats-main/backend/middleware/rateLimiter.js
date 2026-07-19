@@ -9,6 +9,7 @@
         legacyHeaders: false,
     });
 
+    //change the constant as per scaling
     const generalLimiter = rateLimit({
         windowMs: 15 * 60 * 1000,
         max: 200,

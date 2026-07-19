@@ -25,6 +25,9 @@ app.use(cors({
 app.use(express.json());
 app.use(generalLimiter);
 
+
+///update routes
+
 app.use('/auth', authRoutes);
 app.use('/cf', cfRoutes);
 app.use('/leaderboard', leaderboardRoutes);
